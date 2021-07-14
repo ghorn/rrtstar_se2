@@ -38,9 +38,11 @@ cc_library(
     name = "se2_tree",
     srcs = [
         "se2_tree.cpp",
+        "se2_point.cpp",
     ],
     hdrs = [
         "se2_tree.hpp",
+        "se2_point.hpp",
     ],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
