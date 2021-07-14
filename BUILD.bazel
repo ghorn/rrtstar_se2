@@ -47,3 +47,13 @@ cc_library(
     copts = cxx_opts,
     visibility = ["//visibility:public"],
 )
+
+cc_binary(
+    name = "test_tree",
+    srcs = [
+        "test_tree.cpp",
+    ],
+    deps = [":se2_tree"],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
+)
