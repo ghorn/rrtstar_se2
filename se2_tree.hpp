@@ -70,8 +70,8 @@ struct Node {
   // Insert a new point into the node.
   void InsertPoint_(const Point new_point,
                     const Axis axis,
-                    const double lb,
-                    const double ub);
+                    const Point lb,
+                    const Point ub);
 
 private:
   // The node data.

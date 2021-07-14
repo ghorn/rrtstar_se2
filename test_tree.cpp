@@ -4,8 +4,8 @@
 
 int main() {
   Se2::Node tree{Se2::Node::Empty{}};
-  const double lb = 0;
-  const double ub = 1;
+  const Se2::Point lb = {0, 0, -M_PI};
+  const Se2::Point ub = {1, 1, M_PI};
   std::mt19937_64 rng_engine;
   std::uniform_real_distribution<double> uniform_distribution;
 

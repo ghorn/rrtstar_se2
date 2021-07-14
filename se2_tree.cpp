@@ -1,5 +1,6 @@
 #include "se2_tree.hpp"
 
+#include <cassert>
 #include <iostream>
 
 namespace Se2 {
@@ -11,8 +12,14 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 void Node::InsertPoint_(const Point new_point,
                         const Axis axis,
-                        const double lb,
-                        const double ub) {
+                        const Point lb,
+                        const Point ub) {
+  assert(lb.x <= new_point.x);
+  assert(lb.y <= new_point.y);
+  assert(lb.theta <= new_point.theta);
+  assert(new_point.x <= ub.x);
+  assert(new_point.y <= ub.y);
+  assert(new_point.theta <= ub.theta);
   std::visit(overloaded {
       // Inserting a point in Empty promotes it to Leaf.
       [this, new_point](const Empty) {
@@ -24,7 +31,7 @@ void Node::InsertPoint_(const Point new_point,
       [this, new_point, lb, ub, axis](const Leaf leaf) {
         std::cerr << "Leaf splitting." << std::endl;
         const Point &old_point = leaf.point_; // convenience/readability
-        const double mid = 0.5 * (lb + ub);
+        const double mid = Midpoint(axis, lb, ub);
         const double new_coord = RelevantCoord(axis, new_point);
         const double old_coord = RelevantCoord(axis, old_point);
         const bool new_point_left = new_coord <= mid;
@@ -44,14 +51,16 @@ void Node::InsertPoint_(const Point new_point,
         // Both points left.
         if (old_point_left && new_point_left) {
           Node left = Node(Leaf(leaf.point_));
-          left.InsertPoint_(new_point, IncrementAxis(axis), lb, mid); // TODO(greg): WRONG bounds! make them 3-dim
+          const Point new_ub = SetValue(ub, axis, mid); // split axis in half
+          left.InsertPoint_(new_point, IncrementAxis(axis), lb, new_ub);
           value_ = Split{std::move(leaf), Empty{}};
           return;
         }
         // Both points right.
         if (old_point_right && new_point_right) {
           Node right = Node(Leaf(leaf.point_));
-          right.InsertPoint_(new_point, IncrementAxis(axis), mid, ub); // TODO(greg): WRONG bounds! make them 3-dim
+          const Point new_lb = SetValue(lb, axis, mid); // split axis in half
+          right.InsertPoint_(new_point, IncrementAxis(axis), new_lb, ub);
           value_ = Split{Empty{}, std::move(leaf)};
           return;
         }
@@ -59,16 +68,18 @@ void Node::InsertPoint_(const Point new_point,
       // Point inserted to Split will be inserted into either left or right child, depending on its coordinate.
       [new_point, axis, lb, ub](const Split &split) {
         std::cerr << "Split splitting." << std::endl;
-        const double mid = 0.5 * (lb + ub);
+        const double mid = Midpoint(axis, lb, ub);
         const double new_coord = RelevantCoord(axis, new_point);
         const bool new_point_left = new_coord <= mid;
         const bool new_point_right = !new_point_left;
         if (new_point_left) {
-          split.left_->InsertPoint_(new_point, IncrementAxis(axis), lb, mid); // TODO(greg): WRONG bounds! make them 3-dim
+          const Point new_ub = SetValue(ub, axis, mid); // split axis in half
+          split.left_->InsertPoint_(new_point, IncrementAxis(axis), lb, new_ub);
           return;
         }
         if (new_point_right) {
-          split.right_->InsertPoint_(new_point, IncrementAxis(axis), mid, ub); // TODO(greg): WRONG bounds! make them 3-dim
+          const Point new_lb = SetValue(lb, axis, mid); // split axis in half
+          split.right_->InsertPoint_(new_point, IncrementAxis(axis), new_lb, ub);
           return;
         }
       }
