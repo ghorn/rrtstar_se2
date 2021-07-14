@@ -56,12 +56,12 @@ void Se2Node::InsertPoint_(const Se2Point new_point,
                            const double ub) {
   std::visit(overloaded {
       // Inserting a point in Empty promotes it to Leaf.
-      [this, new_point](Empty) {
+      [this, new_point](const Empty) {
         //value_ = std::variant<Empty, Leaf, Split>(Leaf(new_point));
         value_ = Leaf(new_point);
       },
       // Point inserted into Leaf must turn into Split.
-      [this, new_point, lb, ub, axis](Leaf leaf) {
+      [this, new_point, lb, ub, axis](const Leaf leaf) {
         const Se2Point &old_point = leaf.point_; // convenience/readability
         const double mid = 0.5 * (lb + ub);
         const double new_coord = RelevantCoord(axis, new_point);
@@ -96,8 +96,7 @@ void Se2Node::InsertPoint_(const Se2Point new_point,
         }
       },
       // Point inserted to Split will be inserted into either left or right child, depending on its coordinate.
-      // TODO: Does this actually mutate the value in the std::variant? I think not directly, though it may correctly mutate the pointers.
-      [new_point, axis, lb, ub](Split split) {
+      [new_point, axis, lb, ub](const Split &split) {
         const double mid = 0.5 * (lb + ub);
         const double new_coord = RelevantCoord(axis, new_point);
         const bool new_point_left = new_coord <= mid;
