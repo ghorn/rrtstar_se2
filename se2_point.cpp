@@ -1,5 +1,7 @@
 #include "se2_point.hpp"
 
+#include <cassert>  // M_PI
+#include <cmath>  // M_PI
 #include <iostream>
 
 namespace Se2 {
@@ -26,7 +28,7 @@ namespace Se2 {
     }
   }
 
-  double RelevantCoord(const Axis axis, const Point point) {
+  double RelevantCoord(const Axis axis, const Point &point) {
     switch (axis) {
     case Axis::kX:
       {
@@ -48,7 +50,7 @@ namespace Se2 {
     }
   }
 
-  double Midpoint(const Axis axis, const Point lb, const Point ub) {
+  double Midpoint(const Axis axis, const Point &lb, const Point &ub) {
     switch (axis) {
     case Axis::kX:
       {
@@ -70,7 +72,7 @@ namespace Se2 {
     }
   }
 
-  Point SetValue(const Point point, const Axis axis, const double value) {
+  Point SetValue(const Point &point, const Axis axis, const double value) {
     switch (axis) {
     case Axis::kX:
       {
@@ -90,6 +92,31 @@ namespace Se2 {
         std::exit(1);
       }
     }
+  }
+
+  // Same as computing x - y but guaranteed to be in [-pi, pi].
+  double AngleDifference(const double x, const double y) {
+    const double diff = x - y;
+    double correction;
+    if (diff <= -M_PI) {
+      correction = M_PI;
+    } else {
+      correction = -M_PI;
+    }
+
+    const double wrapped_difference = fmod(diff + M_PI, 2*M_PI) + correction;
+
+    assert(wrapped_difference <= M_PI);
+    assert(wrapped_difference >= -M_PI);
+
+    return wrapped_difference;
+  }
+
+  double DistanceSquared(const Point &p0, const Point &p1) {
+    const double dx = p1.x - p0.x;
+    const double dy = p1.y - p0.y;
+    const double dtheta = AngleDifference(p1.theta, p0.theta);
+    return dx*dx + dy*dy + dtheta*dtheta;
   }
 
 } // namespace Se2

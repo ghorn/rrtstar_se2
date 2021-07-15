@@ -2,7 +2,7 @@
 
 #include <variant>
 #include <memory>
-#include <utility>
+#include <vector>
 
 #include "se2_point.hpp"
 
@@ -70,8 +70,21 @@ struct Node {
   // Insert a new point into the node.
   void InsertPoint_(const Point new_point,
                     const Axis axis,
-                    const Point lb,
-                    const Point ub);
+                    const Point tree_lb,
+                    const Point tree_ub);
+
+  struct SearchParams {
+    double radius;
+    double radius_squared;
+    Point test_point;
+    Point bounding_box_lb;
+    Point bounding_box_ub;
+  };
+  void PointsWithinRadiusOf_(std::vector<Point> * const close_points,
+                             const SearchParams &params,
+                             const Axis axis,
+                             const Point tree_lb,
+                             const Point tree_ub);
 
 private:
   // The node data.

@@ -57,3 +57,17 @@ cc_binary(
     copts = cxx_opts,
     visibility = ["//visibility:public"],
 )
+
+cc_binary(
+    name = "test_angle_difference",
+    srcs = [
+        "test_angle_difference.cpp",
+    ],
+    deps = [
+        ":se2_tree",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
+)

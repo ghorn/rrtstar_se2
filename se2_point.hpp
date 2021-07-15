@@ -16,10 +16,14 @@ namespace Se2 {
 
   Axis IncrementAxis(const Axis axis);
 
-  double RelevantCoord(const Axis axis, const Point point);
+  double RelevantCoord(const Axis axis, const Point &point);
 
-  double Midpoint(const Axis axis, const Point lb, const Point ub);
+  double Midpoint(const Axis axis, const Point &lb, const Point &ub);
 
-  Point SetValue(const Point point, const Axis axis, const double value);
-  
+  Point SetValue(const Point &point, const Axis axis, const double value);
+
+  double DistanceSquared(const Point &p0, const Point &p1);
+
+  double AngleDifference(const double x, const double y);
+
 }  // namespace Se2
