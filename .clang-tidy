@@ -1,0 +1,45 @@
+---
+Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-modernize-use-trailing-return-type,-llvmlibc-restrict-system-libc-headers,-llvm-header-guard,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-cppcoreguidelines-pro-type-union-access,-bugprone-incorrect-roundings,-altera-struct-pack-align,-readability-function-cognitive-complexity,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-special-member-functions,-hicpp-special-member-functions,-fuchsia-default-arguments-declarations,-fuchsia-default-arguments-calls'
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+FormatStyle:     none
+CheckOptions:
+  - key:             llvm-else-after-return.WarnOnConditionVariables
+    value:           '0'
+  - key:             modernize-loop-convert.MinConfidence
+    value:           reasonable
+  - key:             modernize-replace-auto-ptr.IncludeStyle
+    value:           llvm
+  - key:             cert-str34-c.DiagnoseSignedUnsignedCharComparisons
+    value:           '0'
+  - key:             google-readability-namespace-comments.ShortNamespaceLines
+    value:           '10'
+  - key:             cert-oop54-cpp.WarnOnlyIfThisHasSuspiciousField
+    value:           '0'
+  - key:             cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value:           '1'
+  - key:             cert-dcl16-c.NewSuffixes
+    value:           'L;LL;LU;LLU'
+  - key:             google-readability-braces-around-statements.ShortStatementLines
+    value:           '1'
+  - key:             modernize-pass-by-value.IncludeStyle
+    value:           llvm
+  - key:             google-readability-namespace-comments.SpacesBeforeComments
+    value:           '2'
+  - key:             modernize-loop-convert.MaxCopySize
+    value:           '16'
+  - key:             cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
+    value:           '1'
+  - key:             modernize-use-nullptr.NullMacros
+    value:           'NULL'
+  - key:             llvm-qualified-auto.AddConstToQualified
+    value:           '0'
+  - key:             modernize-loop-convert.NamingStyle
+    value:           CamelCase
+  - key:             llvm-else-after-return.WarnOnUnfixable
+    value:           '0'
+  - key:             google-readability-function-size.StatementThreshold
+    value:           '800'
+...
+
