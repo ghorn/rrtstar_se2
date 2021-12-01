@@ -49,6 +49,20 @@ cc_library(
 )
 
 cc_binary(
+    name = "vis",
+    srcs = [
+        "vis.cpp",
+    ],
+    deps = [
+        ":se2_tree",
+        "@bb3d//:bb3d",
+    ],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
+)
+
+
+cc_binary(
     name = "test_tree",
     srcs = [
         "test_tree.cpp",
