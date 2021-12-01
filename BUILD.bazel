@@ -37,12 +37,12 @@ cxx_opts = [
 cc_library(
     name = "se2_tree",
     srcs = [
-        "se2_tree.cpp",
-        "se2_point.cpp",
+        "src/se2_tree.cpp",
+        "src/se2_point.cpp",
     ],
     hdrs = [
-        "se2_tree.hpp",
-        "se2_point.hpp",
+        "src/se2_tree.hpp",
+        "src/se2_point.hpp",
     ],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
@@ -65,7 +65,7 @@ cc_binary(
 cc_binary(
     name = "test_tree",
     srcs = [
-        "test_tree.cpp",
+        "test/test_tree.cpp",
     ],
     deps = [":se2_tree"],
     copts = cxx_opts,
@@ -75,7 +75,7 @@ cc_binary(
 cc_binary(
     name = "test_angle_difference",
     srcs = [
-        "test_angle_difference.cpp",
+        "test/test_angle_difference.cpp",
     ],
     deps = [
         ":se2_tree",

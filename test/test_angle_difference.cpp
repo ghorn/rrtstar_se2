@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "se2_point.hpp"
+#include "src/se2_point.hpp"
 
 TEST(AngleDifference, Identities) {
   EXPECT_EQ(Se2::AngleDifference(  M_PI,     0),  -M_PI);
