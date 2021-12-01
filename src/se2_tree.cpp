@@ -235,6 +235,155 @@ void Node::PointsWithinRadiusOf_(std::vector<Point> * const close_points,
     }, value_);
 }
 
+void Node::Nearest_(Point * const closest_point,
+                    double * const closest_point_distance,
+                    double * const closest_point_distance_squared,
+                    const Point test_point,
+                    const Axis axis,
+                    const Point tree_lb,
+                    const Point tree_ub) {
+  // These are going to fail. Keep them in until I run the program as a sanity check.
+  assert(tree_lb.x <= test_point.x);
+  assert(tree_lb.y <= test_point.y);
+  assert(tree_lb.theta <= test_point.theta);
+  assert(test_point.x <= tree_ub.x);
+  assert(test_point.y <= tree_ub.y);
+  assert(test_point.theta <= tree_ub.theta);
+
+  std::visit(overloaded {
+      // There are no close points inside an empty node.
+      [](const Empty) {
+        return;
+      },
+      // If we're at a leaf, it's worth testing.
+      [&test_point, closest_point, closest_point_distance, closest_point_distance_squared](const Leaf leaf) {
+        const double test_distance_squared = DistanceSquared(leaf.point_, test_point);
+        if (test_distance_squared < *closest_point_distance_squared) {
+          *closest_point = test_point;
+          *closest_point_distance_squared = test_distance_squared;
+          *closest_point_distance = sqrt(test_distance_squared);
+        }
+      },
+      // If we're at a Split, only test branches which intersect the sphere's bounding box.
+      //
+      //                 tree_lb       tre_mid         tree_ub
+      // Tree branches:    |---------------|--------------|
+      //
+      //                                       bb_lb                bb_ub
+      // Bounding box:                           |----------------------|
+      [&test_point, axis, &tree_lb, &tree_ub, closest_point, closest_point_distance, closest_point_distance_squared](const Split &split) {
+        const double bb_axis_lb = RelevantCoord(axis, test_point) - *closest_point_distance;
+        const double bb_axis_ub = RelevantCoord(axis, test_point) + *closest_point_distance;
+        const double tree_axis_lb = RelevantCoord(axis, tree_lb);
+        const double tree_axis_ub = RelevantCoord(axis, tree_ub);
+        const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
+
+        bool should_search_left = false;
+        bool should_search_right = false;
+
+        if (axis != Axis::kTheta) {
+          // Normal search, no angle wrapping.
+          // Left branch intersects bounding box:
+          if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
+            should_search_left = true;
+          }
+          // Right branch intersects bounding box:
+          if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
+            should_search_right = true;
+          }
+        } else {
+          // The axis is Axis::kTheta - must consider angle wrapping.
+          if (*closest_point_distance >= M_PI) {
+            // If the radius is greater than pi, just search both branches. If we don't do this,
+            // we could get aliasing issues.
+            should_search_left = true;
+            should_search_right = true;
+          } else {
+            // The domain is between -pi and pi.
+            // If a bound is outside that range, wrap it into two interval searches.
+            //
+            // There are three possibilities.
+            //
+            // 1. Bounding box goes below -pi.
+            // 2. Bounding box goes above pi.
+            // 3. No overflow.
+            //
+            // It can't go both above and below, because we already handled radius >= pi.
+            // It can't go more than a factor of pi below, for the same reason.
+            //
+            if (bb_axis_lb < -M_PI) {
+              // Possibility 1.
+              const double bb_interval_1_lb = -M_PI;
+              const double bb_interval_1_ub = bb_axis_ub;
+
+              const double bb_interval_2_lb = bb_axis_lb + 2*M_PI;
+              const double bb_interval_2_ub = M_PI;
+              // Left branch intersects bounding box:
+              if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_interval_1_lb, bb_interval_1_ub)
+                  || IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_interval_2_lb, bb_interval_2_ub)) {
+                should_search_left = true;
+              }
+              // Right branch intersects bounding box:
+              if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_interval_1_lb, bb_interval_1_ub)
+                  || IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_interval_2_lb, bb_interval_2_ub)) {
+                should_search_right = true;
+              }
+            } else if (bb_axis_ub > M_PI) {
+              // Possibility 2.
+              const double bb_interval_1_lb = bb_axis_lb;
+              const double bb_interval_1_ub = M_PI;
+
+              const double bb_interval_2_lb = -M_PI;
+              const double bb_interval_2_ub = bb_axis_ub - 2*M_PI;
+              // Left branch intersects bounding box:
+              if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_interval_1_lb, bb_interval_1_ub)
+                  || IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_interval_2_lb, bb_interval_2_ub)) {
+                should_search_left = true;
+              }
+              // Right branch intersects bounding box:
+              if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_interval_1_lb, bb_interval_1_ub)
+                  || IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_interval_2_lb, bb_interval_2_ub)) {
+                should_search_right = true;
+              }
+            } else {
+              // Possibility 3 - no overflow
+              // Left branch intersects bounding box:
+              if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
+                should_search_left = true;
+              }
+              // Right branch intersects bounding box:
+              if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
+                should_search_right = true;
+              }
+            } // if (bb_axis_lb < -M_PI) {....} else if (bb_axis_lb > M_PI) {
+          } // if (params.radius >= M_PI) {....} else {
+        } // if (axis != Axis::kTheta) {....} else {
+
+        // Execute the recursive searches.
+        if (should_search_left) {
+          const Point left_branch_ub = SetValue(tree_ub, axis, tree_axis_mid);
+          split.left_->Nearest_(closest_point,
+                                closest_point_distance,
+                                closest_point_distance_squared,
+                                test_point,
+                                IncrementAxis(axis),
+                                tree_lb,
+                                left_branch_ub);
+        }
+        if (should_search_right) {
+          const Point right_branch_lb = SetValue(tree_lb, axis, tree_axis_mid);
+          split.right_->Nearest_(closest_point,
+                                 closest_point_distance,
+                                 closest_point_distance_squared,
+                                 test_point,
+                                 IncrementAxis(axis),
+                                 right_branch_lb,
+                                 tree_ub);
+        }
+      }
+    }, value_);
+}
+  
 
 //Tree::Tree(const double lb, const double ub) : lb_(lb), ub_(ub) {
 //

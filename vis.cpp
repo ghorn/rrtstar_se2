@@ -14,16 +14,21 @@
 #include <thread>              // for sleep_for, thread
 #include <vector>              // for vector
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>  // for glfwDestroyWindow, glfwGetWindowSize, glfwPollEv...
-
-#include <glm/glm.hpp>  // for mat4
-#include <nlopt.hpp>    // for opt, LN_NELDERMEAD
-
-#include "bb3d/assert.hpp"            // for ASSERT
+//#include "bb3d/assert.hpp"            // for ASSERT
 #include "bb3d/opengl_context.hpp"    // for Window
 
+#include "src/rrt_star.hpp"
+
 int run_it(char *argv0) {
+  Se2::Point x_init{0.1, 0.1, 30*3.14/180};
+  const double eta = 0.2;
+  rrts::Algorithm algorithm(x_init, eta);
+
+  for (int k=0; k<10; k++) {
+    algorithm.Step();
+  }
+
+  std::exit(EXIT_SUCCESS);
   // Boilerplate
   bb3d::Window window(argv0);
 
