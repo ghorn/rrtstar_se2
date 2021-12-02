@@ -35,10 +35,11 @@ namespace rrts {
       const double dy = ub_.y - lb_.y;
       const double dz = ub_.z - lb_.z;
       double volume = dx * dy * dz;
-      for (const Sphere &s : sphere_obstacles_) {
-        const double r = s.radius;
-        volume -= 4/3*M_PI*r*r*r;
-      }
+      //// subtract sphere obstacles
+      //for (const Sphere &s : sphere_obstacles_) {
+      //  const double r = s.radius;
+      //  volume -= 4/3*M_PI*r*r*r;
+      //}
       return volume;
     }
 

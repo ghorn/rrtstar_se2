@@ -244,6 +244,8 @@ int run_it(char *argv0) {
 
   // it's theadn' time
   std::thread thread_object([&count, &pause, &search_mutex, &search]() {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(800ms);
     while (count<50000) {
       if (!pause) {
         const std::lock_guard<std::mutex> lock(search_mutex);
@@ -251,8 +253,7 @@ int run_it(char *argv0) {
           count++;
         }
       }
-      using namespace std::chrono_literals;
-      std::this_thread::sleep_for(0.1ms);
+      std::this_thread::sleep_for(1us);
     }
     std::cerr << "finished" << std::endl;
   });
