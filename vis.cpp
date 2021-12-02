@@ -27,11 +27,13 @@ using Point = rrts::R3::Point;
 static void UpdateBridgeLines(bb3d::ColorLines &lines,
                               const std::vector<double> &cost_to_go,
                               const std::vector<rrts::Edge<Point, Line> > &edges) {
+  // Find max cost to go in order to scale lines
   double max_cost_to_go = 0;
   for (double c : cost_to_go) {
     max_cost_to_go = std::max(max_cost_to_go, c);
   }
 
+  // Draw all bridges
   std::vector<std::vector<bb3d::ColoredVec3> > bridges;
   size_t node_index = 1;
   for (const rrts::Edge<Point, Line> &edge: edges) {
@@ -47,6 +49,74 @@ static void UpdateBridgeLines(bb3d::ColorLines &lines,
     node_index++;
   }
   lines.Update(bridges);
+}
+
+static bool InGoalRegion(const glm::vec3 &p) {
+  if (p.x < 4.5F) {
+    return false;
+  }
+  if (p.y < -1.75F) {
+    return false;
+  }
+  if (p.y > -1.25F) {
+    return false;
+  }
+  if (p.z > 0.25F) {
+    return false;
+  }
+  if (p.z < -0.25F) {
+    return false;
+  }
+  return true;
+}
+
+static double UpdateGoalLine(bb3d::Lines &goal_line,
+                             const std::vector<double> &cost_to_go,
+                             const std::vector<rrts::Edge<Point, Line> > &edges) {
+  double min_cost_to_go = 0;
+  size_t winner_index = 0;
+  bool got_winner = false;
+  size_t index = 1;
+  // best cost to go in a goal region
+  for (const rrts::Edge<Point, Line> &edge : edges) {
+    if (InGoalRegion(edge.bridge.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
+      winner_index = index;
+      got_winner = true;
+      min_cost_to_go = cost_to_go.at(index);
+    }
+    index++;
+  }
+
+  // trace back route from winner
+  if (got_winner) {
+    std::vector<glm::vec3> winning_route;
+    size_t head = winner_index;
+
+    int num_links = 0;
+    while (head != 0) {
+      num_links++;
+      rrts::Edge<Point, Line> edge = edges.at(head - 1);
+      glm::vec3 p = edge.bridge.p1;
+      p.z -= 0.02F;
+      //std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << " " << std::endl;
+      winning_route.push_back(p);
+      head = edge.parent_index;
+
+      if (head == 0) {
+        glm::vec3 pf = edge.bridge.p0;
+        pf.z -= 0.02F;
+        winning_route.push_back(pf);
+      }
+    }
+    std::vector<std::vector<glm::vec3> > segments;
+    segments.push_back(winning_route);
+
+    goal_line.Update(segments);
+
+    return min_cost_to_go;
+  }
+
+  return -1;
 }
 
 static void UpdatePoints(bb3d::Lines &lines,
@@ -76,6 +146,7 @@ int run_it(char *argv0) {
   bb3d::Lines points;
   points.SetPointSize(2);
   bb3d::ColorLines bridge_lines;
+  bb3d::Lines goal_line;
   bb3d::Lines sphere_lines;
   bb3d::Lines bounding_box_lines;
   bb3d::Freetype textbox(18);
@@ -137,20 +208,24 @@ int run_it(char *argv0) {
 
   int64_t count = 0;
   std::mutex search_mutex;
-  std::function<void()> update_visualization = [&window, &search, &count, &bridge_lines, &points, &search_mutex]() {
+  double min_cost_to_go = -1;
+  std::function<void()> update_visualization = [&window, &search, &count, &bridge_lines, &goal_line, &points, &search_mutex, &min_cost_to_go]() {
     const std::lock_guard<std::mutex> lock(search_mutex);
     UpdateBridgeLines(bridge_lines, search.cost_to_go_, search.edges_);
+    min_cost_to_go = UpdateGoalLine(goal_line, search.cost_to_go_, search.edges_);
     UpdatePoints(points, search.tree_.points_);
   };
 
   std::function<void(const glm::mat4 &, const glm::mat4 &)> draw_visualization =
-    [&sphere_lines, &bridge_lines, &bounding_box_lines, &points, &window, &textbox, &search, &search_mutex](
+    [&sphere_lines, &bridge_lines, &bounding_box_lines, &goal_line, &points, &window, &textbox, &search, &search_mutex, &min_cost_to_go](
         const glm::mat4 &view, const glm::mat4 &proj) {
       glm::vec4 sphere_color = {0, 1, 0, 0.5};
       glm::vec4 point_color = {1, 1, 1, 0.3};
       glm::vec4 bb_color = {1, 1, 1, 0.5};
+      glm::vec4 goal_color = {1, 1, 1, 1};
       sphere_lines.Draw(view, proj, sphere_color, GL_LINES);
       bridge_lines.Draw(view, proj, GL_LINES);
+      goal_line.Draw(view, proj, goal_color, GL_LINE_STRIP);
       points.Draw(view, proj, point_color, GL_POINTS);
       bounding_box_lines.Draw(view, proj, bb_color, GL_LINES);
 
@@ -159,6 +234,9 @@ int run_it(char *argv0) {
       {
         const std::lock_guard<std::mutex> lock(search_mutex);
         message << search.CardV() << " nodes in tree";
+        if (min_cost_to_go > 0) {
+          message << " optimal distance is " << min_cost_to_go;
+        }
       }
       window.RenderText(textbox, message.str(), 25.0F, 25.0F, glm::vec3(1, 1, 1));
 
