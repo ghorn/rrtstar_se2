@@ -66,6 +66,8 @@ namespace rrts {
       NaiveTree tree_;
       std::vector<Sphere> sphere_obstacles_;
     private:
+      Point Sample();
+      bool PointInSphere(const Point &p);
     };
 
   }  // namespace R3

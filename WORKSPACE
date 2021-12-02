@@ -18,6 +18,6 @@ http_archive(
 git_repository(
     name = "bb3d",
     remote = "https://github.com/ghorn/bb3d.git",
-    commit = "0aa6fbaac86981ec215d026c84fcc5ab47bb8fbe",
-    shallow_since = "1638413595 -0800",
+    commit = "14c9303b3d9e86ac66e2699e98e3d5ecc6386239",
+    shallow_since = "1638471161 -0800",
 )

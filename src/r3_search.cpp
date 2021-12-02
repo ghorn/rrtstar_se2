@@ -1,15 +1,33 @@
 #include "r3_search.hpp"
 
 #include <glm/gtx/intersect.hpp>
+#include <glm/gtx/norm.hpp>
 
 namespace rrts {
   namespace R3 {
 
-    Point R3Search::SampleFree() {
+    Point R3Search::Sample() {
       const double x = lb_.x + (ub_.x - lb_.x) * uniform_distribution(rng_engine);
       const double y = lb_.y + (ub_.y - lb_.y) * uniform_distribution(rng_engine);
       const double z = lb_.z + (ub_.z - lb_.z) * uniform_distribution(rng_engine);
       return {x, y, z};
+    }
+
+    bool R3Search::PointInSphere(const Point &p) {
+      for (const Sphere &s : sphere_obstacles_) {
+        if (glm::distance2(p, s.center) <= s.radius*s.radius) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    Point R3Search::SampleFree() {
+      Point p = Sample();
+      if (!PointInSphere(p)) {
+        return p;
+      }
+      return SampleFree();
     }
 
     double R3Search::mu_Xfree(){

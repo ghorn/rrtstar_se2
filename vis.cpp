@@ -12,6 +12,7 @@
 #include <queue>               // for queue
 #include <thread>              // for sleep_for, thread
 #include <vector>              // for vector
+#include <sstream>
 
 #include "bb3d/opengl_context.hpp"    // for Window
 #include "bb3d/shader/lines.hpp"
@@ -64,9 +65,9 @@ int run_it(char *argv0) {
   rrts::R3::Point x_init{0.01, 0, 0};
   std::vector<rrts::R3::Sphere> sphere_obstacles;
   sphere_obstacles.push_back({{4.0, 0.5, 0}, 1});
-  sphere_obstacles.push_back({{2.0, -0.5, 0}, 1.25});
+  sphere_obstacles.push_back({{2.0, -0.4, 0}, 1.15});
   rrts::R3::R3Search search(x_init, lb, ub, sphere_obstacles);
-  search.eta_ = 0.2;
+  search.eta_ = 0.15;
 
   bb3d::Window window(argv0);
   window.SetCameraFocus({0, 0, 0});
@@ -77,6 +78,7 @@ int run_it(char *argv0) {
   bb3d::ColorLines bridge_lines;
   bb3d::Lines sphere_lines;
   bb3d::Lines bounding_box_lines;
+  bb3d::Freetype textbox(18);
 
   // sphere lines
   {
@@ -134,15 +136,16 @@ int run_it(char *argv0) {
   };
 
   int64_t count = 0;
-  std::mutex step_mutex;
-  std::function<void()> update_visualization = [&window, &search, &count, &bridge_lines, &points, &step_mutex]() {
-    const std::lock_guard<std::mutex> lock(step_mutex);
+  std::mutex search_mutex;
+  std::function<void()> update_visualization = [&window, &search, &count, &bridge_lines, &points, &search_mutex]() {
+    const std::lock_guard<std::mutex> lock(search_mutex);
     UpdateBridgeLines(bridge_lines, search.cost_to_go_, search.edges_);
     UpdatePoints(points, search.tree_.points_);
   };
 
   std::function<void(const glm::mat4 &, const glm::mat4 &)> draw_visualization =
-    [&sphere_lines, &bridge_lines, &bounding_box_lines, &points](const glm::mat4 &view, const glm::mat4 &proj) {
+    [&sphere_lines, &bridge_lines, &bounding_box_lines, &points, &window, &textbox, &search, &search_mutex](
+        const glm::mat4 &view, const glm::mat4 &proj) {
       glm::vec4 sphere_color = {0, 1, 0, 0.5};
       glm::vec4 point_color = {1, 1, 1, 0.3};
       glm::vec4 bb_color = {1, 1, 1, 0.5};
@@ -150,19 +153,28 @@ int run_it(char *argv0) {
       bridge_lines.Draw(view, proj, GL_LINES);
       points.Draw(view, proj, point_color, GL_POINTS);
       bounding_box_lines.Draw(view, proj, bb_color, GL_LINES);
+
+      // some text
+      std::stringstream message;
+      {
+        const std::lock_guard<std::mutex> lock(search_mutex);
+        message << search.CardV() << " nodes in tree";
+      }
+      window.RenderText(textbox, message.str(), 25.0F, 25.0F, glm::vec3(1, 1, 1));
+
     };
 
   // it's theadn' time
-  std::thread thread_object([&count, &pause, &step_mutex, &search]() {
-    while (count<10000) {
+  std::thread thread_object([&count, &pause, &search_mutex, &search]() {
+    while (count<50000) {
       if (!pause) {
-        const std::lock_guard<std::mutex> lock(step_mutex);
+        const std::lock_guard<std::mutex> lock(search_mutex);
         if (search.Step() == rrts::StepResult::kSuccess) {
           count++;
         }
       }
       using namespace std::chrono_literals;
-      std::this_thread::sleep_for(1ms);
+      std::this_thread::sleep_for(0.1ms);
     }
     std::cerr << "finished" << std::endl;
   });
