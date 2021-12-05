@@ -30,7 +30,7 @@ namespace r3 {
       return SampleFree();
     }
 
-    double R3::mu_Xfree(){
+    double R3::mu_Xfree() const {
       const double dx = ub_.x - lb_.x;
       const double dy = ub_.y - lb_.y;
       const double dz = ub_.z - lb_.z;
@@ -43,7 +43,7 @@ namespace r3 {
       return volume;
     }
 
-    Line R3::FormBridge(const Point &v0, const Point &v1) {
+    Line R3::FormBridge(const Point &v0, const Point &v1) const {
       Line line;
       line.p0 = v0;
       line.p1 = v1;
@@ -52,7 +52,7 @@ namespace r3 {
       return line;
     }
 
-  Point R3::Steer(const Point &v0, const Point &v1, double eta) {
+  Point R3::Steer(const Point &v0, const Point &v1, double eta) const {
       const double dx = v1.x - v0.x;
       const double dy = v1.y - v0.y;
       const double dz = v1.z - v0.z;
@@ -80,7 +80,7 @@ namespace r3 {
       return vret;
     }
 
-    bool R3::CollisionFree(const Line &line) {
+    bool R3::CollisionFree(const Line &line) const {
       // intersect with a couple dummy spheres
       const glm::dvec3 &gx0 = line.p0;
       const glm::dvec3 &gx1 = line.p1;

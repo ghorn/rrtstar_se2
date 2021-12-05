@@ -40,14 +40,14 @@ namespace r3 {
       lb_(lb), ub_(ub), sphere_obstacles_(sphere_obstacles) {};
     ~R3() = default;
 
-    double mu_Xfree();
+    double mu_Xfree() const;
     Point SampleFree();
-    Point Steer(const Point&, const Point&, const double eta);
+    Point Steer(const Point&, const Point&, const double eta) const;
 
     // bridges
-    bool CollisionFree(const Line&);
-    double BridgeCost(const Line &line) {return line.dist;};
-    Line FormBridge(const Point &v0, const Point &v1);
+    bool CollisionFree(const Line&) const;
+    double BridgeCost(const Line &line) const {return line.dist;};
+    Line FormBridge(const Point &v0, const Point &v1) const;
 
     const Point lb_;
     const Point ub_;
