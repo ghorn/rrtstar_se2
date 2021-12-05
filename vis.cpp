@@ -27,7 +27,8 @@ using namespace rrts;
 using Line = space::r3::Line;
 using Point = space::r3::Point;
 using Sphere = space::r3::Sphere;
-
+using Tree = tree::Naive<Point>;
+//using Tree = tree::Fast<Point>; // not assignable right now
 
 struct Problem {
   Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere> obstacles)
@@ -35,12 +36,12 @@ struct Problem {
       r3_space_(lb, ub, obstacles), search_(x_init, lb, ub, r3_space_, 0.15) {};
   ~Problem() = default;
   Point x_init = {0, 0, 0};
-  const Point lb_;
-  const Point ub_;
+  Point lb_;
+  Point ub_;
   Sphere goal_region_;
   std::vector<Sphere> obstacles_;
   space::r3::R3 r3_space_;
-  Search<Point, Line, 3, tree::Fast<Point>, space::r3::R3> search_;
+  Search<Point, Line, 3, Tree, space::r3::R3> search_;
 
   void Describe() {
     fprintf(stderr, "lb: % 7.2f % 7.2f % 7.2f\n", lb_.x, lb_.y, lb_.z);
@@ -73,7 +74,6 @@ struct Problem {
       push_sphere(sphere, obstacle_color);
     }
     push_sphere(goal_region_, goal_color);
-
     sphere_lines.Update(sphere_axes);
   }
 
@@ -254,7 +254,7 @@ int run_it(char *argv0) {
 
 //  rrts::tree::Fast<Point> tree = rrts::tree::Fast<Point>(problem.lb_, problem.ub_);
 //  tree = rrts::tree::Fast<Point>(problem.lb_, problem.ub_);
-//
+
 //  rrts::space::r3::R3 r3_space = rrts::space::r3::R3(problem.lb_, problem.ub_, problem.obstacles_);
 //  r3_space = rrts::space::r3::R3(problem.lb_, problem.ub_, problem.obstacles_);
 
@@ -272,9 +272,6 @@ int run_it(char *argv0) {
   bb3d::Lines bounding_box_lines;
   bb3d::Freetype textbox(18);
 
-  problem.UpdateSphereLines(sphere_lines);
-  problem.UpdateBoundingBoxLines(bounding_box_lines);
-
   bool pause = false;
   std::function<void(key_t)> handle_keypress = [&window, &pause](key_t key) {
     if (key == 80) {
@@ -285,11 +282,14 @@ int run_it(char *argv0) {
 
   std::mutex search_mutex;
   double min_cost_to_go = -1;
-  std::function<void()> update_visualization = [&window, &problem, &bridge_lines, &goal_line, &points, &search_mutex, &min_cost_to_go]() {
+  std::function<void()> update_visualization = [&window, &problem, &bridge_lines, &goal_line, &points, &search_mutex, &min_cost_to_go, &sphere_lines, &bounding_box_lines]() {
     const std::lock_guard<std::mutex> lock(search_mutex);
     problem.UpdateBridgeLines(bridge_lines);
     min_cost_to_go = problem.UpdateGoalLine(goal_line);
     //UpdatePoints(points, search.tree_.points_);
+
+    problem.UpdateSphereLines(sphere_lines);
+    problem.UpdateBoundingBoxLines(bounding_box_lines);
   };
 
   std::function<void(const glm::mat4 &, const glm::mat4 &)> draw_visualization =
@@ -322,7 +322,7 @@ int run_it(char *argv0) {
     std::this_thread::sleep_for(800ms);
     for (;;) {
       int count = 0;
-      while (count<50000) {
+      while (count<20000) {
         if (!pause) {
           const std::lock_guard<std::mutex> lock(search_mutex);
           for (int yolo=0; yolo<100; yolo++) {
@@ -333,15 +333,15 @@ int run_it(char *argv0) {
         }
         std::this_thread::sleep_for(1us);
       }
-      return; // just return until we fix "problem = RandomProblem(rng_engine)"
-      // TODO(greg)!!!!! reset the problem!
-      //std::this_thread::sleep_for(500ms);
-      //{
-      //  const std::lock_guard<std::mutex> lock(search_mutex);
-      //  problem = RandomProblem(rng_engine);
-      //  problem.UpdateSphereLines(sphere_lines);
-      //  problem.UpdateBoundingBoxLines(bounding_box_lines);
-      //}
+
+      // sleep
+      std::this_thread::sleep_for(500ms);
+
+      // reset the problem to a new random one
+      {
+        const std::lock_guard<std::mutex> lock(search_mutex);
+        problem = RandomProblem(rng_engine);
+      }
     }
     std::cerr << "finished" << std::endl;
   });

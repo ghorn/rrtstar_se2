@@ -122,12 +122,7 @@ namespace rrts {
     static constexpr double d = static_cast<double>(D);
     double gamma_rrts = pow(2 * (1 + 1 / d), 1/d) * pow(space_.mu_Xfree() / zeta_d, 1 / d);
 
-    //Problem& operator=(const Problem &other){
-    //  tree_ = other.tree_;
-    //  return *this;
-    //}
-
   private:
-    const double eta_;
+    double eta_;
   };
 }

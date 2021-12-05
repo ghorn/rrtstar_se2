@@ -19,7 +19,7 @@ namespace tree {
 template <typename Point>
 struct Fast : public TreeBase<Point> {
   Fast(Point lb, Point ub) : lb_(lb), ub_(ub), root_(Empty{}) {};
-  ~Fast(){};
+  ~Fast() = default;
 
   int64_t num_nodes_ = 0;
 
@@ -30,8 +30,8 @@ struct Fast : public TreeBase<Point> {
     root_.InsertPoint_(new_point, 0, lb_, ub_);
   }
 
-  const Point lb_;
-  const Point ub_;
+  Point lb_;
+  Point ub_;
 
   Tagged<Point> Nearest(const Point &test_point) const {
     // Test point will be overwritten because closest point distance is so high.

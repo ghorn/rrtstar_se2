@@ -14,6 +14,7 @@ namespace r3 {
   using glm::dvec3;
   struct Point : public dvec3 {
     using dvec3::dvec3;
+    Point(const glm::dvec3 &v) : dvec3(v) {};
     double DistanceSquared(const Point &other) const {
       const double dx = x - other.x;
       const double dy = y - other.y;
@@ -49,8 +50,8 @@ namespace r3 {
     double BridgeCost(const Line &line) const {return line.dist;};
     Line FormBridge(const Point &v0, const Point &v1) const;
 
-    const Point lb_;
-    const Point ub_;
+    Point lb_;
+    Point ub_;
     std::vector<Sphere> sphere_obstacles_;
   private:
     Point Sample();
