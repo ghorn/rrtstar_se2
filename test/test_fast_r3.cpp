@@ -3,13 +3,14 @@
 #include <iostream>
 #include <chrono>              // for operator""s, chrono_literals
 
-#include "src/r3_point.hpp"
-#include "src/rrt_star.hpp"
+#include "src/space/n_ball.hpp"
+#include "src/space/r3.hpp"
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
 
 using namespace rrts;
-using Point = R3::Point;
+using Point = space::r3::Point;
+
 using namespace std::chrono_literals;
 
 static inline Point Sample(std::mt19937_64 &rng_engine,
@@ -38,8 +39,8 @@ void TestNearest(const tree::Naive<Point> &naive_tree,
   if (fast_nearest.index != naive_nearest.index) {
     std::cerr << "naive tree nearest index (" << naive_nearest.index << ") != fast tree nearest index (" << fast_nearest.index << ")" << std::endl;
     fprintf(stderr, "test  point: % 7.3f % 7.3f % 7.3f\n", test_point.x, test_point.y, test_point.z);
-    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.point.x, fast_nearest.point.y, fast_nearest.point.z, R3::DistanceSquared(test_point, fast_nearest.point));
-    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.point.x, naive_nearest.point.y, naive_nearest.point.z, R3::DistanceSquared(test_point, naive_nearest.point));
+    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.point.x, fast_nearest.point.y, fast_nearest.point.z, test_point.DistanceSquared(fast_nearest.point));
+    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.point.x, naive_nearest.point.y, naive_nearest.point.z, test_point.DistanceSquared(naive_nearest.point));
     std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality() << std::endl;
     fast_tree.Draw();
     exit(EXIT_FAILURE);
@@ -89,10 +90,10 @@ void TestNear(const tree::Naive<Point> &naive_tree,
 }
 
 int main() {
-  const R3::Point lb = {-2, -3, -0.3};
-  const R3::Point ub = {1, 1.1, 0.6};
+  const Point lb = {-2, -3, -0.3};
+  const Point ub = {1, 1.1, 0.6};
 
-  tree::Naive<Point> naive_tree;
+  tree::Naive<Point> naive_tree(lb, ub);
   tree::Fast<Point> fast_tree(lb, ub);
 
   std::mt19937_64 rng_engine;
@@ -113,7 +114,7 @@ int main() {
   std::chrono::duration<double> naive_near_time{};
 
   for (size_t count=0; count<50000; count++) {
-    const Tagged<R3::Point> p = {count, Sample(rng_engine, uniform_distribution, lb, ub)};
+    const Tagged<Point> p = {count, Sample(rng_engine, uniform_distribution, lb, ub)};
 
     // insert a new point
     auto t0 = std::chrono::high_resolution_clock::now();

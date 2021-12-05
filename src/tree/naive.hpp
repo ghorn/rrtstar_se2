@@ -1,8 +1,7 @@
 #pragma once
 
-#include "src/tree/base.hpp"
+#include "src/tree/tree_base.hpp"
 #include "src/tagged.hpp"
-#include "src/r3_point.hpp"
 
 namespace rrts {
   namespace tree {
@@ -10,7 +9,7 @@ namespace rrts {
     template <typename Point>
     class Naive : public TreeBase<Point> {
     public:
-      Naive() {};
+      Naive(const Point &, const Point &) {};
       ~Naive() = default;
 
       void Insert(const Tagged<Point> &new_point) {
@@ -21,11 +20,11 @@ namespace rrts {
         assert(!points_.empty());
 
         Tagged<Point> nearest_point = points_.at(0);
-        double nearest_distance_squared = R3::DistanceSquared(nearest_point.point, test_point);
+        double nearest_distance_squared = nearest_point.point.DistanceSquared(test_point);
 
         for (size_t k=1; k<points_.size(); k++) {
           Tagged<Point> x = points_.at(k);
-          double distance_squared = R3::DistanceSquared(x.point, test_point);
+          double distance_squared = x.point.DistanceSquared(test_point);
           if (distance_squared < nearest_distance_squared) {
             nearest_distance_squared = distance_squared;
             nearest_point = x;
@@ -39,7 +38,7 @@ namespace rrts {
         const double radius2 = radius*radius;
         std::vector<Tagged<Point> > near_points;
         for (const Tagged<Point> &x : points_) {
-          if (R3::DistanceSquared(x.point, test_point) <= radius2) {
+          if (x.point.DistanceSquared(test_point) <= radius2) {
             near_points.push_back(x);
           }
         }

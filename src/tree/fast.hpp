@@ -8,7 +8,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "src/tree/base.hpp"
+#include "src/tree/tree_base.hpp"
 #include "src/tagged.hpp"
 #include "src/tree/node.hpp"
 

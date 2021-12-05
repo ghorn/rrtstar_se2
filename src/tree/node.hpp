@@ -8,7 +8,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "src/tree/base.hpp"
+#include "src/tree/tree_base.hpp"
 #include "src/tagged.hpp"
 
 namespace rrts {
@@ -252,7 +252,7 @@ struct Node {
           },
           // If we're at a leaf, it's worth testing.
           [&params, close_points](const Leaf leaf) {
-            if (R3::DistanceSquared(leaf.point_.point, params.test_point) <= params.radius_squared) {
+            if (leaf.point_.point.DistanceSquared(params.test_point) <= params.radius_squared) {
               close_points->push_back(leaf.point_);
             }
           },
@@ -322,7 +322,7 @@ struct Node {
           },
           // If we're at a leaf, it's worth testing.
           [&test_point, closest_point, closest_point_distance, closest_point_distance_squared](const Leaf leaf) {
-            const double test_distance_squared = R3::DistanceSquared(leaf.point_.point, test_point);
+            const double test_distance_squared = leaf.point_.point.DistanceSquared(test_point);
             if (test_distance_squared < *closest_point_distance_squared) {
               *closest_point = leaf.point_;
               *closest_point_distance_squared = test_distance_squared;

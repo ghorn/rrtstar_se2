@@ -19,14 +19,18 @@
 #include "bb3d/shader/colorlines.hpp"
 
 #include "src/rrt_star.hpp"
-#include "src/r3_search.hpp"
+#include "src/space/r3.hpp"
+#include "src/tree/fast.hpp"
+#include "src/tree/naive.hpp"
 
-using Line = rrts::R3::Line;
-using Point = rrts::R3::Point;
+using namespace rrts;
+using Line = space::r3::Line;
+using Point = space::r3::Point;
+using Sphere = space::r3::Sphere;
 
 static void UpdateBridgeLines(bb3d::ColorLines &lines,
                               const std::vector<double> &cost_to_go,
-                              const std::vector<rrts::Edge<Point, Line> > &edges) {
+                              const std::vector<Edge<Point, Line> > &edges) {
   // Find max cost to go in order to scale lines
   double max_cost_to_go = 0;
   for (double c : cost_to_go) {
@@ -36,7 +40,7 @@ static void UpdateBridgeLines(bb3d::ColorLines &lines,
   // Draw all bridges
   std::vector<std::vector<bb3d::ColoredVec3> > bridges;
   size_t node_index = 1;
-  for (const rrts::Edge<Point, Line> &edge: edges) {
+  for (const Edge<Point, Line> &edge: edges) {
     bb3d::ColoredVec3 cv0;
     bb3d::ColoredVec3 cv1;
     cv0.position = edge.bridge.p0;
@@ -72,13 +76,13 @@ static bool InGoalRegion(const glm::vec3 &p) {
 
 static double UpdateGoalLine(bb3d::Lines &goal_line,
                              const std::vector<double> &cost_to_go,
-                             const std::vector<rrts::Edge<Point, Line> > &edges) {
+                             const std::vector<Edge<Point, Line> > &edges) {
   double min_cost_to_go = 0;
   size_t winner_index = 0;
   bool got_winner = false;
   size_t index = 1;
   // best cost to go in a goal region
-  for (const rrts::Edge<Point, Line> &edge : edges) {
+  for (const Edge<Point, Line> &edge : edges) {
     if (InGoalRegion(edge.bridge.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
       winner_index = index;
       got_winner = true;
@@ -95,7 +99,7 @@ static double UpdateGoalLine(bb3d::Lines &goal_line,
     int num_links = 0;
     while (head != 0) {
       num_links++;
-      rrts::Edge<Point, Line> edge = edges.at(head - 1);
+      Edge<Point, Line> edge = edges.at(head - 1);
       glm::vec3 p = edge.bridge.p1;
       p.z -= 0.02F;
       //std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << " " << std::endl;
@@ -119,25 +123,24 @@ static double UpdateGoalLine(bb3d::Lines &goal_line,
   return -1;
 }
 
-static void UpdatePoints(bb3d::Lines &lines,
-                         const std::vector<rrts::Tagged<Point> > &tagged_points) {
-  std::vector<glm::vec3> points;
-  for (const rrts::Tagged<Point> &x: tagged_points) {
-    points.push_back(x.point);
-  }
-  std::vector<std::vector<glm::vec3> > point_strip{points};
-  lines.Update(point_strip);
-}
-
+//static void UpdatePoints(bb3d::Lines &lines,
+//                         const std::vector<Tagged<Point> > &tagged_points) {
+//  std::vector<glm::vec3> points;
+//  for (const Tagged<Point> &x: tagged_points) {
+//    points.push_back(x.point);
+//  }
+//  std::vector<std::vector<glm::vec3> > point_strip{points};
+//  lines.Update(point_strip);
+//}
 int run_it(char *argv0) {
-  rrts::R3::Point lb = {0, -2, -1};
-  rrts::R3::Point ub = {5,  2,  1};
-  rrts::R3::Point x_init{0.01, 0, 0};
-  std::vector<rrts::R3::Sphere> sphere_obstacles;
+  Point lb = {0, -2, -1};
+  Point ub = {5,  2,  1};
+  Point x_init{0.01, 0, 0};
+  std::vector<Sphere> sphere_obstacles;
   sphere_obstacles.push_back({{4.0, 0.5, 0}, 1});
   sphere_obstacles.push_back({{2.0, -0.4, 0}, 1.15});
-  rrts::R3::R3Search search(x_init, lb, ub, sphere_obstacles);
-  search.eta_ = 0.15;
+  space::r3::R3 r3_space(lb, ub, sphere_obstacles);
+  Search<Point, Line, 3, tree::Fast<Point>, space::r3::R3> search(x_init, lb, ub, r3_space, 0.15);
 
   bb3d::Window window(argv0);
   window.SetCameraFocus({0, 0, 0});
@@ -154,7 +157,7 @@ int run_it(char *argv0) {
   // sphere lines
   {
     std::vector<std::vector<glm::vec3> > sphere_axes;
-    for (rrts::R3::Sphere &sphere : search.sphere_obstacles_) {
+    for (const Sphere &sphere : sphere_obstacles) {
       glm::vec3 dx = {sphere.radius, 0, 0};
       glm::vec3 dy = {0, sphere.radius, 0};
       glm::vec3 dz = {0, 0, sphere.radius};
@@ -213,7 +216,7 @@ int run_it(char *argv0) {
     const std::lock_guard<std::mutex> lock(search_mutex);
     UpdateBridgeLines(bridge_lines, search.cost_to_go_, search.edges_);
     min_cost_to_go = UpdateGoalLine(goal_line, search.cost_to_go_, search.edges_);
-    UpdatePoints(points, search.naive_tree_.points_);
+    //UpdatePoints(points, search.tree_.points_);
   };
 
   std::function<void(const glm::mat4 &, const glm::mat4 &)> draw_visualization =
@@ -233,7 +236,7 @@ int run_it(char *argv0) {
       std::stringstream message;
       {
         const std::lock_guard<std::mutex> lock(search_mutex);
-        message << search.Cardinality() << " nodes in tree";
+        message << search.tree_.Cardinality() << " nodes in tree";
         if (min_cost_to_go > 0) {
           message << " optimal distance is " << min_cost_to_go;
         }
@@ -250,7 +253,7 @@ int run_it(char *argv0) {
       if (!pause) {
         const std::lock_guard<std::mutex> lock(search_mutex);
         for (int yolo=0; yolo<100; yolo++) {
-          if (search.Step() == rrts::StepResult::kSuccess) {
+          if (search.Step() == StepResult::kSuccess) {
             count++;
           }
         }

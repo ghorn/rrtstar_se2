@@ -2,20 +2,24 @@
 #include <iostream>            // for operator<<, basic_ostream, cerr, endl, ostream, cha...
 
 #include "src/rrt_star.hpp"
-#include "src/r3_search.hpp"
+#include "src/space/r3.hpp"
+#include "src/tree/fast.hpp"
+#include "src/tree/naive.hpp"
 
-using Line = rrts::R3::Line;
-using Point = rrts::R3::Point;
+using namespace rrts;
+using Line = space::r3::Line;
+using Point = space::r3::Point;
+using Sphere = space::r3::Sphere;
 
 int run_it() {
-  rrts::R3::Point lb = {0, -2, -1};
-  rrts::R3::Point ub = {5,  2,  1};
-  rrts::R3::Point x_init{0.01, 0, 0};
-  std::vector<rrts::R3::Sphere> sphere_obstacles;
+  Point lb = {0, -2, -1};
+  Point ub = {5,  2,  1};
+  Point x_init{0.01, 0, 0};
+  std::vector<Sphere> sphere_obstacles;
   sphere_obstacles.push_back({{4.0, 0.5, 0}, 1});
   sphere_obstacles.push_back({{2.0, -0.4, 0}, 1.15});
-  rrts::R3::R3Search search(x_init, lb, ub, sphere_obstacles);
-  search.eta_ = 0.15;
+  space::r3::R3 r3_space(lb, ub, sphere_obstacles);
+  Search<Point, Line, 3, tree::Fast<Point>, space::r3::R3> search(x_init, lb, ub, r3_space, 0.15);
 
   int64_t count = 0;
   while (count<1000) {

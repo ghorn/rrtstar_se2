@@ -1,20 +1,19 @@
-#include "r3_search.hpp"
+#include "src/space/r3.hpp"
 
-#include <iostream>
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/norm.hpp>
 
 namespace rrts {
-  namespace R3 {
-
-    Point R3Search::Sample() {
+namespace space {
+namespace r3 {
+    Point R3::Sample() {
       const double x = lb_.x + (ub_.x - lb_.x) * uniform_distribution(rng_engine);
       const double y = lb_.y + (ub_.y - lb_.y) * uniform_distribution(rng_engine);
       const double z = lb_.z + (ub_.z - lb_.z) * uniform_distribution(rng_engine);
       return {x, y, z};
     }
 
-    bool R3Search::PointInSphere(const Point &p) {
+    bool R3::PointInSphere(const Point &p) {
       for (const Sphere &s : sphere_obstacles_) {
         if (glm::distance2(p, s.center) <= s.radius*s.radius) {
           return true;
@@ -23,7 +22,7 @@ namespace rrts {
       return false;
     }
 
-    Point R3Search::SampleFree() {
+    Point R3::SampleFree() {
       Point p = Sample();
       if (!PointInSphere(p)) {
         return p;
@@ -31,7 +30,7 @@ namespace rrts {
       return SampleFree();
     }
 
-    double R3Search::mu_Xfree(){
+    double R3::mu_Xfree(){
       const double dx = ub_.x - lb_.x;
       const double dy = ub_.y - lb_.y;
       const double dz = ub_.z - lb_.z;
@@ -44,20 +43,16 @@ namespace rrts {
       return volume;
     }
 
-    Line R3Search::FormBridge(const Point &v0, const Point &v1) {
-      double dx = v1.x - v0.x;
-      double dy = v1.y - v0.y;
-      double dz = v1.z - v0.z;
-
+    Line R3::FormBridge(const Point &v0, const Point &v1) {
       Line line;
       line.p0 = v0;
       line.p1 = v1;
-      line.dist = sqrt(dx*dx + dy*dy + dz*dz);
+      line.dist = sqrt(v0.DistanceSquared(v1));
 
       return line;
     }
 
-    Point R3Search::Steer(const Point &v0, const Point &v1) {
+  Point R3::Steer(const Point &v0, const Point &v1, double eta) {
       const double dx = v1.x - v0.x;
       const double dy = v1.y - v0.y;
       const double dz = v1.z - v0.z;
@@ -65,12 +60,12 @@ namespace rrts {
       const double dist = sqrt(dx*dx + dy*dy + dz*dz);
 
       // if distance is shorter than eta, then go all the way to the second point
-      if (dist < eta_) {
+      if (dist < eta) {
         return v1;
       }
 
       // otherwise we have to shorten the distance to eta
-      const double scale_factor = eta_ / dist;
+      const double scale_factor = eta / dist;
 
       Point vret = v0;
       vret.x += dx * scale_factor;
@@ -85,7 +80,7 @@ namespace rrts {
       return vret;
     }
 
-    bool R3Search::CollisionFree(const Line &line) {
+    bool R3::CollisionFree(const Line &line) {
       // intersect with a couple dummy spheres
       const glm::dvec3 &gx0 = line.p0;
       const glm::dvec3 &gx1 = line.p1;
@@ -103,6 +98,6 @@ namespace rrts {
       }
       return true;
     }
-
-  }  // namespace R3
-}  // namespace rrts
+}
+}
+}
