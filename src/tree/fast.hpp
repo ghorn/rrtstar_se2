@@ -17,9 +17,9 @@ namespace rrts::tree {
 // Just a Node with some meta-information and helper functions.
 template <typename Point>
 struct Fast : public TreeBase<Point> {
-  Fast(Point lb, Point ub) : lb_(lb), ub_(ub), root_(Empty{}) {};
+  Fast(Point lb, Point ub) : num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {};
 
-  int64_t num_nodes_ = 0;
+  int64_t num_nodes_;
 
   void Draw() const {root_.Draw("");}
   void Insert(const Tagged<Point> &new_point) {
