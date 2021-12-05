@@ -8,7 +8,6 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "src/r3_point.hpp"
 #include "src/tree/base.hpp"
 #include "src/tagged.hpp"
 
@@ -77,13 +76,13 @@ struct Node {
     std::unique_ptr<Node> left_;
     std::unique_ptr<Node> right_;
 
-    void SearchNearestLeft(Tagged<R3::Point> * const closest_point,
+    void SearchNearestLeft(Tagged<Point> * const closest_point,
                            double * const closest_point_distance,
                            double * const closest_point_distance_squared,
-                           const R3::Point test_point,
+                           const Point test_point,
                            const int32_t axis,
-                           const R3::Point tree_lb,
-                           const R3::Point tree_ub) const {
+                           const Point tree_lb,
+                           const Point tree_ub) const {
       const double tree_axis_lb = tree_lb[axis];
       const double tree_axis_ub = tree_ub[axis];
       const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
@@ -91,7 +90,7 @@ struct Node {
       double bb_axis_lb = test_point[axis] - *closest_point_distance;
       double bb_axis_ub = test_point[axis] + *closest_point_distance;
       if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
-        R3::Point left_branch_ub = tree_ub;
+        Point left_branch_ub = tree_ub;
         left_branch_ub[axis] = tree_axis_mid;
         left_->Nearest_(closest_point,
                         closest_point_distance,
@@ -102,13 +101,13 @@ struct Node {
                         left_branch_ub);
       }
     }
-    void SearchNearestRight(Tagged<R3::Point> * const closest_point,
+    void SearchNearestRight(Tagged<Point> * const closest_point,
                             double * const closest_point_distance,
                             double * const closest_point_distance_squared,
-                            const R3::Point test_point,
+                            const Point test_point,
                             const int32_t axis,
-                            const R3::Point tree_lb,
-                            const R3::Point tree_ub) const {
+                            const Point tree_lb,
+                            const Point tree_ub) const {
       const double tree_axis_lb = tree_lb[axis];
       const double tree_axis_ub = tree_ub[axis];
       const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
@@ -116,7 +115,7 @@ struct Node {
       double bb_axis_lb = test_point[axis] - *closest_point_distance;
       double bb_axis_ub = test_point[axis] + *closest_point_distance;
       if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
-        R3::Point right_branch_lb = tree_lb;
+        Point right_branch_lb = tree_lb;
         right_branch_lb[axis] = tree_axis_mid;
         right_->Nearest_(closest_point,
                          closest_point_distance,
@@ -167,7 +166,7 @@ struct Node {
           // Point inserted into Leaf must turn into Split.
           [this, new_point, tree_lb, tree_ub, axis](const Leaf leaf) {
             //std::cerr << "Leaf " << leaf.point_.index << " splitting." << std::endl;
-            const Tagged<R3::Point> &old_point = leaf.point_; // convenience/readability
+            const Tagged<Point> &old_point = leaf.point_; // convenience/readability
             const double mid = 0.5*(tree_lb[axis] + tree_ub[axis]);
             const double new_coord = new_point.point[axis];
             const double old_coord = old_point.point[axis];
@@ -193,7 +192,7 @@ struct Node {
             if (old_point_left && new_point_left) {
               //std::cerr << "old point left, new point left" << std::endl;
               Node left = Node(Leaf(leaf.point_));
-              R3::Point left_branch_ub = tree_ub;
+              Point left_branch_ub = tree_ub;
               left_branch_ub[axis] = mid; // split axis in half
               left.InsertPoint_(new_point, NextAxis(axis), tree_lb, left_branch_ub);
               value_ = Split{std::move(left), Empty{}};
@@ -204,7 +203,7 @@ struct Node {
             if (old_point_right && new_point_right) {
               //std::cerr << "old point right, new point right" << std::endl;
               Node right = Node(Leaf(leaf.point_));
-              R3::Point right_branch_lb = tree_lb;
+              Point right_branch_lb = tree_lb;
               right_branch_lb[axis] = mid; // split axis in half
               right.InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
               value_ = Split{Empty{}, std::move(right)};
@@ -220,13 +219,13 @@ struct Node {
             const bool new_point_left = new_coord <= mid;
             if (new_point_left) {
               // new point left
-              R3::Point left_branch_ub = tree_ub;
+              Point left_branch_ub = tree_ub;
               left_branch_ub[axis] = mid; // split axis in half
               split.left_->InsertPoint_(new_point, NextAxis(axis), tree_lb, left_branch_ub);
               return;
             } else {
               // new point right
-              R3::Point right_branch_lb = tree_lb;
+              Point right_branch_lb = tree_lb;
               right_branch_lb[axis] = mid; // split axis in half
               split.right_->InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
               return;
@@ -288,7 +287,7 @@ struct Node {
 
             // Execute the recursive searches.
             if (should_search_left) {
-              R3::Point left_branch_ub = tree_ub;
+              Point left_branch_ub = tree_ub;
               left_branch_ub[axis] = tree_axis_mid;
               split.left_->Near_(close_points,
                                  params,
@@ -297,7 +296,7 @@ struct Node {
                                  left_branch_ub);
             }
             if (should_search_right) {
-              R3::Point right_branch_lb = tree_lb;
+              Point right_branch_lb = tree_lb;
               right_branch_lb[axis] = tree_axis_mid;
               split.right_->Near_(close_points,
                                   params,
