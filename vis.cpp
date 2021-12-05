@@ -128,8 +128,8 @@ struct Problem {
       cv1.position = static_cast<glm::dvec3>(edge.bridge.p1);
       const double ctg0 = cost_to_go.at(edge.parent_index) / max_cost_to_go;
       const double ctg1 = cost_to_go.at(node_index) / max_cost_to_go;
-      cv0.color = {ctg0, 0, 1 - ctg0, 1};
-      cv1.color = {ctg1, 0, 1 - ctg1, 1};
+      cv0.color = {ctg0, 0, 1 - ctg0, 0.6};
+      cv1.color = {ctg1, 0, 1 - ctg1, 0.6};
       bridges.push_back({cv0, cv1});
       node_index++;
     }
@@ -172,7 +172,7 @@ struct Problem {
         num_links++;
         Edge<Point, Line> edge = edges.at(head - 1);
         glm::vec3 p = static_cast<glm::dvec3>(edge.bridge.p1);
-        p.z -= 0.02F;
+        p.z -= 0.05F;
         //std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << " " << std::endl;
         winning_route.push_back(p);
         head = edge.parent_index;
@@ -205,9 +205,9 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
     return Point{uniform(), uniform(), uniform()};
   };
 
-  const double dx = 1 + 4*uniform();
-  const double dy = 1 + 4*uniform();
-  const double dz = 1 + 4*uniform();
+  const double dx = 3 + 2*uniform();
+  const double dy = 3 + 2*uniform();
+  const double dz = 3 + 2*uniform();
   const Point lb = { 0, -dy/2, -dz/2};
   const Point ub = {dx,  dy/2,  dz/2};
 
@@ -284,6 +284,16 @@ int run_it(char *argv0) {
   double min_cost_to_go = -1;
   std::function<void()> update_visualization = [&window, &problem, &bridge_lines, &goal_line, &points, &search_mutex, &min_cost_to_go, &sphere_lines, &bounding_box_lines]() {
     const std::lock_guard<std::mutex> lock(search_mutex);
+
+    static float azimuth_deg = 0.f;
+    azimuth_deg += 0.5f;
+    while (azimuth_deg > 180.f) {
+      azimuth_deg -= 360.f;
+    }
+    window.SetCameraAzimuthDeg(azimuth_deg);
+    window.SetCameraFocus(0.5*(problem.lb_ + problem.ub_));
+
+
     problem.UpdateBridgeLines(bridge_lines);
     min_cost_to_go = problem.UpdateGoalLine(goal_line);
     //UpdatePoints(points, search.tree_.points_);
@@ -319,7 +329,6 @@ int run_it(char *argv0) {
   // it's theadn' time
   std::thread thread_object([&pause, &search_mutex, &problem, &rng_engine, &sphere_lines, &bounding_box_lines]() {
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(800ms);
     for (;;) {
       int count = 0;
       while (count<20000) {
