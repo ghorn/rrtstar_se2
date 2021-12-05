@@ -15,7 +15,7 @@ namespace r3 {
 
     bool R3::PointInSphere(const Point &p) {
       for (const Sphere &s : sphere_obstacles_) {
-        if (glm::distance2(p, s.center) <= s.radius*s.radius) {
+        if (p.DistanceSquared(s.center) <= s.radius*s.radius) {
           return true;
         }
       }
