@@ -1,20 +1,155 @@
-#include "src/tree/fast.hpp"
+#pragma once
 
-#include <cassert>
+#include <cmath> // M_PI
+#include <variant>
+#include <memory>
+#include <string>
 #include <iostream>
+#include <vector>
+#include <glm/glm.hpp>
+
+#include "src/r3_point.hpp"
+#include "src/tree/base.hpp"
+#include "src/tagged.hpp"
 
 namespace rrts {
-  namespace tree {
+namespace tree {
 
-    // helper type for the visitor
-    template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-    // explicit deduction guide (not needed as of C++20)
-    template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+// helper type for the visitor
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
-    void Node::InsertPoint_(const Tagged<R3::Point> new_point,
+//    lb0             ub0
+//     |---------------|
+//             lb1           ub1
+//              |-------------|
+static inline bool IntervalIntersects(const double lb0,
+                                      const double ub0,
+                                      const double lb1,
+                                      const double ub1) {
+  assert(lb0 < ub0);
+  assert(lb1 < ub1);
+  return lb0 <= ub1 && lb1 <= ub0;
+}
+
+// No data points.
+struct Empty {
+  // TODO(greg): std::monostate
+};
+  
+// 3-dimensional binary tree. Not a K-D tree, I forget the real name for it.
+// Each branch in the tree divides a spatial dimension in half. Each layer of the tree
+// rotates the axis being divided.
+template <typename Point>
+struct Node {
+
+  // A single data point.
+  struct Leaf {
+    Leaf(Tagged<Point> point) : point_(point) {};
+    Tagged<Point> point_;
+  };
+
+  // Two or more data points. Not necessarily balanced - they could both be in the
+  // left branch with nothing in the right branch, for instance.
+  struct Split {
+    // Forwarding constructor which will accept arguments of any type which can be implicitly
+    // converted to an `Node`
+    template <typename L, typename R>
+    Split(L &&l, R &&r) :
+        left_{std::make_unique<Node>(Node{std::forward<L>(l)})},
+        right_{std::make_unique<Node>(Node{std::forward<R>(r)})} {}
+
+    // // Forwarding constructor which will accept arguments of any type which can be implicitly
+    // // converted to an `Node`
+    // template <typename L, typename R>
+    // Split(L &&l, R &&r) :
+    //   left_{std::make_unique<Node>(std::forward<L>(l))},
+    //   right_{std::make_unique<Node>(std::forward<R>(r))} {}
+
+    //Split(Node &&left, Node &&right) :
+    //  left_{std::make_unique<Node>(std::move(left))},
+    //  right_{std::make_unique<Node>(std::move(right))} {}
+
+    //Split(std::unique_ptr<Node> left, std::unique_ptr<Node> right) :
+    //  left_{std::move(left)},
+    //  right_{std::move(right)} {}
+    std::unique_ptr<Node> left_;
+    std::unique_ptr<Node> right_;
+
+    void SearchNearestLeft(Tagged<R3::Point> * const closest_point,
+                           double * const closest_point_distance,
+                           double * const closest_point_distance_squared,
+                           const R3::Point test_point,
+                           const int32_t axis,
+                           const R3::Point tree_lb,
+                           const R3::Point tree_ub) const {
+      const double tree_axis_lb = tree_lb[axis];
+      const double tree_axis_ub = tree_ub[axis];
+      const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
+
+      double bb_axis_lb = test_point[axis] - *closest_point_distance;
+      double bb_axis_ub = test_point[axis] + *closest_point_distance;
+      if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
+        R3::Point left_branch_ub = tree_ub;
+        left_branch_ub[axis] = tree_axis_mid;
+        left_->Nearest_(closest_point,
+                        closest_point_distance,
+                        closest_point_distance_squared,
+                        test_point,
+                        NextAxis(axis),
+                        tree_lb,
+                        left_branch_ub);
+      }
+    }
+    void SearchNearestRight(Tagged<R3::Point> * const closest_point,
+                            double * const closest_point_distance,
+                            double * const closest_point_distance_squared,
+                            const R3::Point test_point,
                             const int32_t axis,
                             const R3::Point tree_lb,
-                            const R3::Point tree_ub) {
+                            const R3::Point tree_ub) const {
+      const double tree_axis_lb = tree_lb[axis];
+      const double tree_axis_ub = tree_ub[axis];
+      const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
+
+      double bb_axis_lb = test_point[axis] - *closest_point_distance;
+      double bb_axis_ub = test_point[axis] + *closest_point_distance;
+      if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
+        R3::Point right_branch_lb = tree_lb;
+        right_branch_lb[axis] = tree_axis_mid;
+        right_->Nearest_(closest_point,
+                         closest_point_distance,
+                         closest_point_distance_squared,
+                         test_point,
+                         NextAxis(axis),
+                         right_branch_lb,
+                         tree_ub);
+      }
+    }
+  };  // struct Split
+
+  //Node(Empty empty) : value_(empty){}
+  //Node(Leaf leaf) : value_(leaf){}
+  //Node(Split split) :value_(std::move(split)){}
+  explicit Node(const Empty &e) : value_{e} {}
+  explicit Node(const Leaf &l) : value_{l} {}
+  explicit Node(Split &&s) : value_{std::move(s)} {}
+  Node &operator=(const Empty &e) { value_ = e; return *this; };
+  Node &operator=(const Leaf &l) { value_ = l; return *this; };
+  Node &operator=(Split &&s) { value_ = std::move(s); return *this; };
+  //Node(const Empty &e) : value_{e} {}
+  //Node(const Leaf &l) : value_{l} {}
+  //Node(Split &&s) : value_{std::move(s)} {}
+  //Node &operator=(const Empty &e) { value_ = e; return *this; };
+  //Node &operator=(const Leaf &l) { value_ = l; return *this; };
+  //Node &operator=(Split &&s) { value_ = std::move(s); return *this; };
+
+  // Insert a new point into the node.
+  void InsertPoint_(const Tagged<Point> new_point,
+                    const int32_t axis,
+                    const Point tree_lb,
+                    const Point tree_ub) {
       assert(tree_lb.x <= new_point.point.x);
       assert(tree_lb.y <= new_point.point.y);
       assert(tree_lb.z <= new_point.point.z);
@@ -98,26 +233,20 @@ namespace rrts {
             }
           }
         }, value_);
-    }
+  }
 
-    //    lb0             ub0
-    //     |---------------|
-    //             lb1           ub1
-    //              |-------------|
-    static inline bool IntervalIntersects(const double lb0,
-                                          const double ub0,
-                                          const double lb1,
-                                          const double ub1) {
-      assert(lb0 < ub0);
-      assert(lb1 < ub1);
-      return lb0 <= ub1 && lb1 <= ub0;
-    }
-
-    void Node::Near_(std::vector<Tagged<R3::Point>> * const close_points,
-                     const SearchParams &params,
-                     const int32_t axis,
-                     const R3::Point tree_lb,
-                     const R3::Point tree_ub) const {
+  struct SearchParams {
+    double radius;
+    double radius_squared;
+    Point test_point;
+    Point bounding_box_lb;
+    Point bounding_box_ub;
+  };
+  void Near_(std::vector<Tagged<Point>> * const close_points,
+             const SearchParams &params,
+             const int32_t axis,
+             const Point tree_lb,
+             const Point tree_ub) const {
       std::visit(overloaded {
           // There are no close points inside an empty node.
           [](const Empty) {
@@ -178,68 +307,15 @@ namespace rrts {
             }
           }
         }, value_);
-    }
+  }
 
-    void Node::SearchNearestLeft(const Node::Split &split,
-                                 Tagged<R3::Point> * const closest_point,
-                                 double * const closest_point_distance,
-                                 double * const closest_point_distance_squared,
-                                 const R3::Point test_point,
-                                 const int32_t axis,
-                                 const R3::Point tree_lb,
-                                 const R3::Point tree_ub) const {
-      const double tree_axis_lb = tree_lb[axis];
-      const double tree_axis_ub = tree_ub[axis];
-      const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
-
-      double bb_axis_lb = test_point[axis] - *closest_point_distance;
-      double bb_axis_ub = test_point[axis] + *closest_point_distance;
-      if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
-        R3::Point left_branch_ub = tree_ub;
-        left_branch_ub[axis] = tree_axis_mid;
-        split.left_->Nearest_(closest_point,
-                              closest_point_distance,
-                              closest_point_distance_squared,
-                              test_point,
-                              NextAxis(axis),
-                              tree_lb,
-                              left_branch_ub);
-      }
-    }
-    void Node::SearchNearestRight(const Node::Split &split,
-                                  Tagged<R3::Point> * const closest_point,
-                                  double * const closest_point_distance,
-                                  double * const closest_point_distance_squared,
-                                  const R3::Point test_point,
-                                  const int32_t axis,
-                                  const R3::Point tree_lb,
-                                  const R3::Point tree_ub) const {
-      const double tree_axis_lb = tree_lb[axis];
-      const double tree_axis_ub = tree_ub[axis];
-      const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
-
-      double bb_axis_lb = test_point[axis] - *closest_point_distance;
-      double bb_axis_ub = test_point[axis] + *closest_point_distance;
-      if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
-        R3::Point right_branch_lb = tree_lb;
-        right_branch_lb[axis] = tree_axis_mid;
-        split.right_->Nearest_(closest_point,
-                               closest_point_distance,
-                               closest_point_distance_squared,
-                               test_point,
-                               NextAxis(axis),
-                               right_branch_lb,
-                               tree_ub);
-      }
-    }
-
-    void Node::Nearest_(Tagged<R3::Point> * const closest_point,
-                        double * const closest_point_distance,
-                        double * const closest_point_distance_squared,
-                        const R3::Point test_point,
-                        const int32_t axis,
-                        const R3::Point tree_lb,
-                        const R3::Point tree_ub) const {
+  void Nearest_(Tagged<Point> * const closest_point,
+                double * const closest_point_distance,
+                double * const closest_point_distance_squared,
+                const Point test_point,
+                const int32_t axis,
+                const Point tree_lb,
+                const Point tree_ub) const {
       std::visit(overloaded {
           // There are no close points inside an empty node.
           [](const Empty) {
@@ -268,21 +344,21 @@ namespace rrts {
             // so that the bounding box can be shrunk as rapidly as possible
             const double tree_axis_mid = 0.5*(tree_lb[axis] + tree_ub[axis]);
             if (test_point[axis] < tree_axis_mid) {
-              SearchNearestLeft(split, closest_point, closest_point_distance, closest_point_distance_squared,
-                                test_point, axis, tree_lb, tree_ub);
-              SearchNearestRight(split, closest_point, closest_point_distance, closest_point_distance_squared,
-                                test_point, axis, tree_lb, tree_ub);
+              split.SearchNearestLeft(closest_point, closest_point_distance, closest_point_distance_squared,
+                                      test_point, axis, tree_lb, tree_ub);
+              split.SearchNearestRight(closest_point, closest_point_distance, closest_point_distance_squared,
+                                       test_point, axis, tree_lb, tree_ub);
             } else {
-              SearchNearestRight(split, closest_point, closest_point_distance, closest_point_distance_squared,
-                                test_point, axis, tree_lb, tree_ub);
-              SearchNearestLeft(split, closest_point, closest_point_distance, closest_point_distance_squared,
-                                test_point, axis, tree_lb, tree_ub);
+              split.SearchNearestRight(closest_point, closest_point_distance, closest_point_distance_squared,
+                                       test_point, axis, tree_lb, tree_ub);
+              split.SearchNearestLeft(closest_point, closest_point_distance, closest_point_distance_squared,
+                                      test_point, axis, tree_lb, tree_ub);
             }
           }
         }, value_);
     }
 
-    void Node::Draw(const std::string &prefix) const {
+    void Draw(const std::string &prefix) const {
       std::visit(overloaded {
           // There are no close points inside an empty node.
           [&prefix](const Empty) {
@@ -299,7 +375,20 @@ namespace rrts {
             split.right_->Draw(prefix + " R");
           }
         }, value_);
-    }
+  }
 
-  } // namespace fast
+  static const int32_t tree_dimension_ = 3; // TODO(greg): don't hardcode!!!
+  static int32_t NextAxis(int32_t axis) {
+    int32_t next_axis = axis + 1;
+    if (next_axis >= tree_dimension_) {
+      next_axis = 0;
+    }
+    return next_axis;
+  }
+private:
+  // The node data.
+  std::variant<Empty, Leaf, Split> value_;
+
+};
+} // namespace fast
 } // namespace rrts

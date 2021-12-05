@@ -130,7 +130,7 @@ namespace rrts {
       const Point lb_;
       const Point ub_;
       tree::Naive<Point> naive_tree_;
-      tree::Fast fast_tree_;
+      tree::Fast<Point> fast_tree_;
       std::vector<Sphere> sphere_obstacles_;
     private:
       Point Sample();
