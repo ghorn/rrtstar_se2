@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cmath>
 
 constexpr double VolumeOfNBall(int n, double radius) {
   assert(n > 0);
