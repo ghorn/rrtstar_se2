@@ -249,7 +249,7 @@ int run_it(char *argv0) {
     while (count<50000) {
       if (!pause) {
         const std::lock_guard<std::mutex> lock(search_mutex);
-        for (int yolo=0; yolo<50; yolo++) {
+        for (int yolo=0; yolo<100; yolo++) {
           if (search.Step() == rrts::StepResult::kSuccess) {
             count++;
           }

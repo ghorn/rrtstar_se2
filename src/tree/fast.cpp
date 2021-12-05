@@ -118,14 +118,6 @@ namespace rrts {
                      const int32_t axis,
                      const R3::Point tree_lb,
                      const R3::Point tree_ub) const {
-      // These are going to fail. Keep them in until I run the program as a sanity check.
-      //assert(tree_lb.x <= params.test_point.x);
-      //assert(tree_lb.y <= params.test_point.y);
-      //assert(tree_lb.z <= params.test_point.z);
-      //assert(params.test_point.x <= tree_ub.x);
-      //assert(params.test_point.y <= tree_ub.y);
-      //assert(params.test_point.z <= tree_ub.z);
-
       std::visit(overloaded {
           // There are no close points inside an empty node.
           [](const Empty) {
@@ -188,6 +180,59 @@ namespace rrts {
         }, value_);
     }
 
+    void Node::SearchNearestLeft(const Node::Split &split,
+                                 Tagged<R3::Point> * const closest_point,
+                                 double * const closest_point_distance,
+                                 double * const closest_point_distance_squared,
+                                 const R3::Point test_point,
+                                 const int32_t axis,
+                                 const R3::Point tree_lb,
+                                 const R3::Point tree_ub) const {
+      const double tree_axis_lb = tree_lb[axis];
+      const double tree_axis_ub = tree_ub[axis];
+      const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
+
+      double bb_axis_lb = test_point[axis] - *closest_point_distance;
+      double bb_axis_ub = test_point[axis] + *closest_point_distance;
+      if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
+        R3::Point left_branch_ub = tree_ub;
+        left_branch_ub[axis] = tree_axis_mid;
+        split.left_->Nearest_(closest_point,
+                              closest_point_distance,
+                              closest_point_distance_squared,
+                              test_point,
+                              NextAxis(axis),
+                              tree_lb,
+                              left_branch_ub);
+      }
+    }
+    void Node::SearchNearestRight(const Node::Split &split,
+                                  Tagged<R3::Point> * const closest_point,
+                                  double * const closest_point_distance,
+                                  double * const closest_point_distance_squared,
+                                  const R3::Point test_point,
+                                  const int32_t axis,
+                                  const R3::Point tree_lb,
+                                  const R3::Point tree_ub) const {
+      const double tree_axis_lb = tree_lb[axis];
+      const double tree_axis_ub = tree_ub[axis];
+      const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
+
+      double bb_axis_lb = test_point[axis] - *closest_point_distance;
+      double bb_axis_ub = test_point[axis] + *closest_point_distance;
+      if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
+        R3::Point right_branch_lb = tree_lb;
+        right_branch_lb[axis] = tree_axis_mid;
+        split.right_->Nearest_(closest_point,
+                               closest_point_distance,
+                               closest_point_distance_squared,
+                               test_point,
+                               NextAxis(axis),
+                               right_branch_lb,
+                               tree_ub);
+      }
+    }
+
     void Node::Nearest_(Tagged<R3::Point> * const closest_point,
                         double * const closest_point_distance,
                         double * const closest_point_distance_squared,
@@ -195,14 +240,6 @@ namespace rrts {
                         const int32_t axis,
                         const R3::Point tree_lb,
                         const R3::Point tree_ub) const {
-      // These are going to fail. Keep them in until I run the program as a sanity check.
-      //assert(tree_lb.x <= test_point.x);
-      //assert(tree_lb.y <= test_point.y);
-      //assert(tree_lb.z <= test_point.z);
-      //assert(test_point.x <= tree_ub.x);
-      //assert(test_point.y <= tree_ub.y);
-      //assert(test_point.z <= tree_ub.z);
-
       std::visit(overloaded {
           // There are no close points inside an empty node.
           [](const Empty) {
@@ -224,50 +261,22 @@ namespace rrts {
           //
           //                                       bb_lb                bb_ub
           // Bounding box:                           |----------------------|
-          [&test_point, axis, &tree_lb, &tree_ub, closest_point, closest_point_distance, closest_point_distance_squared](const Split &split) {
-            const double bb_axis_lb = test_point[axis] - *closest_point_distance;
-            const double bb_axis_ub = test_point[axis] + *closest_point_distance;
-            const double tree_axis_lb = tree_lb[axis];
-            const double tree_axis_ub = tree_ub[axis];
-            const double tree_axis_mid = 0.5*(tree_axis_lb + tree_axis_ub);
-
-            bool should_search_left = false;
-            bool should_search_right = false;
-
-            {
-              // Normal search, no angle wrapping.
-              // Left branch intersects bounding box:
-              if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
-                should_search_left = true;
-              }
-              // Right branch intersects bounding box:
-              if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
-                should_search_right = true;
-              }
-            }
-
-            // Execute the recursive searches.
-            if (should_search_left) {
-              R3::Point left_branch_ub = tree_ub;
-              left_branch_ub[axis] = tree_axis_mid;
-              split.left_->Nearest_(closest_point,
-                                    closest_point_distance,
-                                    closest_point_distance_squared,
-                                    test_point,
-                                    NextAxis(axis),
-                                    tree_lb,
-                                    left_branch_ub);
-            }
-            if (should_search_right) {
-              R3::Point right_branch_lb = tree_lb;
-              right_branch_lb[axis] = tree_axis_mid;
-              split.right_->Nearest_(closest_point,
-                                     closest_point_distance,
-                                     closest_point_distance_squared,
-                                     test_point,
-                                     NextAxis(axis),
-                                     right_branch_lb,
-                                     tree_ub);
+          [this, &test_point, axis, &tree_lb, &tree_ub, closest_point, closest_point_distance, closest_point_distance_squared](const Split &split) {
+            // The order of searching matters. If we go left to right always,
+            // it'll be a breadth first search at worst.
+            // We should first search the branch that is more likely to contain the close point
+            // so that the bounding box can be shrunk as rapidly as possible
+            const double tree_axis_mid = 0.5*(tree_lb[axis] + tree_ub[axis]);
+            if (test_point[axis] < tree_axis_mid) {
+              SearchNearestLeft(split, closest_point, closest_point_distance, closest_point_distance_squared,
+                                test_point, axis, tree_lb, tree_ub);
+              SearchNearestRight(split, closest_point, closest_point_distance, closest_point_distance_squared,
+                                test_point, axis, tree_lb, tree_ub);
+            } else {
+              SearchNearestRight(split, closest_point, closest_point_distance, closest_point_distance_squared,
+                                test_point, axis, tree_lb, tree_ub);
+              SearchNearestLeft(split, closest_point, closest_point_distance, closest_point_distance_squared,
+                                test_point, axis, tree_lb, tree_ub);
             }
           }
         }, value_);

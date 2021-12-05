@@ -113,6 +113,23 @@ struct Node {
 private:
   // The node data.
   std::variant<Empty, Leaf, Split> value_;
+
+  void SearchNearestLeft(const Node::Split &split,
+                         Tagged<R3::Point> * const closest_point,
+                         double * const closest_point_distance,
+                         double * const closest_point_distance_squared,
+                         const R3::Point test_point,
+                         const int32_t axis,
+                         const R3::Point tree_lb,
+                         const R3::Point tree_ub) const;
+  void SearchNearestRight(const Node::Split &split,
+                          Tagged<R3::Point> * const closest_point,
+                          double * const closest_point_distance,
+                          double * const closest_point_distance_squared,
+                          const R3::Point test_point,
+                          const int32_t axis,
+                          const R3::Point tree_lb,
+                          const R3::Point tree_ub) const;
 };
 
 
