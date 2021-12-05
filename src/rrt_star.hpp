@@ -5,15 +5,12 @@
 #include <random>
 #include <glm/glm.hpp>
 
+#include "src/r3_point.hpp"
+#include "src/tagged.hpp"
+
 namespace rrts {
 
   double VolumeOfNBall(int n, double radius);
-
-  template <class Point>
-  struct Tagged {
-    size_t index;
-    Point point;
-  };
 
   template <class Point, class Bridge>
   struct Edge {
@@ -60,7 +57,8 @@ namespace rrts {
       }
 
       // L7 from paper
-      const double radius = fmin(gamma_rrts() * pow(log(CardV()) / CardV(), 1/d), eta_);
+      const double cardV = Cardinality();
+      const double radius = fmin(gamma_rrts() * pow(log(cardV) / cardV, 1/d), eta_);
       std::vector<Tagged<Point> > X_near = Near(x_new, radius);
 
       // ************** Add new node to graph. ****************
@@ -135,11 +133,14 @@ namespace rrts {
     virtual Bridge FormBridge(const Point&, const Point&) = 0;
     virtual bool CollisionFree(const Bridge&) = 0;
 
-    virtual double CardV() = 0;
+    // sampling
     virtual Point SampleFree() = 0;
-    virtual std::vector<Tagged<Point> > Near(const Point&, double) = 0;
-    virtual Tagged<Point> Nearest(const Point&) = 0;
     virtual Point Steer(const Point&, const Point&) = 0;
+
+    // tree
+    virtual double Cardinality() const = 0;
+    virtual std::vector<Tagged<Point> > Near(const Point&, double) const = 0;
+    virtual Tagged<Point> Nearest(const Point&) const = 0;
     virtual void InsertPoint(const Tagged<Point>&) = 0;
 
   public:

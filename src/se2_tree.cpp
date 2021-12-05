@@ -54,7 +54,7 @@ void Node::InsertPoint_(const Point new_point,
           Node left = Node(Leaf(leaf.point_));
           const Point left_branch_ub = SetValue(tree_ub, axis, mid); // split axis in half
           left.InsertPoint_(new_point, IncrementAxis(axis), tree_lb, left_branch_ub);
-          value_ = Split{std::move(leaf), Empty{}};
+          value_ = Split{std::move(left), Empty{}};
           return;
         }
         // Both points right.
@@ -62,7 +62,7 @@ void Node::InsertPoint_(const Point new_point,
           Node right = Node(Leaf(leaf.point_));
           const Point right_branch_lb = SetValue(tree_lb, axis, mid); // split axis in half
           right.InsertPoint_(new_point, IncrementAxis(axis), right_branch_lb, tree_ub);
-          value_ = Split{Empty{}, std::move(leaf)};
+          value_ = Split{Empty{}, std::move(right)};
           return;
         }
       },
@@ -259,7 +259,7 @@ void Node::Nearest_(Point * const closest_point,
       [&test_point, closest_point, closest_point_distance, closest_point_distance_squared](const Leaf leaf) {
         const double test_distance_squared = DistanceSquared(leaf.point_, test_point);
         if (test_distance_squared < *closest_point_distance_squared) {
-          *closest_point = test_point;
+          *closest_point = leaf.point_;
           *closest_point_distance_squared = test_distance_squared;
           *closest_point_distance = sqrt(test_distance_squared);
         }

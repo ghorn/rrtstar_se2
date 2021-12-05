@@ -1,5 +1,6 @@
 #include "r3_search.hpp"
 
+#include <iostream>
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -41,39 +42,6 @@ namespace rrts {
       //  volume -= 4/3*M_PI*r*r*r;
       //}
       return volume;
-    }
-
-    static double DistSquared(const Point &x0, const Point &x1) {
-      const double dx = x1.x - x0.x;
-      const double dy = x1.y - x0.y;
-      const double dz = x1.z - x0.z;
-      return dx*dx + dy*dy + dz*dz;
-    }
-
-    std::vector<Tagged<Point> > R3Search::Near(const Point &x_test, double radius) {
-      std::vector<Tagged<Point> > ret;
-      const double radius2 = radius*radius;
-      for (Tagged<Point> &x : tree_.points_) {
-        if (DistSquared(x.point, x_test) < radius2) {
-          ret.push_back(x);
-        }
-      }
-      return ret;
-    }
-
-    Tagged<Point> R3Search::Nearest(const Point &x_test) {
-      assert(!tree_.points_.empty());
-      Tagged<Point> nearest_point = tree_.points_.at(0);
-      double nearest_distance_squared = DistSquared(nearest_point.point, x_test);
-      for (size_t k=1; k<tree_.points_.size(); k++) {
-        Tagged<Point> x = tree_.points_.at(k);
-        double distance_squared = DistSquared(x.point, x_test);
-        if (distance_squared < nearest_distance_squared) {
-          nearest_distance_squared = distance_squared;
-          nearest_point = x;
-        }
-      }
-      return nearest_point;
     }
 
     Line R3Search::FormBridge(const Point &v0, const Point &v1) {
@@ -134,10 +102,6 @@ namespace rrts {
         }
       }
       return true;
-    }
-
-    void R3Search::InsertPoint(const Tagged<Point> &new_point) {
-      tree_.points_.push_back(new_point);
     }
 
   }  // namespace R3

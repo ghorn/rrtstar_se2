@@ -213,7 +213,7 @@ int run_it(char *argv0) {
     const std::lock_guard<std::mutex> lock(search_mutex);
     UpdateBridgeLines(bridge_lines, search.cost_to_go_, search.edges_);
     min_cost_to_go = UpdateGoalLine(goal_line, search.cost_to_go_, search.edges_);
-    UpdatePoints(points, search.tree_.points_);
+    UpdatePoints(points, search.naive_tree_.points_);
   };
 
   std::function<void(const glm::mat4 &, const glm::mat4 &)> draw_visualization =
@@ -233,7 +233,7 @@ int run_it(char *argv0) {
       std::stringstream message;
       {
         const std::lock_guard<std::mutex> lock(search_mutex);
-        message << search.CardV() << " nodes in tree";
+        message << search.Cardinality() << " nodes in tree";
         if (min_cost_to_go > 0) {
           message << " optimal distance is " << min_cost_to_go;
         }
@@ -249,8 +249,10 @@ int run_it(char *argv0) {
     while (count<50000) {
       if (!pause) {
         const std::lock_guard<std::mutex> lock(search_mutex);
-        if (search.Step() == rrts::StepResult::kSuccess) {
-          count++;
+        for (int yolo=0; yolo<50; yolo++) {
+          if (search.Step() == rrts::StepResult::kSuccess) {
+            count++;
+          }
         }
       }
       std::this_thread::sleep_for(1us);
