@@ -1,21 +1,20 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <set>
 #include <glm/glm.hpp>
+#include <iostream>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "src/space/space_base.hpp"
 
-namespace rrts {
-namespace space {
-namespace r3 {
+namespace rrts::space::r3 {
 
   using glm::dvec3;
   struct Point : public dvec3 {
     using dvec3::dvec3;
     Point(const glm::dvec3 &v) : dvec3(v) {};
-    double DistanceSquared(const Point &other) const {
+    [[nodiscard]] double DistanceSquared(const Point &other) const {
       const double dx = x - other.x;
       const double dy = y - other.y;
       const double dz = z - other.z;
@@ -38,17 +37,17 @@ namespace r3 {
   class R3 : public SpaceBase<Point, Line> {
   public:
     R3(Point lb, Point ub, std::vector<Sphere> sphere_obstacles) :
-      lb_(lb), ub_(ub), sphere_obstacles_(sphere_obstacles) {};
-    ~R3() = default;
+      lb_(lb), ub_(ub), sphere_obstacles_(std::move(sphere_obstacles)) {};
+    ~R3() override = default;
 
-    double mu_Xfree() const;
-    Point SampleFree();
-    Point Steer(const Point&, const Point&, const double eta) const;
+    [[nodiscard]] double mu_Xfree() const override;
+    Point SampleFree() override;
+    [[nodiscard]] Point Steer(const Point &v0, const Point &v1, double eta) const override;
 
     // bridges
-    bool CollisionFree(const Line&) const;
-    double BridgeCost(const Line &line) const {return line.dist;};
-    Line FormBridge(const Point &v0, const Point &v1) const;
+    [[nodiscard]] bool CollisionFree(const Line & line) const override;
+    [[nodiscard]] double BridgeCost(const Line &line) const override {return line.dist;};
+    [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
 
     Point lb_;
     Point ub_;
@@ -58,6 +57,4 @@ namespace r3 {
     bool PointInSphere(const Point &p);
   };
 
-}  // namespace r3
-}  // namespace space
 }  // namespace rrts

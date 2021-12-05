@@ -3,13 +3,12 @@
 #include "src/tree/tree_base.hpp"
 #include "src/tagged.hpp"
 
-namespace rrts {
-  namespace tree {
+namespace rrts::tree {
 
     template <typename Point>
     class Naive : public TreeBase<Point> {
     public:
-      Naive(const Point &, const Point &) {};
+      Naive(const Point & /*unused*/, const Point & /*unused*/) {};
       ~Naive() = default;
 
       void Insert(const Tagged<Point> &new_point) {
@@ -45,7 +44,7 @@ namespace rrts {
         return near_points;
       }
     
-      double Cardinality() const {
+      [[nodiscard]] double Cardinality() const {
         // TODO(greg): this might be wrong
         return static_cast<double>(points_.size());
       };
@@ -54,5 +53,4 @@ namespace rrts {
       std::vector<Tagged<Point> > points_;
     };
 
-  }  // namespace tree
-}  // namespace rrts
+  }  // namespace rrts

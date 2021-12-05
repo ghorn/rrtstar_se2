@@ -10,13 +10,13 @@
 #include <mutex>               // for mutex, lock_guard
 #include <optional>            // for optional, nullopt
 #include <queue>               // for queue
+#include <sstream>
 #include <thread>              // for sleep_for, thread
 #include <vector>              // for vector
-#include <sstream>
 
 #include "bb3d/opengl_context.hpp"    // for Window
-#include "bb3d/shader/lines.hpp"
 #include "bb3d/shader/colorlines.hpp"
+#include "bb3d/shader/lines.hpp"
 
 #include "src/rrt_star.hpp"
 #include "src/space/r3.hpp"
@@ -31,7 +31,7 @@ using Tree = tree::Naive<Point>;
 //using Tree = tree::Fast<Point>; // not assignable right now
 
 struct Problem {
-  Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere> obstacles)
+  Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere>& obstacles)
     : lb_(lb), ub_(ub), goal_region_(goal_region), obstacles_(obstacles),
       r3_space_(lb, ub, obstacles), search_(x_init, lb, ub, r3_space_, 0.55) {};
   ~Problem() = default;
@@ -122,8 +122,8 @@ struct Problem {
     std::vector<std::vector<bb3d::ColoredVec3> > bridges;
     size_t node_index = 1;
     for (const Edge<Point, Line> &edge: edges) {
-      bb3d::ColoredVec3 cv0;
-      bb3d::ColoredVec3 cv1;
+      bb3d::ColoredVec3 cv0{};
+      bb3d::ColoredVec3 cv1{};
       cv0.position = static_cast<glm::dvec3>(edge.bridge.p0);
       cv1.position = static_cast<glm::dvec3>(edge.bridge.p1);
       const double ctg0 = cost_to_go.at(edge.parent_index) / max_cost_to_go;
@@ -136,7 +136,7 @@ struct Problem {
     lines.Update(bridges);
   }
 
-  bool InGoalRegion(const Point &p) const {
+  [[nodiscard]] bool InGoalRegion(const Point &p) const {
     Point goal;
     goal.x = goal_region_.center.x;
     goal.y = goal_region_.center.y;

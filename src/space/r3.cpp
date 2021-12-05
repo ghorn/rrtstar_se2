@@ -3,9 +3,7 @@
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/norm.hpp>
 
-namespace rrts {
-namespace space {
-namespace r3 {
+namespace rrts::space::r3 {
     Point R3::Sample() {
       const double x = lb_.x + (ub_.x - lb_.x) * uniform_distribution(rng_engine);
       const double y = lb_.y + (ub_.y - lb_.y) * uniform_distribution(rng_engine);
@@ -44,7 +42,7 @@ namespace r3 {
     }
 
     Line R3::FormBridge(const Point &v0, const Point &v1) const {
-      Line line;
+      Line line{};
       line.p0 = v0;
       line.p1 = v1;
       line.dist = sqrt(v0.DistanceSquared(v1));
@@ -98,6 +96,4 @@ namespace r3 {
       }
       return true;
     }
-}
-}
 }

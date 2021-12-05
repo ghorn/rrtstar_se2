@@ -1,18 +1,17 @@
 #pragma once
 
 #include <cmath> // M_PI
-#include <variant>
+#include <glm/glm.hpp>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
+#include <variant>
 #include <vector>
-#include <glm/glm.hpp>
 
-#include "src/tree/tree_base.hpp"
 #include "src/tagged.hpp"
+#include "src/tree/tree_base.hpp"
 
-namespace rrts {
-namespace tree {
+namespace rrts::tree {
 
 // helper type for the visitor
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
@@ -158,7 +157,7 @@ struct Node {
 
       std::visit(overloaded {
           // Inserting a point in Empty promotes it to Leaf.
-          [this, new_point](const Empty) {
+          [this, new_point](const Empty /*unused*/) {
             //std::cerr << "Empty turning to Leaf " << new_point.index << std::endl;
             //value_ = std::variant<Empty, Leaf, Split>(Leaf(new_point));
             value_ = Leaf(new_point);
@@ -248,7 +247,7 @@ struct Node {
              const Point tree_ub) const {
       std::visit(overloaded {
           // There are no close points inside an empty node.
-          [](const Empty) {
+          [](const Empty /*unused*/) {
           },
           // If we're at a leaf, it's worth testing.
           [&params, close_points](const Leaf leaf) {
@@ -317,7 +316,7 @@ struct Node {
                 const Point tree_ub) const {
       std::visit(overloaded {
           // There are no close points inside an empty node.
-          [](const Empty) {
+          [](const Empty /*unused*/) {
             return;
           },
           // If we're at a leaf, it's worth testing.
@@ -360,7 +359,7 @@ struct Node {
     void Draw(const std::string &prefix) const {
       std::visit(overloaded {
           // There are no close points inside an empty node.
-          [&prefix](const Empty) {
+          [&prefix](const Empty /*unused*/) {
             std::cerr << prefix + " x" << std::endl;
           },
           // If we're at a leaf, it's worth testing.
@@ -389,5 +388,4 @@ private:
   std::variant<Empty, Leaf, Split> value_;
 
 };
-} // namespace fast
 } // namespace rrts

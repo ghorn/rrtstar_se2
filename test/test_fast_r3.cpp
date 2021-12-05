@@ -1,7 +1,7 @@
+#include <chrono>              // for operator""s, chrono_literals
+#include <iostream>
 #include <random>
 #include <set>
-#include <iostream>
-#include <chrono>              // for operator""s, chrono_literals
 
 #include "src/space/n_ball.hpp"
 #include "src/space/r3.hpp"

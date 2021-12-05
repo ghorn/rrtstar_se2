@@ -2,11 +2,11 @@
 
 #include <cassert>
 
-#include <random>
 #include <glm/glm.hpp>
+#include <random>
 
-#include "src/tagged.hpp"
 #include "src/space/n_ball.hpp"
+#include "src/tagged.hpp"
 
 namespace rrts {
 

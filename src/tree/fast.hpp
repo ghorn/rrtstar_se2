@@ -1,19 +1,18 @@
 #pragma once
 
 #include <cmath> // M_PI
-#include <variant>
+#include <glm/glm.hpp>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
+#include <variant>
 #include <vector>
-#include <glm/glm.hpp>
 
-#include "src/tree/tree_base.hpp"
 #include "src/tagged.hpp"
 #include "src/tree/node.hpp"
+#include "src/tree/tree_base.hpp"
 
-namespace rrts {
-namespace tree {
+namespace rrts::tree {
 
 // Just a Node with some meta-information and helper functions.
 template <typename Point>
@@ -73,7 +72,7 @@ struct Fast : public TreeBase<Point> {
     return close_points;
   }
 
-  double Cardinality() const {
+  [[nodiscard]] double Cardinality() const {
     // TODO(greg): this might be wrong
     return static_cast<double>(num_nodes_);
   }
@@ -82,5 +81,4 @@ private:
 
 };  // struct Fast
 
-} // namespace fast
 } // namespace rrts

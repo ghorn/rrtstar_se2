@@ -1,5 +1,5 @@
-#include <cmath>  // M_PI
 #include <cassert>
+#include <cmath>  // M_PI
 
 #include <gtest/gtest.h>
 
