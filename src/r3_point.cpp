@@ -7,10 +7,6 @@
 namespace rrts {
 namespace R3 {
 
-  double Midpoint(const int32_t axis, const Point &lb, const Point &ub) {
-    return 0.5*(lb[axis] + ub[axis]);
-  }
-
   double DistanceSquared(const Point &p0, const Point &p1) {
     const double dx = p1.x - p0.x;
     const double dy = p1.y - p0.y;

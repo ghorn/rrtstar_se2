@@ -33,7 +33,7 @@ namespace rrts {
           [this, new_point, tree_lb, tree_ub, axis](const Leaf leaf) {
             //std::cerr << "Leaf " << leaf.point_.index << " splitting." << std::endl;
             const Tagged<R3::Point> &old_point = leaf.point_; // convenience/readability
-            const double mid = R3::Midpoint(axis, tree_lb, tree_ub);
+            const double mid = 0.5*(tree_lb[axis], tree_ub[axis]);
             const double new_coord = new_point.point[axis];
             const double old_coord = old_point.point[axis];
             const bool new_point_left = new_coord <= mid;
@@ -80,17 +80,17 @@ namespace rrts {
           // Point inserted to Split will be inserted into either left or right child, depending on its coordinate.
           [this, new_point, axis, tree_lb, tree_ub](const Split &split) {
             //std::cerr << "Split splitting." << std::endl;
-            const double mid = R3::Midpoint(axis, tree_lb, tree_ub);
+            const double mid = 0.5*(tree_lb[axis], tree_ub[axis]);
             const double new_coord = new_point.point[axis];
             const bool new_point_left = new_coord <= mid;
-            const bool new_point_right = !new_point_left;
             if (new_point_left) {
+              // new point left
               R3::Point left_branch_ub = tree_ub;
               left_branch_ub[axis] = mid; // split axis in half
               split.left_->InsertPoint_(new_point, NextAxis(axis), tree_lb, left_branch_ub);
               return;
-            }
-            if (new_point_right) {
+            } else {
+              // new point right
               R3::Point right_branch_lb = tree_lb;
               right_branch_lb[axis] = mid; // split axis in half
               split.right_->InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
