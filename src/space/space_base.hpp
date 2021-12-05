@@ -18,7 +18,7 @@ namespace space {
     virtual Point SampleFree() = 0;
     virtual Point Steer(const Point&, const Point&, const double eta) const = 0;
 
-    virtual double mu_Xfree() const = 0; //  = 2*M_PI; // TODO(greg): adapt for obstacles and for non-(0,1),(0,1),(-pi,pi)
+    virtual double mu_Xfree() const = 0;
 
     // bridges
     virtual bool CollisionFree(const Line&) const = 0;
