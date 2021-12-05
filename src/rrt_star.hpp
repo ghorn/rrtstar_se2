@@ -36,7 +36,6 @@ namespace rrts {
       cost_to_go_.push_back(0);
       tree_.Insert({0, x_init});
     }
-    virtual ~Search() = default;
 
     StepResult Step() {
       // ********** Sample new point to add to tree. ***********

@@ -18,7 +18,6 @@ namespace rrts::tree {
 template <typename Point>
 struct Fast : public TreeBase<Point> {
   Fast(Point lb, Point ub) : lb_(lb), ub_(ub), root_(Empty{}) {};
-  ~Fast() = default;
 
   int64_t num_nodes_ = 0;
 

@@ -27,14 +27,13 @@ using namespace rrts;
 using Line = space::r3::Line;
 using Point = space::r3::Point;
 using Sphere = space::r3::Sphere;
-using Tree = tree::Naive<Point>;
-//using Tree = tree::Fast<Point>; // not assignable right now
+//using Tree = tree::Naive<Point>;  // comment in for testing Fast tree
+using Tree = tree::Fast<Point>;
 
 struct Problem {
   Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere>& obstacles)
     : lb_(lb), ub_(ub), goal_region_(goal_region), obstacles_(obstacles),
       r3_space_(lb, ub, obstacles), search_(x_init, lb, ub, r3_space_, 0.55) {};
-  ~Problem() = default;
   Point x_init = {0, 0, 0};
   Point lb_;
   Point ub_;
@@ -251,12 +250,6 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
 int run_it(char *argv0) {
   std::mt19937_64 rng_engine;
   Problem problem = RandomProblem(rng_engine);
-
-//  rrts::tree::Fast<Point> tree = rrts::tree::Fast<Point>(problem.lb_, problem.ub_);
-//  tree = rrts::tree::Fast<Point>(problem.lb_, problem.ub_);
-
-//  rrts::space::r3::R3 r3_space = rrts::space::r3::R3(problem.lb_, problem.ub_, problem.obstacles_);
-//  r3_space = rrts::space::r3::R3(problem.lb_, problem.ub_, problem.obstacles_);
 
   problem.Describe();
 
