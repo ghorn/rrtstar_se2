@@ -57,8 +57,7 @@ namespace rrts {
 
       // L7 from paper
       const double cardV = tree_.Cardinality();
-      constexpr double d = static_cast<double>(D);
-      const double radius = fmin(gamma_rrts() * pow(log(cardV) / cardV, 1/d), eta_);
+      const double radius = fmin(gamma_rrts * pow(log(cardV) / cardV, 1/d), eta_);
       std::vector<Tagged<Point> > X_near = tree_.Near(x_new, radius);
 
       // ************** Add new node to graph. ****************
@@ -109,23 +108,24 @@ namespace rrts {
       return StepResult::kSuccess;
     }
 
-    // The proof says gamma_rrtstar should be strictly greater than this number.
-    // I set it equal because mu_Xfree is conservatively large.
-    double gamma_rrts() {
-      constexpr double d = static_cast<double>(D);
-      // zeta_d is volume of the unit ball in d dimensions.
-      constexpr double zeta_d = VolumeOfNBall(D, 1.0);
-      // compute on first invocation to avoid using virtual mu_XFree function in constructor.
-      static double ret = pow(2 * (1 + 1 / d), 1/d) * pow(space_.mu_Xfree() / zeta_d, 1 / d);
-      return ret;
-    }
-
     // index of edge (plus one) is node, Edge type contains parent index.
     std::vector<Edge<Point, Bridge> > edges_;
     std::vector<double> cost_to_go_;
 
     Tree tree_;
     Space space_;
+
+      // zeta_d is volume of the unit ball in d dimensions.
+    static constexpr double zeta_d = VolumeOfNBall(D, 1.0);
+    // The proof says gamma_rrtstar should be strictly greater than this number.
+    // I set it equal because mu_Xfree is conservatively large.
+    static constexpr double d = static_cast<double>(D);
+    double gamma_rrts = pow(2 * (1 + 1 / d), 1/d) * pow(space_.mu_Xfree() / zeta_d, 1 / d);
+
+    //Problem& operator=(const Problem &other){
+    //  tree_ = other.tree_;
+    //  return *this;
+    //}
 
   private:
     const double eta_;
