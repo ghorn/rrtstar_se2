@@ -119,6 +119,7 @@ namespace rrts {
     static constexpr double zeta_d = VolumeOfNBall(D, 1.0);
     // The proof says gamma_rrtstar should be strictly greater than this number.
     // I set it equal because mu_Xfree is conservatively large.
+    // TODO(greg): study if increasing it further helps
     static constexpr double d = static_cast<double>(D);
     double gamma_rrts = pow(2 * (1 + 1 / d), 1/d) * pow(space_.mu_Xfree() / zeta_d, 1 / d);
 

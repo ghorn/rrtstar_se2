@@ -33,7 +33,7 @@ using Tree = tree::Naive<Point>;
 struct Problem {
   Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere> obstacles)
     : lb_(lb), ub_(ub), goal_region_(goal_region), obstacles_(obstacles),
-      r3_space_(lb, ub, obstacles), search_(x_init, lb, ub, r3_space_, 0.15) {};
+      r3_space_(lb, ub, obstacles), search_(x_init, lb, ub, r3_space_, 0.55) {};
   ~Problem() = default;
   Point x_init = {0, 0, 0};
   Point lb_;
