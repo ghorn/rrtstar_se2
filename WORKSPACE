@@ -21,3 +21,11 @@ git_repository(
     commit = "14c9303b3d9e86ac66e2699e98e3d5ecc6386239",
     shallow_since = "1638471161 -0800",
 )
+
+http_archive(
+    name = "nanoflann",
+    build_file = "@rrtstar_se2//third_party:BUILD.nanoflann",
+    sha256 = "e100b5fc8d72e9426a80312d852a62c05ddefd23f17cbb22ccd8b458b11d0bea",
+    strip_prefix = "nanoflann-1.3.2",
+    urls = ["https://github.com/jlblancoc/nanoflann/archive/refs/tags/v1.3.2.tar.gz"],
+)
