@@ -168,7 +168,7 @@ struct Node {
           [this, new_point, tree_lb, tree_ub, axis](const Leaf leaf) {
             //std::cerr << "Leaf " << leaf.point_.index << " splitting." << std::endl;
             const Tagged<R3::Point> &old_point = leaf.point_; // convenience/readability
-            const double mid = 0.5*(tree_lb[axis], tree_ub[axis]);
+            const double mid = 0.5*(tree_lb[axis] + tree_ub[axis]);
             const double new_coord = new_point.point[axis];
             const double old_coord = old_point.point[axis];
             const bool new_point_left = new_coord <= mid;
@@ -215,7 +215,7 @@ struct Node {
           // Point inserted to Split will be inserted into either left or right child, depending on its coordinate.
           [this, new_point, axis, tree_lb, tree_ub](const Split &split) {
             //std::cerr << "Split splitting." << std::endl;
-            const double mid = 0.5*(tree_lb[axis], tree_ub[axis]);
+            const double mid = 0.5*(tree_lb[axis] + tree_ub[axis]);
             const double new_coord = new_point.point[axis];
             const bool new_point_left = new_coord <= mid;
             if (new_point_left) {
