@@ -92,7 +92,7 @@ int main() {
   const R3::Point lb = {-2, -3, -0.3};
   const R3::Point ub = {1, 1.1, 0.6};
 
-  tree::Naive<Point> naive_tree(lb, ub);
+  tree::Naive<Point> naive_tree;
   tree::Fast<Point> fast_tree(lb, ub);
 
   std::mt19937_64 rng_engine;

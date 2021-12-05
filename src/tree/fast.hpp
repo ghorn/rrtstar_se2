@@ -17,14 +17,14 @@ namespace tree {
 
 // Just a Node with some meta-information and helper functions.
 template <typename Point>
-struct Fast {
+struct Fast : public TreeBase<Point> {
   Fast(Point lb, Point ub) : lb_(lb), ub_(ub), root_(Empty{}) {};
   ~Fast(){};
 
   int64_t num_nodes_ = 0;
 
   void Draw() const {root_.Draw("");}
-  void Insert(const Tagged<Point> new_point) {
+  void Insert(const Tagged<Point> &new_point) {
     //std::cerr << "inserting point " << new_point.index << std::endl;
     num_nodes_++;
     root_.InsertPoint_(new_point, 0, lb_, ub_);
@@ -33,7 +33,7 @@ struct Fast {
   const Point lb_;
   const Point ub_;
 
-  Tagged<Point> Nearest(const Point test_point) const {
+  Tagged<Point> Nearest(const Point &test_point) const {
     // Test point will be overwritten because closest point distance is so high.
     // This is potentially violated if bounds are anything besides (0, 1).
     Tagged<Point> closest_point = {2222222222222222, test_point};

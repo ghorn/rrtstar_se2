@@ -42,7 +42,6 @@ cc_library(
         "src/se2_point.cpp",
         "src/r3_point.cpp",
         "src/r3_search.cpp",
-        #"src/tree/fast.cpp",
     ],
     hdrs = [
         "src/rrt_star.hpp",

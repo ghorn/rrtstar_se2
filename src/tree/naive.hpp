@@ -10,7 +10,7 @@ namespace rrts {
     template <typename Point>
     class Naive : public TreeBase<Point> {
     public:
-      Naive(Point lb, Point ub) : TreeBase<Point>(lb, ub){};
+      Naive() {};
       ~Naive() = default;
 
       void Insert(const Tagged<Point> &new_point) {

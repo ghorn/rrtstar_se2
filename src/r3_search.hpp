@@ -28,7 +28,7 @@ namespace rrts {
     public:
       R3Search(Point x_init, Point lb, Point ub, std::vector<Sphere> sphere_obstacles) :
         lb_(lb), ub_(ub),
-        naive_tree_(lb, ub),
+        naive_tree_(),
         fast_tree_(lb, ub),
         sphere_obstacles_(sphere_obstacles)
       {
