@@ -2,8 +2,10 @@
 
 #include <cassert>
 
+#include <functional>
 #include <glm/glm.hpp>
 #include <random>
+#include <set>
 
 #include "src/space/n_ball.hpp"
 #include "src/tagged.hpp"
@@ -13,14 +15,9 @@ namespace rrts {
   template <class Point, class Bridge>
   struct Edge {
     Edge(size_t parent_index, const Bridge &bridge) : parent_index_(parent_index), bridge_(bridge) {};
-    //double cost_to_go;
     size_t parent_index_;
-    //size_t index;
-    //Point point;
     Bridge bridge_;
-    //double bridge_cost;
   };
-
 
   enum class StepResult {
     kSuccess,
@@ -33,14 +30,14 @@ namespace rrts {
   template <class Point, class Bridge, int D, class Tree, class Space>
   class Search {
   public:
-    Search(Point x_init, Point lb, Point ub, Space space, double eta) : edges_{}, cost_to_go_{}, tree_(lb, ub), space_(space), eta_(eta) {
-      cost_to_go_.push_back(0);
+    Search(Point x_init, Point lb, Point ub, Space space, double eta) : edges_{}, children_map_{}, tree_(lb, ub), space_(space), eta_(eta) {
       tree_.Insert({0, x_init});
+      children_map_.push_back({});
     }
 
     // index of edge (plus one) is node, Edge type contains parent index.
     std::vector<Edge<Point, Bridge> > edges_;
-    std::vector<double> cost_to_go_;
+    std::vector<std::set<size_t> > children_map_;
 
     Tree tree_;
     Space space_;
@@ -57,6 +54,42 @@ namespace rrts {
     double eta_;
 
   public:
+    // Compute cost to go of a node by tracing parents back and adding up all the bridges.
+    // O[n]
+    double CostToGo(size_t index) {
+      double cost = 0;
+
+      while (index != 0) {
+        const Edge<Point, Bridge> &edge = edges_.at(index - 1);
+        cost += space_.BridgeCost(edge.bridge_);
+        index = edge.parent_index_;
+      }
+
+      return cost;
+    }
+
+    // Compute costs to go of all nodes in one pass.
+    // O[n].
+    std::vector<double> ComputeCostsToGo() {
+      std::vector<double> costs_to_go(edges_.size() + 1, 0.0);
+
+      std::function<void(size_t, double)> compute_child_costs =
+        [this, &costs_to_go, &compute_child_costs](size_t index, double parent_cost) {
+          // iterate through children of this node
+          for (const size_t child_index : children_map_.at(index)) {
+            // for each child, update it's cost to go
+            const Edge<Point, Bridge> &edge = edges_.at(child_index - 1);
+            double child_cost_to_go = parent_cost + space_.BridgeCost(edge.bridge_);
+            costs_to_go.at(child_index) = child_cost_to_go;
+            // for each child, update all of its children recursively
+            compute_child_costs(child_index, child_cost_to_go);
+          }
+        };
+
+      compute_child_costs(0, 0.0);
+      return costs_to_go;
+    }
+
     StepResult Step() {
       // ********** Sample new point to add to tree. ***********
       // L3 from paper
@@ -81,7 +114,7 @@ namespace rrts {
 
       // ************** Add new node to graph. ****************
       // L8 from paper
-      assert(edges_.size() + 1 == cost_to_go_.size());
+      assert(edges_.size() + 1 == children_map_.size());
       size_t new_index = edges_.size() + 1; // 0th node has no bridge, offset by one
       tree_.Insert(Tagged<Point>{new_index, x_new});
 
@@ -89,12 +122,12 @@ namespace rrts {
       // L9 from paper
       Tagged<Point> x_min = x_nearest;
       Bridge b_min = nearest_to_new_bridge;
-      double c_min = cost_to_go_.at(x_min.index) + space_.BridgeCost(b_min);
+      double c_min = CostToGo(x_min.index) + space_.BridgeCost(b_min);
 
       // L10-12 in paper
       for (const Tagged<Point> x_near : X_near) {
         Bridge near_to_new_bridge = space_.FormBridge(x_near.point, x_new);
-        double c = cost_to_go_.at(x_near.index) + space_.BridgeCost(near_to_new_bridge);
+        double c = CostToGo(x_near.index) + space_.BridgeCost(near_to_new_bridge);
         if (space_.CollisionFree(near_to_new_bridge) && c < c_min) {
           x_min = x_near;
           c_min = c;
@@ -106,7 +139,8 @@ namespace rrts {
       // Insert edge for new node.
       Edge<Point, Bridge> new_edge(x_min.index, b_min);
       edges_.push_back(new_edge);
-      cost_to_go_.push_back(c_min);  // TODO(greg): Can/should cost_to_go and edge be combined?
+      children_map_.push_back({}); // new node initially has no children
+      children_map_.at(x_min.index).insert(new_index); // new node is a child of x_min
 
       // ******* Rewire tree: see if any near node is better off going to new node. ******
       // L14-16 in paper
@@ -114,9 +148,13 @@ namespace rrts {
         if (x_near.index != 0) { // don't rewire root node, it has no parents
           Bridge new_to_near_bridge = space_.FormBridge(x_new, x_near.point);
           const double c = c_min + space_.BridgeCost(new_to_near_bridge);
-          if (space_.CollisionFree(new_to_near_bridge) && c < cost_to_go_.at(x_near.index)) {
-            // Change parent.
-            cost_to_go_.at(x_near.index) = c;
+          if (space_.CollisionFree(new_to_near_bridge) && c < CostToGo(x_near.index)) {
+            // Update parent map.
+            size_t old_parent_index = edges_.at(x_near.index - 1).parent_index_;
+            children_map_.at(old_parent_index).erase(x_near.index);
+            children_map_.at(new_index).insert(x_near.index);
+
+            // Update edge.
             edges_.at(x_near.index - 1) = Edge<Point, Bridge>{new_index, new_to_near_bridge};
           }
         }

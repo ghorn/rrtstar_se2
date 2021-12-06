@@ -107,8 +107,7 @@ struct Problem {
     bounding_box_lines.Update(bb_lines);
   }
 
-  void UpdateBridgeLines(bb3d::ColorLines &lines) const {
-    const std::vector<double> &cost_to_go = search_.cost_to_go_;
+  void UpdateBridgeLines(bb3d::ColorLines &lines, const std::vector<double> &cost_to_go) const {
     const std::vector<Edge<Point, Line> > &edges = search_.edges_;
 
     // Find max cost to go in order to scale lines
@@ -143,8 +142,7 @@ struct Problem {
     return sqrt(p.DistanceSquared(goal)) <= goal_region_.radius;
   }
 
-  double UpdateGoalLine(bb3d::Lines &goal_line) const {
-    const std::vector<double> &cost_to_go = search_.cost_to_go_;
+  double UpdateGoalLine(bb3d::Lines &goal_line, const std::vector<double> &cost_to_go) const {
     const std::vector<Edge<Point, Line> > &edges = search_.edges_;
 
     double min_cost_to_go = 0;
@@ -286,9 +284,9 @@ int run_it(char *argv0) {
     window.SetCameraAzimuthDeg(azimuth_deg);
     window.SetCameraFocus(0.5*(problem.lb_ + problem.ub_));
 
-
-    problem.UpdateBridgeLines(bridge_lines);
-    min_cost_to_go = problem.UpdateGoalLine(goal_line);
+    const std::vector<double> cost_to_go = problem.search_.ComputeCostsToGo();
+    problem.UpdateBridgeLines(bridge_lines, cost_to_go);
+    min_cost_to_go = problem.UpdateGoalLine(goal_line, cost_to_go);
     //UpdatePoints(points, search.tree_.points_);
 
     problem.UpdateSphereLines(sphere_lines);
