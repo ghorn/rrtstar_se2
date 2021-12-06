@@ -27,8 +27,8 @@ using namespace rrts;
 using Line = space::r3::Line;
 using Point = space::r3::Point;
 using Sphere = space::r3::Sphere;
-//using Tree = tree::Naive<Point>;  // comment in for testing Fast tree
-using Tree = tree::Fast<Point>;
+//using Tree = tree::Naive<Point, 3>;  // comment in for testing Fast tree
+using Tree = tree::Fast<Point, 3>;
 
 struct Problem {
   Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere>& obstacles)

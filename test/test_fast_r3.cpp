@@ -22,8 +22,8 @@ static inline Point Sample(std::mt19937_64 &rng_engine,
   return Point{x, y, z};
 }
 
-void TestNearest(const tree::Naive<Point> &naive_tree,
-                 const tree::Fast<Point> &fast_tree,
+void TestNearest(const tree::Naive<Point, 3> &naive_tree,
+                 const tree::Fast<Point, 3> &fast_tree,
                  const Point &test_point,
                  std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
@@ -48,8 +48,8 @@ void TestNearest(const tree::Naive<Point> &naive_tree,
 }
 
 
-void TestNear(const tree::Naive<Point> &naive_tree,
-              const tree::Fast<Point> &fast_tree,
+void TestNear(const tree::Naive<Point, 3> &naive_tree,
+              const tree::Fast<Point, 3> &fast_tree,
               const Point &test_point,
               const double radius,
               std::chrono::duration<double> &naive_time,
@@ -93,8 +93,9 @@ int main() {
   const Point lb = {-2, -3, -0.3};
   const Point ub = {1, 1.1, 0.6};
 
-  tree::Naive<Point> naive_tree(lb, ub);
-  tree::Fast<Point> fast_tree(lb, ub);
+  std::array<bool, 3> periodic = {false, false, false};
+  tree::Naive<Point, 3> naive_tree(lb, ub, periodic);
+  tree::Fast<Point, 3> fast_tree(lb, ub, periodic);
 
   std::mt19937_64 rng_engine;
   std::uniform_real_distribution<double> uniform_distribution;

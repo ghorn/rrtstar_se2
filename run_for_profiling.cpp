@@ -19,7 +19,7 @@ int run_it() {
   sphere_obstacles.push_back({{4.0, 0.5, 0}, 1});
   sphere_obstacles.push_back({{2.0, -0.4, 0}, 1.15});
   space::r3::R3 r3_space(lb, ub, sphere_obstacles);
-  Search<Point, Line, 3, tree::Fast<Point>, space::r3::R3> search(x_init, lb, ub, r3_space, 0.15);
+  Search<Point, Line, 3, tree::Fast<Point, 3>, space::r3::R3> search(x_init, lb, ub, r3_space, 0.15);
 
   int64_t count = 0;
   while (count<1000) {

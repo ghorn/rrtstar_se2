@@ -34,7 +34,7 @@ namespace rrts::space::r3 {
     double dist{0};
   };
 
-  class R3 : public SpaceBase<Point, Line> {
+  class R3 : public SpaceBase<Point, Line, 3> {
   public:
     R3(Point lb, Point ub, std::vector<Sphere> sphere_obstacles) :
       lb_(lb), ub_(ub), sphere_obstacles_(std::move(sphere_obstacles)) {};
@@ -48,6 +48,9 @@ namespace rrts::space::r3 {
     [[nodiscard]] bool CollisionFree(const Line & line) const override;
     [[nodiscard]] double BridgeCost(const Line &line) const override {return line.dist;};
     [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
+    [[nodiscard]] std::array<bool, 3> Periodic() const override {
+      return {false, false, false};
+    }
 
   private:
     Point Sample();

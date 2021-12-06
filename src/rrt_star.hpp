@@ -30,7 +30,7 @@ namespace rrts {
   template <class Point, class Bridge, int D, class Tree, class Space>
   class Search {
   public:
-    Search(Point x_init, Point lb, Point ub, Space space, double eta) : tree_(lb, ub), space_(space), eta_(eta) {
+    Search(Point x_init, Point lb, Point ub, Space space, double eta) : tree_(lb, ub, space.Periodic()), space_(space), eta_(eta) {
       tree_.Insert({0, x_init});
       children_map_.emplace_back(std::set<size_t>{});
     }

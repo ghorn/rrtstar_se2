@@ -15,9 +15,9 @@
 namespace rrts::tree {
 
 // Just a Node with some meta-information and helper functions.
-template <typename Point>
-struct Fast : public TreeBase<Point> {
-  Fast(Point lb, Point ub) : num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {};
+template <typename Point, size_t D>
+struct Fast : public TreeBase<Point, D> {
+  Fast(Point lb, Point ub, std::array<bool, 3> periodic) : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {};
 
   void Draw() const {root_.Draw("");}
   void Insert(const Tagged<Point> &new_point) {

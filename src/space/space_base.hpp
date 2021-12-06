@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <iostream>
 #include <random>
 #include <set>
@@ -8,7 +9,7 @@
 namespace rrts::space {
 
 
-  template <typename Point, typename Bridge>
+  template <typename Point, typename Bridge, size_t D>
   class SpaceBase {
   public:
     virtual ~SpaceBase() = default;
@@ -22,6 +23,9 @@ namespace rrts::space {
     virtual bool CollisionFree(const Bridge&) const = 0;
     virtual double BridgeCost(const Bridge &bridge) const = 0;
     virtual Bridge FormBridge(const Point &v0, const Point &v1) const = 0;
+
+    // periodic
+    virtual std::array<bool, D> Periodic() const = 0;
   };
 
 }  // namespace rrts::space

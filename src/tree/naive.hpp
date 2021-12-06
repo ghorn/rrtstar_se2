@@ -5,10 +5,11 @@
 
 namespace rrts::tree {
 
-    template <typename Point>
-    class Naive : public TreeBase<Point> {
+    template <typename Point, size_t D>
+    class Naive : public TreeBase<Point, D> {
     public:
-      Naive(const Point & /*unused*/, const Point & /*unused*/) : points_{} {};
+      Naive(const Point & /*unused*/, const Point & /*unused*/, std::array<bool, D> periodic)
+        : TreeBase<Point, D>(periodic), points_{} {};
 
       void Insert(const Tagged<Point> &new_point) {
         points_.push_back(new_point);
