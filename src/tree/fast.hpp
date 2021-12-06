@@ -17,7 +17,14 @@ namespace rrts::tree {
 // Just a Node with some meta-information and helper functions.
 template <typename Point, size_t D>
 struct Fast : public TreeBase<Point, D> {
-  Fast(Point lb, Point ub, std::array<bool, 3> periodic) : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {};
+  Fast(Point lb, Point ub, std::array<bool, 3> periodic) : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {
+    for (bool p : periodic) {
+      if (p) {
+        std::cerr << "ERROR: Fast tree doesn't yet support periodicity." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+  };
 
   void Draw() const {root_.Draw("");}
   void Insert(const Tagged<Point> &new_point) {
