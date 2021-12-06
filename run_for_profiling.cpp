@@ -6,10 +6,11 @@
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
 
-using namespace rrts;
-using Line = space::r3::Line;
-using Point = space::r3::Point;
-using Sphere = space::r3::Sphere;
+using Line = rrts::space::r3::Line;
+using Point = rrts::space::r3::Point;
+using Sphere = rrts::space::r3::Sphere;
+using Tree = rrts::tree::Fast<Point, 3>;
+using Space = rrts::space::r3::R3;
 
 int run_it() {
   Point lb = {0, -2, -1};
@@ -18,8 +19,8 @@ int run_it() {
   std::vector<Sphere> sphere_obstacles;
   sphere_obstacles.push_back({{4.0, 0.5, 0}, 1});
   sphere_obstacles.push_back({{2.0, -0.4, 0}, 1.15});
-  space::r3::R3 r3_space(lb, ub, sphere_obstacles);
-  Search<Point, Line, 3, tree::Fast<Point, 3>, space::r3::R3> search(x_init, lb, ub, r3_space, 0.15);
+  Space r3_space(lb, ub, sphere_obstacles);
+  rrts::Search<Point, Line, 3, Tree, Space> search(x_init, lb, ub, r3_space, 0.15);
 
   int64_t count = 0;
   while (count<1000) {

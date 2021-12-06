@@ -23,12 +23,12 @@
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
 
-using namespace rrts;
-using Line = space::r3::Line;
-using Point = space::r3::Point;
-using Sphere = space::r3::Sphere;
-//using Tree = tree::Naive<Point, 3>;  // comment in for testing Fast tree
-using Tree = tree::Fast<Point, 3>;
+using Line = rrts::space::r3::Line;
+using Point = rrts::space::r3::Point;
+using Sphere = rrts::space::r3::Sphere;
+//using Tree = rrts::tree::Naive<Point, 3>;  // comment in for testing Fast tree
+using Tree = rrts::tree::Fast<Point, 3>;
+using Space = rrts::space::r3::R3;
 
 struct Problem {
   Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere>& obstacles)
@@ -39,8 +39,8 @@ struct Problem {
   Point ub_;
   Sphere goal_region_;
   std::vector<Sphere> obstacles_;
-  space::r3::R3 r3_space_;
-  Search<Point, Line, 3, Tree, space::r3::R3> search_;
+  Space r3_space_;
+  rrts::Search<Point, Line, 3, Tree, Space> search_;
 
   void Describe() {
     fprintf(stderr, "lb: % 7.2f % 7.2f % 7.2f\n", lb_.x, lb_.y, lb_.z);
@@ -108,7 +108,7 @@ struct Problem {
   }
 
   void UpdateBridgeLines(bb3d::ColorLines &lines, const std::vector<double> &cost_to_go) const {
-    const std::vector<Edge<Point, Line> > &edges = search_.Edges();
+    const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
 
     // Find max cost to go in order to scale lines
     double max_cost_to_go = 0;
@@ -119,7 +119,7 @@ struct Problem {
     // Draw all bridges
     std::vector<std::vector<bb3d::ColoredVec3> > bridges;
     size_t node_index = 1;
-    for (const Edge<Point, Line> &edge: edges) {
+    for (const rrts::Edge<Point, Line> &edge: edges) {
       bb3d::ColoredVec3 cv0{};
       bb3d::ColoredVec3 cv1{};
       cv0.position = static_cast<glm::dvec3>(edge.bridge_.p0);
@@ -143,14 +143,14 @@ struct Problem {
   }
 
   double UpdateGoalLine(bb3d::Lines &goal_line, const std::vector<double> &cost_to_go) const {
-    const std::vector<Edge<Point, Line> > &edges = search_.Edges();
+    const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
 
     double min_cost_to_go = 0;
     size_t winner_index = 0;
     bool got_winner = false;
     size_t index = 1;
     // best cost to go in a goal region
-    for (const Edge<Point, Line> &edge : edges) {
+    for (const rrts::Edge<Point, Line> &edge : edges) {
       if (InGoalRegion(edge.bridge_.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
         winner_index = index;
         got_winner = true;
@@ -167,7 +167,7 @@ struct Problem {
       int num_links = 0;
       while (head != 0) {
         num_links++;
-        Edge<Point, Line> edge = edges.at(head - 1);
+        rrts::Edge<Point, Line> edge = edges.at(head - 1);
         glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
         p.z -= 0.05F;
         //std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << " " << std::endl;
@@ -219,7 +219,7 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
   const double obstacle_fraction = 0.6;
   // upper bound (no overlap)
   const double volume_per_obstacle = total_volume * obstacle_fraction / static_cast<double>(n);
-  const double radius_per_obstacle = pow(3 * volume_per_obstacle / (4 * M_PI), 1/3);
+  const double radius_per_obstacle = pow(3 * volume_per_obstacle / (4 * M_PI), 1.0 / 3.0);
   std::vector<Sphere> obstacles;
   while (obstacles.size() < n) {
     const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
@@ -326,7 +326,7 @@ int run_it(char *argv0) {
         if (!pause) {
           const std::lock_guard<std::mutex> lock(search_mutex);
           for (int yolo=0; yolo<100; yolo++) {
-            if (problem.search_.Step() == StepResult::kSuccess) {
+            if (problem.search_.Step() == rrts::StepResult::kSuccess) {
               count++;
             }
           }
