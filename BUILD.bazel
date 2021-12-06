@@ -41,6 +41,7 @@ cc_library(
         "src/se2_tree.cpp",
         "src/se2_point.cpp",
         "src/space/r3.cpp",
+        "src/space/se2.cpp",
     ],
     hdrs = [
         "src/rrt_star.hpp",
@@ -54,6 +55,7 @@ cc_library(
         "src/space/space_base.hpp",
         "src/space/n_ball.hpp",
         "src/space/r3.hpp",
+        "src/space/se2.hpp",
     ],
     linkopts = ["-lpthread"],
     copts = cxx_opts,
