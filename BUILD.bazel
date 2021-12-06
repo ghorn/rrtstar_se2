@@ -32,6 +32,7 @@ cxx_opts = [
     #"-Wold-style-cast",
     "-Woverloaded-virtual",
     "-fdiagnostics-color=always",
+    "-Weffc++",
 ]
 
 cc_library(

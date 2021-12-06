@@ -29,6 +29,8 @@ namespace rrts::space::r3 {
   };
 
   struct Line {
+    Line() : p0{}, p1{}, dist{} {};
+
     Point p0;
     Point p1;
     double dist;

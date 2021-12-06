@@ -11,7 +11,7 @@ namespace rrts::space {
   template <typename Point, typename Line>
   class SpaceBase {
   public:
-    SpaceBase()= default;;
+    SpaceBase() : rng_engine(), uniform_distribution() {};
     virtual ~SpaceBase() = default;
 
     virtual Point SampleFree() = 0;

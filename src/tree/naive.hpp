@@ -8,8 +8,7 @@ namespace rrts::tree {
     template <typename Point>
     class Naive : public TreeBase<Point> {
     public:
-      Naive(const Point & /*unused*/, const Point & /*unused*/) {};
-      ~Naive() = default;
+      Naive(const Point & /*unused*/, const Point & /*unused*/) : points_{} {};
 
       void Insert(const Tagged<Point> &new_point) {
         points_.push_back(new_point);

@@ -123,9 +123,9 @@ struct Problem {
     for (const Edge<Point, Line> &edge: edges) {
       bb3d::ColoredVec3 cv0{};
       bb3d::ColoredVec3 cv1{};
-      cv0.position = static_cast<glm::dvec3>(edge.bridge.p0);
-      cv1.position = static_cast<glm::dvec3>(edge.bridge.p1);
-      const double ctg0 = cost_to_go.at(edge.parent_index) / max_cost_to_go;
+      cv0.position = static_cast<glm::dvec3>(edge.bridge_.p0);
+      cv1.position = static_cast<glm::dvec3>(edge.bridge_.p1);
+      const double ctg0 = cost_to_go.at(edge.parent_index_) / max_cost_to_go;
       const double ctg1 = cost_to_go.at(node_index) / max_cost_to_go;
       cv0.color = {ctg0, 0, 1 - ctg0, 0.6};
       cv1.color = {ctg1, 0, 1 - ctg1, 0.6};
@@ -153,7 +153,7 @@ struct Problem {
     size_t index = 1;
     // best cost to go in a goal region
     for (const Edge<Point, Line> &edge : edges) {
-      if (InGoalRegion(edge.bridge.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
+      if (InGoalRegion(edge.bridge_.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
         winner_index = index;
         got_winner = true;
         min_cost_to_go = cost_to_go.at(index);
@@ -170,14 +170,14 @@ struct Problem {
       while (head != 0) {
         num_links++;
         Edge<Point, Line> edge = edges.at(head - 1);
-        glm::vec3 p = static_cast<glm::dvec3>(edge.bridge.p1);
+        glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
         p.z -= 0.05F;
         //std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << " " << std::endl;
         winning_route.push_back(p);
-        head = edge.parent_index;
+        head = edge.parent_index_;
 
         if (head == 0) {
-          glm::vec3 pf = static_cast<glm::dvec3>(edge.bridge.p0);
+          glm::vec3 pf = static_cast<glm::dvec3>(edge.bridge_.p0);
           pf.z -= 0.02F;
           winning_route.push_back(pf);
         }

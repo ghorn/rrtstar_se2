@@ -233,7 +233,8 @@ struct Node {
         }, value_);
   }
 
-  struct SearchParams {
+  struct SearchParams{
+    SearchParams() : radius(0), radius_squared(0), test_point{}, bounding_box_lb{}, bounding_box_ub{} {};
     double radius;
     double radius_squared;
     Point test_point;
