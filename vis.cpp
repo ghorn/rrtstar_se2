@@ -108,7 +108,7 @@ struct Problem {
   }
 
   void UpdateBridgeLines(bb3d::ColorLines &lines, const std::vector<double> &cost_to_go) const {
-    const std::vector<Edge<Point, Line> > &edges = search_.edges_;
+    const std::vector<Edge<Point, Line> > &edges = search_.Edges();
 
     // Find max cost to go in order to scale lines
     double max_cost_to_go = 0;
@@ -143,7 +143,7 @@ struct Problem {
   }
 
   double UpdateGoalLine(bb3d::Lines &goal_line, const std::vector<double> &cost_to_go) const {
-    const std::vector<Edge<Point, Line> > &edges = search_.edges_;
+    const std::vector<Edge<Point, Line> > &edges = search_.Edges();
 
     double min_cost_to_go = 0;
     size_t winner_index = 0;
@@ -309,7 +309,7 @@ int run_it(char *argv0) {
       std::stringstream message;
       {
         const std::lock_guard<std::mutex> lock(search_mutex);
-        message << problem.search_.tree_.Cardinality() << " nodes in tree";
+        message << problem.search_.Cardinality() << " nodes in tree";
         if (min_cost_to_go > 0) {
           message << " optimal distance is " << min_cost_to_go;
         }

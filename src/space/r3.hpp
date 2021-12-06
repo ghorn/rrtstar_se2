@@ -13,7 +13,7 @@ namespace rrts::space::r3 {
   using glm::dvec3;
   struct Point : public dvec3 {
     using dvec3::dvec3;
-    Point(const glm::dvec3 &v) : dvec3(v) {};
+    explicit Point(const glm::dvec3 &v) : dvec3(v) {};
     [[nodiscard]] double DistanceSquared(const Point &other) const {
       const double dx = x - other.x;
       const double dy = y - other.y;
@@ -29,11 +29,9 @@ namespace rrts::space::r3 {
   };
 
   struct Line {
-    Line() : p0{}, p1{}, dist{} {};
-
-    Point p0;
-    Point p1;
-    double dist;
+    Point p0{};
+    Point p1{};
+    double dist{0};
   };
 
   class R3 : public SpaceBase<Point, Line> {
@@ -51,12 +49,15 @@ namespace rrts::space::r3 {
     [[nodiscard]] double BridgeCost(const Line &line) const override {return line.dist;};
     [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
 
+  private:
+    Point Sample();
+    [[nodiscard]] bool PointInSpheres(const Point &p) const;
+
     Point lb_;
     Point ub_;
     std::vector<Sphere> sphere_obstacles_;
-  private:
-    Point Sample();
-    bool PointInSphere(const Point &p);
+    std::mt19937_64 rng_engine_{};
+    std::uniform_real_distribution<double> uniform_distribution_{};
   };
 
-}  // namespace rrts
+}  // namespace rrts::space::r3

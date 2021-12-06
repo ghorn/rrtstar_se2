@@ -1,31 +1,32 @@
 #include "src/space/r3.hpp"
 
+#include <algorithm>
+
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/norm.hpp>
 
 namespace rrts::space::r3 {
     Point R3::Sample() {
-      const double x = lb_.x + (ub_.x - lb_.x) * uniform_distribution(rng_engine);
-      const double y = lb_.y + (ub_.y - lb_.y) * uniform_distribution(rng_engine);
-      const double z = lb_.z + (ub_.z - lb_.z) * uniform_distribution(rng_engine);
+      const double x = lb_.x + (ub_.x - lb_.x) * uniform_distribution_(rng_engine_);
+      const double y = lb_.y + (ub_.y - lb_.y) * uniform_distribution_(rng_engine_);
+      const double z = lb_.z + (ub_.z - lb_.z) * uniform_distribution_(rng_engine_);
       return {x, y, z};
     }
 
-    bool R3::PointInSphere(const Point &p) {
-      for (const Sphere &s : sphere_obstacles_) {
-        if (p.DistanceSquared(s.center) <= s.radius*s.radius) {
-          return true;
-        }
-      }
-      return false;
+    bool R3::PointInSpheres(const Point &p) const {
+      auto point_in_sphere = [&p](const Sphere &s) {
+        return p.DistanceSquared(Point(s.center)) <= s.radius*s.radius;
+      };
+      return std::any_of(sphere_obstacles_.cbegin(), sphere_obstacles_.cend(), point_in_sphere);
     }
 
     Point R3::SampleFree() {
-      Point p = Sample();
-      if (!PointInSphere(p)) {
-        return p;
+      for (;;) {
+        Point p = Sample();
+        if (!PointInSpheres(p)) {
+          return p;
+        }
       }
-      return SampleFree();
     }
 
     double R3::mu_Xfree() const {
@@ -70,9 +71,9 @@ namespace rrts::space::r3 {
       vret.y += dy * scale_factor;
       vret.z += dz * scale_factor;
 
-      assert(std::isnormal(vret.x));
-      assert(std::isnormal(vret.y));
-      assert(std::isnormal(vret.z));
+      assert(std::isnormal(vret.x));  // NOLINT
+      assert(std::isnormal(vret.y));  // NOLINT
+      assert(std::isnormal(vret.z));  // NOLINT
 
       //fprintf(stderr, "%8.4f %8.4f %8.4f\n", vret.x, vret.y, vret.z);
       return vret;

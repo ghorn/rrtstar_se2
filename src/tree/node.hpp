@@ -26,8 +26,8 @@ static inline bool IntervalIntersects(const double lb0,
                                       const double ub0,
                                       const double lb1,
                                       const double ub1) {
-  assert(lb0 < ub0);
-  assert(lb1 < ub1);
+  assert(lb0 < ub0);  // NOLINT
+  assert(lb1 < ub1);  // NOLINT
   return lb0 <= ub1 && lb1 <= ub0;
 }
 
@@ -44,7 +44,7 @@ struct Node {
 
   // A single data point.
   struct Leaf {
-    Leaf(Tagged<Point> point) : point_(point) {};
+    explicit Leaf(Tagged<Point> point) : point_(point) {};
     Tagged<Point> point_;
   };
 
@@ -222,24 +222,21 @@ struct Node {
               left_branch_ub[axis] = mid; // split axis in half
               split.left_->InsertPoint_(new_point, NextAxis(axis), tree_lb, left_branch_ub);
               return;
-            } else {
-              // new point right
-              Point right_branch_lb = tree_lb;
-              right_branch_lb[axis] = mid; // split axis in half
-              split.right_->InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
-              return;
             }
+            // new point right
+            Point right_branch_lb = tree_lb;
+            right_branch_lb[axis] = mid; // split axis in half
+            split.right_->InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
           }
         }, value_);
   }
 
   struct SearchParams{
-    SearchParams() : radius(0), radius_squared(0), test_point{}, bounding_box_lb{}, bounding_box_ub{} {};
-    double radius;
-    double radius_squared;
-    Point test_point;
-    Point bounding_box_lb;
-    Point bounding_box_ub;
+    double radius{0};
+    double radius_squared{0};
+    Point test_point{};
+    Point bounding_box_lb{};
+    Point bounding_box_ub{};
   };
   void Near_(std::vector<Tagged<Point>> * const close_points,
              const SearchParams &params,

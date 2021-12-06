@@ -3,8 +3,9 @@
 #include <cassert>
 #include <cmath>
 
+// NOLINTNEXTLINE
 constexpr double VolumeOfNBall(int n, double radius) {
-  assert(n > 0);
+  assert(n > 0); // NOLINT
   switch (n) {
   case 0:
     return 1;

@@ -30,14 +30,15 @@ namespace rrts {
   template <class Point, class Bridge, int D, class Tree, class Space>
   class Search {
   public:
-    Search(Point x_init, Point lb, Point ub, Space space, double eta) : edges_{}, children_map_{}, tree_(lb, ub), space_(space), eta_(eta) {
+    Search(Point x_init, Point lb, Point ub, Space space, double eta) : tree_(lb, ub), space_(space), eta_(eta) {
       tree_.Insert({0, x_init});
-      children_map_.push_back({});
+      children_map_.emplace_back(std::set<size_t>{});
     }
 
+  private:
     // index of edge (plus one) is node, Edge type contains parent index.
-    std::vector<Edge<Point, Bridge> > edges_;
-    std::vector<std::set<size_t> > children_map_;
+    std::vector<Edge<Point, Bridge> > edges_{};
+    std::vector<std::set<size_t> > children_map_{};
 
     Tree tree_;
     Space space_;
@@ -50,10 +51,12 @@ namespace rrts {
     static constexpr double d = static_cast<double>(D);
     double gamma_rrts = pow(2 * (1 + 1 / d), 1/d) * pow(space_.mu_Xfree() / zeta_d, 1 / d);
 
-  private:
     double eta_;
 
   public:
+    const std::vector<Edge<Point, Bridge> >& Edges() const {return edges_;};
+    [[nodiscard]] double Cardinality() const {return tree_.Cardinality();};
+
     // Compute cost to go of a node by tracing parents back and adding up all the bridges.
     // O[n]
     double CostToGo(size_t index) {
@@ -139,7 +142,7 @@ namespace rrts {
       // Insert edge for new node.
       Edge<Point, Bridge> new_edge(x_min.index, b_min);
       edges_.push_back(new_edge);
-      children_map_.push_back({}); // new node initially has no children
+      children_map_.emplace_back(std::set<size_t>{}); // new node initially has no children
       children_map_.at(x_min.index).insert(new_index); // new node is a child of x_min
 
       // ******* Rewire tree: see if any near node is better off going to new node. ******
