@@ -1,5 +1,5 @@
-#include <cstdlib>             // for EXIT_SUCCESS
-#include <iostream>            // for operator<<, basic_ostream, cerr, endl, ostream, cha...
+#include <cstdlib>   // for EXIT_SUCCESS
+#include <iostream>  // for operator<<, basic_ostream, cerr, endl, ostream, cha...
 
 #include "src/rrt_star.hpp"
 #include "src/space/r3.hpp"
@@ -14,7 +14,7 @@ using Space = rrts::space::r3::R3;
 
 int run_it() {
   Point lb = {0, -2, -1};
-  Point ub = {5,  2,  1};
+  Point ub = {5, 2, 1};
   Point x_init{0.01, 0, 0};
   std::vector<Sphere> sphere_obstacles;
   sphere_obstacles.push_back({{4.0, 0.5, 0}, 1});
@@ -23,7 +23,7 @@ int run_it() {
   rrts::Search<Point, Line, 3, Tree, Space> search(x_init, lb, ub, r3_space, 0.15);
 
   int64_t count = 0;
-  while (count<1000) {
+  while (count < 1000) {
     if (search.Step() == rrts::StepResult::kSuccess) {
       count++;
     }

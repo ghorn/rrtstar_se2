@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath> // M_PI
+#include <cmath>  // M_PI
 #include <glm/glm.hpp>
 #include <iostream>
 #include <memory>
@@ -17,7 +17,8 @@ namespace rrts::tree {
 // Just a Node with some meta-information and helper functions.
 template <typename Point, size_t D>
 struct Fast : public TreeBase<Point, D> {
-  Fast(Point lb, Point ub, std::array<bool, 3> periodic) : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {
+  Fast(Point lb, Point ub, std::array<bool, 3> periodic)
+      : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {
     for (bool p : periodic) {
       if (p) {
         std::cerr << "ERROR: Fast tree doesn't yet support periodicity." << std::endl;
@@ -26,19 +27,19 @@ struct Fast : public TreeBase<Point, D> {
     }
   };
 
-  void Draw() const {root_.Draw("");}
+  void Draw() const { root_.Draw(""); }
   void Insert(const Tagged<Point> &new_point) {
-    //std::cerr << "inserting point " << new_point.index << std::endl;
+    // std::cerr << "inserting point " << new_point.index << std::endl;
     num_nodes_++;
     root_.InsertPoint_(new_point, 0, lb_, ub_);
   }
 
-private:
+ private:
   int64_t num_nodes_;
   Point lb_;
   Point ub_;
 
-public:
+ public:
   Tagged<Point> Nearest(const Point &test_point) const {
     // Test point will be overwritten because closest point distance is so high.
     // This is potentially violated if bounds are anything besides (0, 1).
@@ -46,23 +47,17 @@ public:
     double closest_point_distance = 1e9;
     double closest_point_distance_squared = 1e18;
 
-    root_.Nearest_(&closest_point,
-                   &closest_point_distance,
-                   &closest_point_distance_squared,
-                   test_point,
-                   0,
-                   lb_,
-                   ub_);
+    root_.Nearest_(&closest_point, &closest_point_distance, &closest_point_distance_squared,
+                   test_point, 0, lb_, ub_);
 
     return closest_point;
   }
-  std::vector<Tagged<Point> > Near(const Point &test_point,
-                                   const double radius) const {
+  std::vector<Tagged<Point>> Near(const Point &test_point, const double radius) const {
     std::vector<Tagged<Point>> close_points;
 
     typename Node<Point>::SearchParams search_params;
     search_params.radius = radius;
-    search_params.radius_squared = radius*radius;
+    search_params.radius_squared = radius * radius;
     search_params.test_point = test_point;
 
     search_params.bounding_box_lb = test_point;
@@ -83,9 +78,10 @@ public:
     // TODO(greg): this might be wrong
     return static_cast<double>(num_nodes_);
   }
-private:
+
+ private:
   Node<Point> root_;
 
 };  // struct Fast
 
-} // namespace rrts::tree
+}  // namespace rrts::tree

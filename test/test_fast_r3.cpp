@@ -1,4 +1,4 @@
-#include <chrono>              // for operator""s, chrono_literals
+#include <chrono>  // for operator""s, chrono_literals
 #include <iostream>
 #include <random>
 #include <set>
@@ -22,10 +22,8 @@ static inline Point Sample(std::mt19937_64 &rng_engine,
   return Point{x, y, z};
 }
 
-void TestNearest(const tree::Naive<Point, 3> &naive_tree,
-                 const tree::Fast<Point, 3> &fast_tree,
-                 const Point &test_point,
-                 std::chrono::duration<double> &naive_time,
+void TestNearest(const tree::Naive<Point, 3> &naive_tree, const tree::Fast<Point, 3> &fast_tree,
+                 const Point &test_point, std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
   Tagged<Point> naive_nearest = naive_tree.Nearest(test_point);
@@ -37,23 +35,26 @@ void TestNearest(const tree::Naive<Point, 3> &naive_tree,
   fast_time += t2 - t1;
 
   if (fast_nearest.index != naive_nearest.index) {
-    std::cerr << "naive tree nearest index (" << naive_nearest.index << ") != fast tree nearest index (" << fast_nearest.index << ")" << std::endl;
-    fprintf(stderr, "test  point: % 7.3f % 7.3f % 7.3f\n", test_point.x, test_point.y, test_point.z);
-    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.point.x, fast_nearest.point.y, fast_nearest.point.z, test_point.DistanceSquared(fast_nearest.point));
-    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.point.x, naive_nearest.point.y, naive_nearest.point.z, test_point.DistanceSquared(naive_nearest.point));
-    std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality() << std::endl;
+    std::cerr << "naive tree nearest index (" << naive_nearest.index
+              << ") != fast tree nearest index (" << fast_nearest.index << ")" << std::endl;
+    fprintf(stderr, "test  point: % 7.3f % 7.3f % 7.3f\n", test_point.x, test_point.y,
+            test_point.z);
+    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.point.x,
+            fast_nearest.point.y, fast_nearest.point.z,
+            test_point.DistanceSquared(fast_nearest.point));
+    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.point.x,
+            naive_nearest.point.y, naive_nearest.point.z,
+            test_point.DistanceSquared(naive_nearest.point));
+    std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality()
+              << std::endl;
     fast_tree.Draw();
     exit(EXIT_FAILURE);
   }
 }
 
-
-void TestNear(const tree::Naive<Point, 3> &naive_tree,
-              const tree::Fast<Point, 3> &fast_tree,
-              const Point &test_point,
-              const double radius,
-              std::chrono::duration<double> &naive_time,
-              std::chrono::duration<double> &fast_time) {
+void TestNear(const tree::Naive<Point, 3> &naive_tree, const tree::Fast<Point, 3> &fast_tree,
+              const Point &test_point, const double radius,
+              std::chrono::duration<double> &naive_time, std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
   const std::vector<Tagged<Point> > naive_near_points = naive_tree.Near(test_point, radius);
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -103,7 +104,7 @@ int main() {
   const double zeta_d = VolumeOfNBall(3, 1.0);
   const double d = 3;
   const double mu_Xfree = (ub[0] - lb[0]) * (ub[1] - lb[1]) * (ub[2] - lb[2]);
-  const double gamma_rrts = pow(2 * (1 + 1 / d), 1/d) * pow(mu_Xfree / zeta_d, 1 / d);
+  const double gamma_rrts = pow(2 * (1 + 1 / d), 1 / d) * pow(mu_Xfree / zeta_d, 1 / d);
 
   std::chrono::duration<double> fast_insert_time{};
   std::chrono::duration<double> naive_insert_time{};
@@ -114,7 +115,7 @@ int main() {
   std::chrono::duration<double> fast_near_time{};
   std::chrono::duration<double> naive_near_time{};
 
-  for (size_t count=0; count<50000; count++) {
+  for (size_t count = 0; count < 50000; count++) {
     const Tagged<Point> p = {count, Sample(rng_engine, uniform_distribution, lb, ub)};
 
     // insert a new point
@@ -134,22 +135,19 @@ int main() {
     TestNearest(naive_tree, fast_tree, test_point, naive_nearest_time, fast_nearest_time);
 
     // do a near search
-    //const double radius = pow(100 * volume / fast_tree.Cardinality(), 1/3);
+    // const double radius = pow(100 * volume / fast_tree.Cardinality(), 1/3);
     const double cardV = naive_tree.Cardinality();
-    const double radius = gamma_rrts * pow(log(cardV) / cardV, 1/d);
+    const double radius = gamma_rrts * pow(log(cardV) / cardV, 1 / d);
 
     TestNear(naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time);
   }
 
   double n = naive_tree.Cardinality();
   fprintf(stderr, "        |   naive    |    fast\n");
-  fprintf(stderr, "insert  | %7.3f us | %7.3f us\n",
-          1e6*naive_insert_time.count()/n,
-          1e6*fast_insert_time.count()/n);
-  fprintf(stderr, "nearest | %7.3f us | %7.3f us\n",
-          1e6*naive_nearest_time.count()/n,
-          1e6*fast_nearest_time.count()/n);
-  fprintf(stderr, "near    | %7.3f us | %7.3f us\n",
-          1e6*naive_near_time.count()/n,
-          1e6*fast_near_time.count()/n);
+  fprintf(stderr, "insert  | %7.3f us | %7.3f us\n", 1e6 * naive_insert_time.count() / n,
+          1e6 * fast_insert_time.count() / n);
+  fprintf(stderr, "nearest | %7.3f us | %7.3f us\n", 1e6 * naive_nearest_time.count() / n,
+          1e6 * fast_nearest_time.count() / n);
+  fprintf(stderr, "near    | %7.3f us | %7.3f us\n", 1e6 * naive_near_time.count() / n,
+          1e6 * fast_near_time.count() / n);
 }

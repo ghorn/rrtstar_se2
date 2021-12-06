@@ -1,23 +1,22 @@
 #include <bits/exception.h>  // for exception
 #include <sys/types.h>       // for key_t, uint
 
-#include <algorithm>           // for copy, max
-#include <chrono>              // for operator""s, chrono_literals
-#include <cstdio>              // for fprintf, stderr
-#include <cstdlib>             // for EXIT_SUCCESS
-#include <functional>          // for function
-#include <iostream>            // for operator<<, basic_ostream, cerr, endl, ostream, cha...
-#include <mutex>               // for mutex, lock_guard
-#include <optional>            // for optional, nullopt
-#include <queue>               // for queue
+#include <algorithm>   // for copy, max
+#include <chrono>      // for operator""s, chrono_literals
+#include <cstdio>      // for fprintf, stderr
+#include <cstdlib>     // for EXIT_SUCCESS
+#include <functional>  // for function
+#include <iostream>    // for operator<<, basic_ostream, cerr, endl, ostream, cha...
+#include <mutex>       // for mutex, lock_guard
+#include <optional>    // for optional, nullopt
+#include <queue>       // for queue
 #include <sstream>
-#include <thread>              // for sleep_for, thread
-#include <vector>              // for vector
+#include <thread>  // for sleep_for, thread
+#include <vector>  // for vector
 
-#include "bb3d/opengl_context.hpp"    // for Window
+#include "bb3d/opengl_context.hpp"  // for Window
 #include "bb3d/shader/colorlines.hpp"
 #include "bb3d/shader/lines.hpp"
-
 #include "src/rrt_star.hpp"
 #include "src/space/r3.hpp"
 #include "src/tree/fast.hpp"
@@ -26,14 +25,19 @@
 using Line = rrts::space::r3::Line;
 using Point = rrts::space::r3::Point;
 using Sphere = rrts::space::r3::Sphere;
-//using Tree = rrts::tree::Naive<Point, 3>;  // comment in for testing Fast tree
+// using Tree = rrts::tree::Naive<Point, 3>;  // comment in for testing Fast tree
 using Tree = rrts::tree::Fast<Point, 3>;
 using Space = rrts::space::r3::R3;
 
 struct Problem {
-  Problem(const Point &lb, const Point &ub, const Sphere &goal_region, const std::vector<Sphere>& obstacles)
-    : lb_(lb), ub_(ub), goal_region_(goal_region), obstacles_(obstacles),
-      r3_space_(lb, ub, obstacles), search_(x_init, lb, ub, r3_space_, 0.55) {};
+  Problem(const Point &lb, const Point &ub, const Sphere &goal_region,
+          const std::vector<Sphere> &obstacles)
+      : lb_(lb),
+        ub_(ub),
+        goal_region_(goal_region),
+        obstacles_(obstacles),
+        r3_space_(lb, ub, obstacles),
+        search_(x_init, lb, ub, r3_space_, 0.55){};
   Point x_init = {0, 0, 0};
   Point lb_;
   Point ub_;
@@ -45,10 +49,10 @@ struct Problem {
   void Describe() {
     fprintf(stderr, "lb: % 7.2f % 7.2f % 7.2f\n", lb_.x, lb_.y, lb_.z);
     fprintf(stderr, "ub: % 7.2f % 7.2f % 7.2f\n", ub_.x, ub_.y, ub_.z);
-    int k=0;
+    int k = 0;
     for (const Sphere &s : obstacles_) {
-      fprintf(stderr, "obstacle %d: radius %7.2f, center % 7.2f % 7.2f % 7.2f\n",
-              k, s.radius, s.center.x, s.center.y, s.center.z);
+      fprintf(stderr, "obstacle %d: radius %7.2f, center % 7.2f % 7.2f % 7.2f\n", k, s.radius,
+              s.center.x, s.center.y, s.center.z);
       k++;
     }
   }
@@ -58,16 +62,16 @@ struct Problem {
     const glm::vec4 goal_color = {0, 1, 1, 1};
     std::vector<std::vector<bb3d::ColoredVec3> > sphere_axes;
 
-    std::function<void(const Sphere&, const glm::vec4&)> push_sphere =
-      [&sphere_axes](const Sphere &sphere, glm::vec4 color) {
-        glm::vec3 dx = {sphere.radius, 0, 0};
-        glm::vec3 dy = {0, sphere.radius, 0};
-        glm::vec3 dz = {0, 0, sphere.radius};
-        const glm::vec3 &center = sphere.center;
-        sphere_axes.push_back({{{center + dx, color}, {center - dx, color}}});
-        sphere_axes.push_back({{{center + dy, color}, {center - dy, color}}});
-        sphere_axes.push_back({{{center + dz, color}, {center - dz, color}}});
-      };
+    std::function<void(const Sphere &, const glm::vec4 &)> push_sphere =
+        [&sphere_axes](const Sphere &sphere, glm::vec4 color) {
+          glm::vec3 dx = {sphere.radius, 0, 0};
+          glm::vec3 dy = {0, sphere.radius, 0};
+          glm::vec3 dz = {0, 0, sphere.radius};
+          const glm::vec3 &center = sphere.center;
+          sphere_axes.push_back({{{center + dx, color}, {center - dx, color}}});
+          sphere_axes.push_back({{{center + dy, color}, {center - dy, color}}});
+          sphere_axes.push_back({{{center + dz, color}, {center - dz, color}}});
+        };
 
     for (const Sphere &sphere : obstacles_) {
       push_sphere(sphere, obstacle_color);
@@ -78,32 +82,20 @@ struct Problem {
 
   void UpdateBoundingBoxLines(bb3d::Lines &bounding_box_lines) const {
     std::vector<std::vector<glm::vec3> > bb_lines;
-    bb_lines.push_back({{lb_.x, lb_.y, lb_.z},
-                        {ub_.x, lb_.y, lb_.z}});
-    bb_lines.push_back({{lb_.x, lb_.y, ub_.z},
-                        {ub_.x, lb_.y, ub_.z}});
-    bb_lines.push_back({{lb_.x, ub_.y, lb_.z},
-                        {ub_.x, ub_.y, lb_.z}});
-    bb_lines.push_back({{lb_.x, ub_.y, ub_.z},
-                        {ub_.x, ub_.y, ub_.z}});
+    bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {ub_.x, lb_.y, lb_.z}});
+    bb_lines.push_back({{lb_.x, lb_.y, ub_.z}, {ub_.x, lb_.y, ub_.z}});
+    bb_lines.push_back({{lb_.x, ub_.y, lb_.z}, {ub_.x, ub_.y, lb_.z}});
+    bb_lines.push_back({{lb_.x, ub_.y, ub_.z}, {ub_.x, ub_.y, ub_.z}});
 
-    bb_lines.push_back({{lb_.x, lb_.y, lb_.z},
-                        {lb_.x, ub_.y, lb_.z}});
-    bb_lines.push_back({{lb_.x, lb_.y, ub_.z},
-                        {lb_.x, ub_.y, ub_.z}});
-    bb_lines.push_back({{ub_.x, lb_.y, lb_.z},
-                        {ub_.x, ub_.y, lb_.z}});
-    bb_lines.push_back({{ub_.x, lb_.y, ub_.z},
-                        {ub_.x, ub_.y, ub_.z}});
+    bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {lb_.x, ub_.y, lb_.z}});
+    bb_lines.push_back({{lb_.x, lb_.y, ub_.z}, {lb_.x, ub_.y, ub_.z}});
+    bb_lines.push_back({{ub_.x, lb_.y, lb_.z}, {ub_.x, ub_.y, lb_.z}});
+    bb_lines.push_back({{ub_.x, lb_.y, ub_.z}, {ub_.x, ub_.y, ub_.z}});
 
-    bb_lines.push_back({{lb_.x, lb_.y, lb_.z},
-                        {lb_.x, lb_.y, ub_.z}});
-    bb_lines.push_back({{lb_.x, ub_.y, lb_.z},
-                        {lb_.x, ub_.y, ub_.z}});
-    bb_lines.push_back({{ub_.x, lb_.y, lb_.z},
-                        {ub_.x, lb_.y, ub_.z}});
-    bb_lines.push_back({{ub_.x, ub_.y, lb_.z},
-                        {ub_.x, ub_.y, ub_.z}});
+    bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {lb_.x, lb_.y, ub_.z}});
+    bb_lines.push_back({{lb_.x, ub_.y, lb_.z}, {lb_.x, ub_.y, ub_.z}});
+    bb_lines.push_back({{ub_.x, lb_.y, lb_.z}, {ub_.x, lb_.y, ub_.z}});
+    bb_lines.push_back({{ub_.x, ub_.y, lb_.z}, {ub_.x, ub_.y, ub_.z}});
     bounding_box_lines.Update(bb_lines);
   }
 
@@ -119,7 +111,7 @@ struct Problem {
     // Draw all bridges
     std::vector<std::vector<bb3d::ColoredVec3> > bridges;
     size_t node_index = 1;
-    for (const rrts::Edge<Point, Line> &edge: edges) {
+    for (const rrts::Edge<Point, Line> &edge : edges) {
       bb3d::ColoredVec3 cv0{};
       bb3d::ColoredVec3 cv1{};
       cv0.position = static_cast<glm::dvec3>(edge.bridge_.p0);
@@ -170,7 +162,8 @@ struct Problem {
         rrts::Edge<Point, Line> edge = edges.at(head - 1);
         glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
         p.z -= 0.05F;
-        //std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << " " << std::endl;
+        // std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z << "
+        // " << std::endl;
         winning_route.push_back(p);
         head = edge.parent_index_;
 
@@ -190,23 +183,22 @@ struct Problem {
 
     return -1;
   }
-
 };
 
 static Problem RandomProblem(std::mt19937_64 &rng_engine) {
   std::uniform_real_distribution<double> uniform_distribution;
-  std::function<double(void)> uniform = [&uniform_distribution, &rng_engine](){
+  std::function<double(void)> uniform = [&uniform_distribution, &rng_engine]() {
     return uniform_distribution(rng_engine);
   };
-  std::function<Point(void)> uniform_p = [&uniform](){
+  std::function<Point(void)> uniform_p = [&uniform]() {
     return Point{uniform(), uniform(), uniform()};
   };
 
-  const double dx = 3 + 2*uniform();
-  const double dy = 3 + 2*uniform();
-  const double dz = 3 + 2*uniform();
-  const Point lb = { 0, -dy/2, -dz/2};
-  const Point ub = {dx,  dy/2,  dz/2};
+  const double dx = 3 + 2 * uniform();
+  const double dy = 3 + 2 * uniform();
+  const double dz = 3 + 2 * uniform();
+  const Point lb = {0, -dy / 2, -dz / 2};
+  const Point ub = {dx, dy / 2, dz / 2};
 
   const Point goal = {ub[0], dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
   const double goal_radius = 0.5;
@@ -214,8 +206,9 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
 
   // obstacles
   const int max_num_obstacles = 10;
-  const size_t n = static_cast<size_t>(std::uniform_int_distribution<>(1, max_num_obstacles + 1)(rng_engine));
-  const double total_volume = dx*dy*dz;
+  const size_t n =
+      static_cast<size_t>(std::uniform_int_distribution<>(1, max_num_obstacles + 1)(rng_engine));
+  const double total_volume = dx * dy * dz;
   const double obstacle_fraction = 0.6;
   // upper bound (no overlap)
   const double volume_per_obstacle = total_volume * obstacle_fraction / static_cast<double>(n);
@@ -225,7 +218,7 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
     const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
     const Point p = {dx * uniform(), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
     const bool avoids_goal = sqrt(p.DistanceSquared(goal)) > obstacle_radius + goal_radius;
-    const bool avoids_start = sqrt(p.DistanceSquared(Point(0,0,0))) > obstacle_radius + 0.5;
+    const bool avoids_start = sqrt(p.DistanceSquared(Point(0, 0, 0))) > obstacle_radius + 0.5;
     if (avoids_goal && avoids_start) {
       Sphere obstacle = {p, obstacle_radius};
       obstacles.push_back(obstacle);
@@ -235,7 +228,7 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
   return Problem(lb, ub, goal_region, obstacles);
 }
 
-//static void UpdatePoints(bb3d::Lines &lines,
+// static void UpdatePoints(bb3d::Lines &lines,
 //                         const std::vector<Tagged<Point> > &tagged_points) {
 //  std::vector<glm::vec3> points;
 //  for (const Tagged<Point> &x: tagged_points) {
@@ -273,7 +266,9 @@ int run_it(char *argv0) {
 
   std::mutex search_mutex;
   double min_cost_to_go = -1;
-  std::function<void()> update_visualization = [&window, &problem, &bridge_lines, &goal_line, &points, &search_mutex, &min_cost_to_go, &sphere_lines, &bounding_box_lines]() {
+  std::function<void()> update_visualization = [&window, &problem, &bridge_lines, &goal_line,
+                                                &points, &search_mutex, &min_cost_to_go,
+                                                &sphere_lines, &bounding_box_lines]() {
     const std::lock_guard<std::mutex> lock(search_mutex);
 
     static float azimuth_deg = 0.f;
@@ -282,69 +277,70 @@ int run_it(char *argv0) {
       azimuth_deg -= 360.f;
     }
     window.SetCameraAzimuthDeg(azimuth_deg);
-    window.SetCameraFocus(0.5*(problem.lb_ + problem.ub_));
+    window.SetCameraFocus(0.5 * (problem.lb_ + problem.ub_));
 
     const std::vector<double> cost_to_go = problem.search_.ComputeCostsToGo();
     problem.UpdateBridgeLines(bridge_lines, cost_to_go);
     min_cost_to_go = problem.UpdateGoalLine(goal_line, cost_to_go);
-    //UpdatePoints(points, search.tree_.points_);
+    // UpdatePoints(points, search.tree_.points_);
 
     problem.UpdateSphereLines(sphere_lines);
     problem.UpdateBoundingBoxLines(bounding_box_lines);
   };
 
   std::function<void(const glm::mat4 &, const glm::mat4 &)> draw_visualization =
-    [&sphere_lines, &bridge_lines, &bounding_box_lines, &goal_line, &points, &window, &textbox, &search_mutex, &min_cost_to_go, &problem](
-        const glm::mat4 &view, const glm::mat4 &proj) {
-      glm::vec4 point_color = {1, 1, 1, 0.3};
-      glm::vec4 bb_color = {1, 1, 1, 0.5};
-      glm::vec4 goal_color = {1, 1, 1, 1};
-      sphere_lines.Draw(view, proj, GL_LINES);
-      bridge_lines.Draw(view, proj, GL_LINES);
-      goal_line.Draw(view, proj, goal_color, GL_LINE_STRIP);
-      points.Draw(view, proj, point_color, GL_POINTS);
-      bounding_box_lines.Draw(view, proj, bb_color, GL_LINES);
+      [&sphere_lines, &bridge_lines, &bounding_box_lines, &goal_line, &points, &window, &textbox,
+       &search_mutex, &min_cost_to_go, &problem](const glm::mat4 &view, const glm::mat4 &proj) {
+        glm::vec4 point_color = {1, 1, 1, 0.3};
+        glm::vec4 bb_color = {1, 1, 1, 0.5};
+        glm::vec4 goal_color = {1, 1, 1, 1};
+        sphere_lines.Draw(view, proj, GL_LINES);
+        bridge_lines.Draw(view, proj, GL_LINES);
+        goal_line.Draw(view, proj, goal_color, GL_LINE_STRIP);
+        points.Draw(view, proj, point_color, GL_POINTS);
+        bounding_box_lines.Draw(view, proj, bb_color, GL_LINES);
 
-      // some text
-      std::stringstream message;
-      {
-        const std::lock_guard<std::mutex> lock(search_mutex);
-        message << problem.search_.Cardinality() << " nodes in tree";
-        if (min_cost_to_go > 0) {
-          message << " optimal distance is " << min_cost_to_go;
-        }
-      }
-      window.RenderText(textbox, message.str(), 25.0F, 25.0F, glm::vec3(1, 1, 1));
-    };
-
-  // it's theadn' time
-  std::thread thread_object([&pause, &search_mutex, &problem, &rng_engine, &sphere_lines, &bounding_box_lines]() {
-    using namespace std::chrono_literals;
-    for (;;) {
-      int count = 0;
-      while (count<20000) {
-        if (!pause) {
+        // some text
+        std::stringstream message;
+        {
           const std::lock_guard<std::mutex> lock(search_mutex);
-          for (int yolo=0; yolo<100; yolo++) {
-            if (problem.search_.Step() == rrts::StepResult::kSuccess) {
-              count++;
-            }
+          message << problem.search_.Cardinality() << " nodes in tree";
+          if (min_cost_to_go > 0) {
+            message << " optimal distance is " << min_cost_to_go;
           }
         }
-        std::this_thread::sleep_for(1us);
-      }
+        window.RenderText(textbox, message.str(), 25.0F, 25.0F, glm::vec3(1, 1, 1));
+      };
 
-      // sleep
-      std::this_thread::sleep_for(500ms);
+  // it's theadn' time
+  std::thread thread_object(
+      [&pause, &search_mutex, &problem, &rng_engine, &sphere_lines, &bounding_box_lines]() {
+        using namespace std::chrono_literals;
+        for (;;) {
+          int count = 0;
+          while (count < 20000) {
+            if (!pause) {
+              const std::lock_guard<std::mutex> lock(search_mutex);
+              for (int yolo = 0; yolo < 100; yolo++) {
+                if (problem.search_.Step() == rrts::StepResult::kSuccess) {
+                  count++;
+                }
+              }
+            }
+            std::this_thread::sleep_for(1us);
+          }
 
-      // reset the problem to a new random one
-      {
-        const std::lock_guard<std::mutex> lock(search_mutex);
-        problem = RandomProblem(rng_engine);
-      }
-    }
-    std::cerr << "finished" << std::endl;
-  });
+          // sleep
+          std::this_thread::sleep_for(500ms);
+
+          // reset the problem to a new random one
+          {
+            const std::lock_guard<std::mutex> lock(search_mutex);
+            problem = RandomProblem(rng_engine);
+          }
+        }
+        std::cerr << "finished" << std::endl;
+      });
 
   window.Run(handle_keypress, update_visualization, draw_visualization);
 
