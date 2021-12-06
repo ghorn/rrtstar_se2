@@ -389,4 +389,4 @@ private:
   std::variant<Empty, Leaf, Split> value_;
 
 };
-} // namespace rrts
+} // namespace rrts::tree

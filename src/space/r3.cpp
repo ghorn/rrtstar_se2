@@ -96,4 +96,4 @@ namespace rrts::space::r3 {
       }
       return true;
     }
-}
+}  // namespace rrts::space::r3

@@ -29,4 +29,4 @@ namespace rrts::space {
     std::uniform_real_distribution<double> uniform_distribution;
   };
 
-}  // namespace rrts
+}  // namespace rrts::space

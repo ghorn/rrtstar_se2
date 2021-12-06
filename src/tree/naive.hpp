@@ -52,4 +52,4 @@ namespace rrts::tree {
       std::vector<Tagged<Point> > points_;
     };
 
-  }  // namespace rrts
+}  // namespace rrts::tree

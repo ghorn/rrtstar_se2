@@ -125,4 +125,4 @@ namespace rrts {
       return StepResult::kSuccess;
     }
   };
-}
+}  // namespace rrts

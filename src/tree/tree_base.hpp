@@ -16,4 +16,4 @@ namespace rrts::tree {
       [[nodiscard]] virtual double Cardinality() const = 0;
     };
 
-  } // namespace rrts
+  } // namespace rrts::tree
