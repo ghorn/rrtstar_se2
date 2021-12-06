@@ -8,7 +8,7 @@
 namespace rrts::space {
 
 
-  template <typename Point, typename Line>
+  template <typename Point, typename Bridge>
   class SpaceBase {
   public:
     virtual ~SpaceBase() = default;
@@ -19,9 +19,9 @@ namespace rrts::space {
     [[nodiscard]] virtual double mu_Xfree() const = 0;
 
     // bridges
-    virtual bool CollisionFree(const Line&) const = 0;
-    virtual double BridgeCost(const Line &line) const = 0;
-    virtual Line FormBridge(const Point &v0, const Point &v1) const = 0;
+    virtual bool CollisionFree(const Bridge&) const = 0;
+    virtual double BridgeCost(const Bridge &bridge) const = 0;
+    virtual Bridge FormBridge(const Point &v0, const Point &v1) const = 0;
   };
 
 }  // namespace rrts::space
