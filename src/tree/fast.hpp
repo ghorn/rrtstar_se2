@@ -19,8 +19,6 @@ template <typename Point>
 struct Fast : public TreeBase<Point> {
   Fast(Point lb, Point ub) : num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {};
 
-  int64_t num_nodes_;
-
   void Draw() const {root_.Draw("");}
   void Insert(const Tagged<Point> &new_point) {
     //std::cerr << "inserting point " << new_point.index << std::endl;
@@ -28,9 +26,12 @@ struct Fast : public TreeBase<Point> {
     root_.InsertPoint_(new_point, 0, lb_, ub_);
   }
 
+private:
+  int64_t num_nodes_;
   Point lb_;
   Point ub_;
 
+public:
   Tagged<Point> Nearest(const Point &test_point) const {
     // Test point will be overwritten because closest point distance is so high.
     // This is potentially violated if bounds are anything besides (0, 1).
@@ -80,4 +81,4 @@ private:
 
 };  // struct Fast
 
-} // namespace rrts
+} // namespace rrts::tree
