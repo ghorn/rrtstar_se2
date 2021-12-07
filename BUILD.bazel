@@ -40,6 +40,7 @@ cc_library(
     srcs = [
         "src/space/r3.cpp",
         "src/space/se2.cpp",
+        "src/space/dubins/dubins.cpp",
     ],
     hdrs = [
         "src/rrt_star.hpp",
@@ -52,6 +53,7 @@ cc_library(
         "src/space/n_ball.hpp",
         "src/space/r3.hpp",
         "src/space/se2.hpp",
+        "src/space/dubins/dubins.hpp",
     ],
     linkopts = ["-lpthread"],
     copts = cxx_opts,
