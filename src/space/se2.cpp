@@ -50,7 +50,7 @@ Se2Coord Se2::SampleFree() {
   //}
 }
 
-double Se2::mu_Xfree() const {
+double Se2::MuXfree() const {
   const double dx = ub_.x - lb_.x;
   const double dy = ub_.y - lb_.y;
   const double dz = ub_.z - lb_.z;

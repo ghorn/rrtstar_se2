@@ -43,7 +43,7 @@ class Se2 : public SpaceBase<Se2Coord, DubinsPath, 3> {
   Se2(Se2Coord lb, Se2Coord ub) : lb_(lb), ub_(ub){};
   ~Se2() override = default;
 
-  [[nodiscard]] double mu_Xfree() const override;
+  [[nodiscard]] double MuXfree() const override;
   Se2Coord SampleFree() override;
   [[nodiscard]] Se2Coord Steer(const Se2Coord &v0, const Se2Coord &v1, double eta) const override;
 

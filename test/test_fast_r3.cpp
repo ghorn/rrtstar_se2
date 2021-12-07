@@ -95,7 +95,7 @@ void TestNear(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_tree
   }
 }
 
-void run() {
+void Run() {
   const Point lb = {-2, -3, -0.3};
   const Point ub = {1, 1.1, 0.6};
 
@@ -108,8 +108,8 @@ void run() {
 
   const double zeta_d = VolumeOfNBall(3, 1.0);
   const double d = 3;
-  const double mu_Xfree = (ub[0] - lb[0]) * (ub[1] - lb[1]) * (ub[2] - lb[2]);
-  const double gamma_rrts = pow(2 * (1 + 1 / d), 1 / d) * pow(mu_Xfree / zeta_d, 1 / d);
+  const double mu_xfree = (ub[0] - lb[0]) * (ub[1] - lb[1]) * (ub[2] - lb[2]);
+  const double gamma_rrts = pow(2 * (1 + 1 / d), 1 / d) * pow(mu_xfree / zeta_d, 1 / d);
 
   std::chrono::duration<double> fast_insert_time{};
   std::chrono::duration<double> naive_insert_time{};
@@ -142,8 +142,8 @@ void run() {
 
     // do a near search
     // const double radius = pow(100 * volume / fast_tree.Cardinality(), 1/3);
-    const double cardV = naive_tree.Cardinality();
-    const double radius = gamma_rrts * pow(log(cardV) / cardV, 1 / d);
+    const double card_v = naive_tree.Cardinality();
+    const double radius = gamma_rrts * pow(log(card_v) / card_v, 1 / d);
 
     TestNear(naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time);
   }
@@ -160,7 +160,7 @@ void run() {
 
 int main() {
   try {
-    run();
+    Run();
     return EXIT_SUCCESS;
   } catch (const std::exception &e) {
     std::cerr << e.what();

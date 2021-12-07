@@ -16,7 +16,7 @@ class SpaceBase {
   virtual Point SampleFree() = 0;
   virtual Point Steer(const Point &, const Point &, double eta) const = 0;
 
-  [[nodiscard]] virtual double mu_Xfree() const = 0;
+  [[nodiscard]] virtual double MuXfree() const = 0;
 
   // bridges
   virtual bool CollisionFree(const Bridge &) const = 0;

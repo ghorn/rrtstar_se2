@@ -12,7 +12,7 @@ using Sphere = rrts::space::r3::Sphere;
 using Tree = rrts::tree::Fast<Point, 3>;
 using Space = rrts::space::r3::R3;
 
-int run_it() {
+int RunIt() {
   Point lb = {0, -2, -1};
   Point ub = {5, 2, 1};
   Point x_init{0.01, 0, 0};
@@ -34,7 +34,7 @@ int run_it() {
 
 int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused))) {
   try {
-    return run_it();
+    return RunIt();
   } catch (const std::exception &e) {
     std::cerr << e.what();
   }

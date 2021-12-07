@@ -15,12 +15,12 @@ namespace rrts::tree {
 
 // helper type for the visitor
 template <class... Ts>
-struct overloaded : Ts... {  // NOLINT(fuchsia-trailing-return)
+struct Overloaded : Ts... {  // NOLINT(fuchsia-trailing-return)
   using Ts::operator()...;
 };
 // explicit deduction guide (not needed as of C++20)
 template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;  // NOLINT(fuchsia-trailing-return)
+Overloaded(Ts...) -> Overloaded<Ts...>;  // NOLINT(fuchsia-trailing-return)
 
 //    lb0             ub0
 //     |---------------|
@@ -88,8 +88,8 @@ struct Node {
       if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
         Point left_branch_ub = tree_ub;
         left_branch_ub[axis] = tree_axis_mid;
-        left_->Nearest_(closest_point, closest_point_distance, closest_point_distance_squared,
-                        test_point, NextAxis(axis), tree_lb, left_branch_ub);
+        left_->Nearest(closest_point, closest_point_distance, closest_point_distance_squared,
+                       test_point, NextAxis(axis), tree_lb, left_branch_ub);
       }
     }
     void SearchNearestRight(Tagged<Point> *const closest_point,
@@ -105,8 +105,8 @@ struct Node {
       if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
         Point right_branch_lb = tree_lb;
         right_branch_lb[axis] = tree_axis_mid;
-        right_->Nearest_(closest_point, closest_point_distance, closest_point_distance_squared,
-                         test_point, NextAxis(axis), right_branch_lb, tree_ub);
+        right_->Nearest(closest_point, closest_point_distance, closest_point_distance_squared,
+                        test_point, NextAxis(axis), right_branch_lb, tree_ub);
       }
     }
   };  // struct Split
@@ -137,8 +137,8 @@ struct Node {
   // Node &operator=(Split &&s) { value_ = std::move(s); return *this; };
 
   // Insert a new point into the node.
-  void InsertPoint_(const Tagged<Point> new_point, const int32_t axis, const Point tree_lb,
-                    const Point tree_ub) {
+  void InsertPoint(const Tagged<Point> new_point, const int32_t axis, const Point tree_lb,
+                   const Point tree_ub) {
     assert(tree_lb.x <= new_point.point.x);
     assert(tree_lb.y <= new_point.point.y);
     assert(tree_lb.z <= new_point.point.z);
@@ -147,7 +147,7 @@ struct Node {
     assert(new_point.point.z <= tree_ub.z);
 
     std::visit(
-        overloaded{
+        Overloaded{
             // Inserting a point in Empty promotes it to Leaf.
             [this, new_point](const Empty /*unused*/) {
               // std::cerr << "Empty turning to Leaf " << new_point.index << std::endl;
@@ -185,7 +185,7 @@ struct Node {
                 Node left = Node(Leaf(leaf.point_));
                 Point left_branch_ub = tree_ub;
                 left_branch_ub[axis] = mid;  // split axis in half
-                left.InsertPoint_(new_point, NextAxis(axis), tree_lb, left_branch_ub);
+                left.InsertPoint(new_point, NextAxis(axis), tree_lb, left_branch_ub);
                 value_ = Split{std::move(left), Empty{}};
                 // Draw("");
                 return;
@@ -196,7 +196,7 @@ struct Node {
                 Node right = Node(Leaf(leaf.point_));
                 Point right_branch_lb = tree_lb;
                 right_branch_lb[axis] = mid;  // split axis in half
-                right.InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
+                right.InsertPoint(new_point, NextAxis(axis), right_branch_lb, tree_ub);
                 value_ = Split{Empty{}, std::move(right)};
                 // Draw("");
                 return;
@@ -213,13 +213,13 @@ struct Node {
                 // new point left
                 Point left_branch_ub = tree_ub;
                 left_branch_ub[axis] = mid;  // split axis in half
-                split.left_->InsertPoint_(new_point, NextAxis(axis), tree_lb, left_branch_ub);
+                split.left_->InsertPoint(new_point, NextAxis(axis), tree_lb, left_branch_ub);
                 return;
               }
               // new point right
               Point right_branch_lb = tree_lb;
               right_branch_lb[axis] = mid;  // split axis in half
-              split.right_->InsertPoint_(new_point, NextAxis(axis), right_branch_lb, tree_ub);
+              split.right_->InsertPoint(new_point, NextAxis(axis), right_branch_lb, tree_ub);
             }},
         value_);
   }
@@ -231,10 +231,10 @@ struct Node {
     Point bounding_box_lb{};
     Point bounding_box_ub{};
   };
-  void Near_(std::vector<Tagged<Point>> *const close_points, const SearchParams &params,
-             const int32_t axis, const Point tree_lb, const Point tree_ub) const {
+  void Near(std::vector<Tagged<Point>> *const close_points, const SearchParams &params,
+            const int32_t axis, const Point tree_lb, const Point tree_ub) const {
     std::visit(
-        overloaded{
+        Overloaded{
             // There are no close points inside an empty node.
             [](const Empty /*unused*/) {},
             // If we're at a leaf, it's worth testing.
@@ -276,22 +276,22 @@ struct Node {
               if (should_search_left) {
                 Point left_branch_ub = tree_ub;
                 left_branch_ub[axis] = tree_axis_mid;
-                split.left_->Near_(close_points, params, NextAxis(axis), tree_lb, left_branch_ub);
+                split.left_->Near(close_points, params, NextAxis(axis), tree_lb, left_branch_ub);
               }
               if (should_search_right) {
                 Point right_branch_lb = tree_lb;
                 right_branch_lb[axis] = tree_axis_mid;
-                split.right_->Near_(close_points, params, NextAxis(axis), right_branch_lb, tree_ub);
+                split.right_->Near(close_points, params, NextAxis(axis), right_branch_lb, tree_ub);
               }
             }},
         value_);
   }
 
-  void Nearest_(Tagged<Point> *const closest_point, double *const closest_point_distance,
-                double *const closest_point_distance_squared, const Point test_point,
-                const int32_t axis, const Point tree_lb, const Point tree_ub) const {
+  void Nearest(Tagged<Point> *const closest_point, double *const closest_point_distance,
+               double *const closest_point_distance_squared, const Point test_point,
+               const int32_t axis, const Point tree_lb, const Point tree_ub) const {
     std::visit(
-        overloaded{
+        Overloaded{
             // There are no close points inside an empty node.
             [](const Empty /*unused*/) { return; },
             // If we're at a leaf, it's worth testing.
@@ -339,7 +339,7 @@ struct Node {
 
   void Draw(const std::string &prefix) const {
     std::visit(
-        overloaded{// There are no close points inside an empty node.
+        Overloaded{// There are no close points inside an empty node.
                    [&prefix](const Empty /*unused*/) { std::cerr << prefix + " x" << std::endl; },
                    // If we're at a leaf, it's worth testing.
                    [&prefix](const Leaf leaf) {
@@ -354,10 +354,10 @@ struct Node {
         value_);
   }
 
-  static const int32_t tree_dimension_ = 3;  // TODO(greg): don't hardcode!!!
+  static const int32_t kTreeDimension = 3;  // TODO(greg): don't hardcode!!!
   static int32_t NextAxis(int32_t axis) {
     int32_t next_axis = axis + 1;
-    if (next_axis >= tree_dimension_) {
+    if (next_axis >= kTreeDimension) {
       next_axis = 0;
     }
     return next_axis;

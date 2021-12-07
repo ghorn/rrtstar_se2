@@ -40,7 +40,7 @@ class R3 : public SpaceBase<Point, Line, 3> {
       : lb_(lb), ub_(ub), sphere_obstacles_(std::move(sphere_obstacles)){};
   ~R3() override = default;
 
-  [[nodiscard]] double mu_Xfree() const override;
+  [[nodiscard]] double MuXfree() const override;
   Point SampleFree() override;
   [[nodiscard]] Point Steer(const Point &v0, const Point &v1, double eta) const override;
 

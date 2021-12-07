@@ -30,7 +30,7 @@ struct Fast : public TreeBase<Point, D> {
   void Insert(const Tagged<Point> &new_point) {
     // std::cerr << "inserting point " << new_point.index << std::endl;
     num_nodes_++;
-    root_.InsertPoint_(new_point, 0, lb_, ub_);
+    root_.InsertPoint(new_point, 0, lb_, ub_);
   }
 
  private:
@@ -46,8 +46,8 @@ struct Fast : public TreeBase<Point, D> {
     double closest_point_distance = 1e9;
     double closest_point_distance_squared = 1e18;
 
-    root_.Nearest_(&closest_point, &closest_point_distance, &closest_point_distance_squared,
-                   test_point, 0, lb_, ub_);
+    root_.Nearest(&closest_point, &closest_point_distance, &closest_point_distance_squared,
+                  test_point, 0, lb_, ub_);
 
     return closest_point;
   }
@@ -69,7 +69,7 @@ struct Fast : public TreeBase<Point, D> {
     search_params.bounding_box_ub.y += radius;
     search_params.bounding_box_ub.z += radius;
 
-    root_.Near_(&close_points, search_params, 0, lb_, ub_);
+    root_.Near(&close_points, search_params, 0, lb_, ub_);
     return close_points;
   }
 

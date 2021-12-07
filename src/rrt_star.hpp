@@ -44,12 +44,12 @@ class Search {
   Space space_;
 
   // zeta_d is volume of the unit ball in d dimensions.
-  static constexpr double zeta_d = VolumeOfNBall(D, 1.0);
+  static constexpr double kZetaD = VolumeOfNBall(D, 1.0);
   // The proof says gamma_rrtstar should be strictly greater than this number.
   // I set it equal because mu_Xfree is conservatively large.
   // TODO(greg): study if increasing it further helps
-  static constexpr double d = static_cast<double>(D);
-  double gamma_rrts = pow(2 * (1 + 1 / d), 1 / d) * pow(space_.mu_Xfree() / zeta_d, 1 / d);
+  static constexpr double kD = static_cast<double>(D);
+  double gamma_rrts_ = pow(2 * (1 + 1 / kD), 1 / kD) * pow(space_.MuXfree() / kZetaD, 1 / kD);
 
   double eta_;
 
@@ -111,9 +111,9 @@ class Search {
     }
 
     // L7 from paper
-    const double cardV = tree_.Cardinality();
-    const double radius = fmin(gamma_rrts * pow(log(cardV) / cardV, 1 / d), eta_);
-    std::vector<Tagged<Point> > X_near = tree_.Near(x_new, radius);
+    const double card_v = tree_.Cardinality();
+    const double radius = fmin(gamma_rrts_ * pow(log(card_v) / card_v, 1 / kD), eta_);
+    std::vector<Tagged<Point> > x_nears = tree_.Near(x_new, radius);
 
     // ************** Add new node to graph. ****************
     // L8 from paper
@@ -128,7 +128,7 @@ class Search {
     double c_min = CostToGo(x_min.index) + space_.BridgeCost(b_min);
 
     // L10-12 in paper
-    for (const Tagged<Point> x_near : X_near) {
+    for (const Tagged<Point> x_near : x_nears) {
       Bridge near_to_new_bridge = space_.FormBridge(x_near.point, x_new);
       double c = CostToGo(x_near.index) + space_.BridgeCost(near_to_new_bridge);
       if (space_.CollisionFree(near_to_new_bridge) && c < c_min) {
@@ -147,7 +147,7 @@ class Search {
 
     // ******* Rewire tree: see if any near node is better off going to new node. ******
     // L14-16 in paper
-    for (const Tagged<Point> x_near : X_near) {
+    for (const Tagged<Point> x_near : x_nears) {
       if (x_near.index != 0) {  // don't rewire root node, it has no parents
         Bridge new_to_near_bridge = space_.FormBridge(x_new, x_near.point);
         const double c = c_min + space_.BridgeCost(new_to_near_bridge);

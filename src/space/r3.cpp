@@ -28,7 +28,7 @@ Point R3::SampleFree() {
   }
 }
 
-double R3::mu_Xfree() const {
+double R3::MuXfree() const {
   const double dx = ub_.x - lb_.x;
   const double dy = ub_.y - lb_.y;
   const double dz = ub_.z - lb_.z;
@@ -83,13 +83,13 @@ bool R3::CollisionFree(const Line &line) const {
   const glm::dvec3 &gx0 = line.p0;
   const glm::dvec3 &gx1 = line.p1;
   for (const Sphere &s : sphere_obstacles_) {
-    glm::dvec3 intersectPos1;
-    glm::dvec3 intersectNormal1;
-    glm::dvec3 intersectPos2;
-    glm::dvec3 intersectNormal2;
+    glm::dvec3 intersect_pos1;
+    glm::dvec3 intersect_normal1;
+    glm::dvec3 intersect_pos2;
+    glm::dvec3 intersect_normal2;
     bool intersect =
-        glm::intersectLineSphere<glm::dvec3>(gx0, gx1, s.center, s.radius, intersectPos1,
-                                             intersectNormal1, intersectPos2, intersectNormal2);
+        glm::intersectLineSphere<glm::dvec3>(gx0, gx1, s.center, s.radius, intersect_pos1,
+                                             intersect_normal1, intersect_pos2, intersect_normal2);
     if (intersect) {
       return false;
     }
