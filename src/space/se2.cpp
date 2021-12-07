@@ -5,10 +5,11 @@
 #include <glm/gtx/norm.hpp>
 
 namespace rrts::space::se2 {
+
 // Same as computing x - y but guaranteed to be in [-pi, pi].
 double AngleDifference(double x, double y) {
   const double diff = x - y;
-  double correction;
+  double correction{};
   if (diff <= -M_PI) {
     correction = M_PI;
   } else {
@@ -17,7 +18,9 @@ double AngleDifference(double x, double y) {
 
   const double wrapped_difference = fmod(diff + M_PI, 2 * M_PI) + correction;
 
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
   assert(wrapped_difference <= M_PI);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
   assert(wrapped_difference >= -M_PI);
 
   return wrapped_difference;

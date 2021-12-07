@@ -239,7 +239,7 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
 //}
 
 int run_it(char *argv0) {
-  std::mt19937_64 rng_engine;
+  std::mt19937_64 rng_engine;  // NOLINT
   Problem problem = RandomProblem(rng_engine);
 
   problem.Describe();
@@ -349,7 +349,7 @@ int run_it(char *argv0) {
 
 int main(int argc __attribute__((unused)), char *argv[]) {
   try {
-    run_it(argv[0]);
+    run_it(argv[0]);  // NOLINT
   } catch (const std::exception &e) {
     std::cerr << e.what();
   }

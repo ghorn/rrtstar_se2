@@ -21,8 +21,7 @@ struct Fast : public TreeBase<Point, D> {
       : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {
     for (bool p : periodic) {
       if (p) {
-        std::cerr << "ERROR: Fast tree doesn't yet support periodicity." << std::endl;
-        std::exit(EXIT_FAILURE);
+        throw std::runtime_error("ERROR: Fast tree doesn't yet support periodicity.");
       }
     }
   };

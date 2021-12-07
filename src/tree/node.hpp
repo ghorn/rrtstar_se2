@@ -15,12 +15,12 @@ namespace rrts::tree {
 
 // helper type for the visitor
 template <class... Ts>
-struct overloaded : Ts... {
+struct overloaded : Ts... {  // NOLINT(fuchsia-trailing-return)
   using Ts::operator()...;
 };
 // explicit deduction guide (not needed as of C++20)
 template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
+overloaded(Ts...) -> overloaded<Ts...>;  // NOLINT(fuchsia-trailing-return)
 
 //    lb0             ub0
 //     |---------------|
@@ -117,15 +117,15 @@ struct Node {
   explicit Node(const Empty &e) : value_{e} {}
   explicit Node(const Leaf &l) : value_{l} {}
   explicit Node(Split &&s) : value_{std::move(s)} {}
-  Node &operator=(const Empty &e) {
+  Node &operator=(const Empty &e) {  // NOLINT(fuchsia-overloaded-operator)
     value_ = e;
     return *this;
   };
-  Node &operator=(const Leaf &l) {
+  Node &operator=(const Leaf &l) {  // NOLINT(fuchsia-overloaded-operator)
     value_ = l;
     return *this;
   };
-  Node &operator=(Split &&s) {
+  Node &operator=(Split &&s) {  // NOLINT(fuchsia-overloaded-operator)
     value_ = std::move(s);
     return *this;
   };

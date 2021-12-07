@@ -7,6 +7,7 @@
 
 namespace rrts::space {
 
+// NOLINTNEXTLINE
 TEST(AngleDifference, Identities) {
   EXPECT_EQ(se2::AngleDifference(M_PI, 0), -M_PI);
   EXPECT_EQ(se2::AngleDifference(-M_PI, 0), M_PI);
@@ -14,6 +15,7 @@ TEST(AngleDifference, Identities) {
   EXPECT_EQ(se2::AngleDifference(0, -M_PI), -M_PI);
 }
 
+// NOLINTNEXTLINE
 TEST(AngleDifference, half_pi) {
   EXPECT_EQ(se2::AngleDifference(1.5 * M_PI, M_PI), 1.5707963267948966);
   EXPECT_EQ(se2::AngleDifference(3.5 * M_PI, M_PI), 1.5707963267948966);

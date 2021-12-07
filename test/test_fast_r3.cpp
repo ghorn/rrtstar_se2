@@ -8,8 +8,13 @@
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
 
-using namespace rrts;
-using Point = space::r3::Point;
+using Point = rrts::space::r3::Point;
+template <typename P, size_t D>
+using Naive = rrts::tree::Naive<P, D>;
+template <typename P, size_t D>
+using Fast = rrts::tree::Fast<P, D>;
+template <typename P>
+using Tagged = rrts::Tagged<P>;
 
 using namespace std::chrono_literals;
 
@@ -22,7 +27,7 @@ static inline Point Sample(std::mt19937_64 &rng_engine,
   return Point{x, y, z};
 }
 
-void TestNearest(const tree::Naive<Point, 3> &naive_tree, const tree::Fast<Point, 3> &fast_tree,
+void TestNearest(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_tree,
                  const Point &test_point, std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
@@ -48,11 +53,11 @@ void TestNearest(const tree::Naive<Point, 3> &naive_tree, const tree::Fast<Point
     std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality()
               << std::endl;
     fast_tree.Draw();
-    exit(EXIT_FAILURE);
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
   }
 }
 
-void TestNear(const tree::Naive<Point, 3> &naive_tree, const tree::Fast<Point, 3> &fast_tree,
+void TestNear(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_tree,
               const Point &test_point, const double radius,
               std::chrono::duration<double> &naive_time, std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
@@ -86,19 +91,19 @@ void TestNear(const tree::Naive<Point, 3> &naive_tree, const tree::Fast<Point, 3
     }
   }
   if (fail) {
-    exit(EXIT_FAILURE);
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
   }
 }
 
-int main() {
+void run() {
   const Point lb = {-2, -3, -0.3};
   const Point ub = {1, 1.1, 0.6};
 
   std::array<bool, 3> periodic = {false, false, false};
-  tree::Naive<Point, 3> naive_tree(lb, ub, periodic);
-  tree::Fast<Point, 3> fast_tree(lb, ub, periodic);
+  Naive<Point, 3> naive_tree(lb, ub, periodic);
+  Fast<Point, 3> fast_tree(lb, ub, periodic);
 
-  std::mt19937_64 rng_engine;
+  std::mt19937_64 rng_engine;  // NOLINT(cert-msc32-c,cert-msc51-cpp)
   std::uniform_real_distribution<double> uniform_distribution;
 
   const double zeta_d = VolumeOfNBall(3, 1.0);
@@ -128,6 +133,7 @@ int main() {
     fast_insert_time += t2 - t1;
 
     // compare cardinality
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
     assert(naive_tree.Cardinality() == fast_tree.Cardinality());
 
     // do a nearest search
@@ -150,4 +156,14 @@ int main() {
           1e6 * fast_nearest_time.count() / n);
   fprintf(stderr, "near    | %7.3f us | %7.3f us\n", 1e6 * naive_near_time.count() / n,
           1e6 * fast_near_time.count() / n);
+}
+
+int main() {
+  try {
+    run();
+    return EXIT_SUCCESS;
+  } catch (const std::exception &e) {
+    std::cerr << e.what();
+    return EXIT_FAILURE;
+  }
 }

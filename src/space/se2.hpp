@@ -60,7 +60,7 @@ class Se2 : public SpaceBase<Se2Coord, DubinsPath, 3> {
   Se2Coord lb_;
   Se2Coord ub_;
   // std::vector<Sphere> sphere_obstacles_;
-  std::mt19937_64 rng_engine_{};
+  std::mt19937_64 rng_engine_{};  // NOLINT(cert-msc32-c,cert-msc51-cpp)
   std::uniform_real_distribution<double> uniform_distribution_{};
 };
 
