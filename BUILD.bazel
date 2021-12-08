@@ -1,5 +1,4 @@
-cxx_opts = [
-    "-std=c++17",
+common_opts = [
     "-Wall",
     "-Wextra",
     "-Werror",
@@ -26,14 +25,21 @@ cxx_opts = [
     "-Wlogical-op",
     "-Wmisleading-indentation",
     "-Wunused-but-set-parameter",
-    "-Wuseless-cast",
     "-Winit-self",
-    "-Wnon-virtual-dtor",
     #"-Wold-style-cast",
-    "-Woverloaded-virtual",
     "-fdiagnostics-color=always",
-    "-Weffc++",
 ]
+c_opts = [
+    "-std=gnu11",
+] + common_opts
+
+cxx_opts = [
+    "-Wuseless-cast",
+    "-Wnon-virtual-dtor",
+    "-Woverloaded-virtual",
+    "-Weffc++",
+    "-std=c++17",
+] + common_opts
 
 cc_library(
     name = "rrt_star",
@@ -41,6 +47,7 @@ cc_library(
         "src/space/r3.cpp",
         "src/space/se2.cpp",
         "src/space/dubins/dubins.cpp",
+        "src/assert.cpp",
     ],
     hdrs = [
         "src/rrt_star.hpp",
@@ -54,10 +61,10 @@ cc_library(
         "src/space/r3.hpp",
         "src/space/se2.hpp",
         "src/space/dubins/dubins.hpp",
+        "src/assert.hpp",
     ],
     linkopts = ["-lpthread"],
     copts = cxx_opts,
-    deps = [],
     visibility = ["//visibility:public"],
 )
 
@@ -65,6 +72,20 @@ cc_binary(
     name = "vis",
     srcs = [
         "vis.cpp",
+    ],
+    deps = [
+        ":rrt_star",
+        "@bb3d//:bb3d",
+    ],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
+)
+
+
+cc_binary(
+    name = "plot_dubins",
+    srcs = [
+        "plot_dubins.cpp",
     ],
     deps = [
         ":rrt_star",

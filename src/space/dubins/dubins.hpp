@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2008-2018, Andrew Walker
+ * Copyright (c)      2021, Greg Horn (heavily modified)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +24,18 @@
  */
 
 #include <array>
+#include <sstream>
+#include <string>
 
 enum class DubinsPathType { kLsl = 0, kLsr = 1, kRsl = 2, kRsr = 3, kRlr = 4, kLrl = 5 };
+
+// NOLINTNEXTLINE(fuchsia-overloaded-operator)
+std::ostream &operator<<(std::ostream &os, DubinsPathType path_type);
+
+enum class DubinsWordStatus {
+  kSuccess,
+  kNoPath, /* no connection between configurations with this word */
+};
 
 struct DubinsPath {
   /* the initial configuration */
@@ -35,23 +46,43 @@ struct DubinsPath {
   double rho;
   /* the path type described */
   DubinsPathType type;
+  /* total length */
+  double total_length;
+
+  std::string Describe() {
+    std::stringstream message;
+    message << "type: " << type << std::endl;
+    message << "qi: " << qi.at(0) << " " << qi.at(1) << " " << qi.at(2) << std::endl;
+    message << "lengths: " << param.at(0) << " " << param.at(1) << " " << param.at(2) << std::endl;
+    message << "rho: " << rho << std::endl;
+    return message.str();
+  }
 };
 
-#define EDUBOK (0)        /* No error */
-#define EDUBCOCONFIGS (1) /* Colocated configurations */
-#define EDUBPARAM (2)     /* Path parameterisitation error */
-#define EDUBBADRHO (3)    /* the rho value is invalid */
-#define EDUBNOPATH (4)    /* no connection between configurations with this word */
+enum class DubinsStatus {
+  kSuccess = 0,               /* No error */
+  kPathParameterizationError, /* Path parameterisitation error */
+                              //  kInvalidRho,                /* the rho value is invalid */
+  kNoPath,                    /* no connection between configurations with this word */
+};
 
-/**
- * Callback function for path sampling
- *
- * @note the q parameter is a configuration
- * @note the t parameter is the distance along the path
- * @note the user_data parameter is forwarded from the caller
- * @note return non-zero to denote sampling should be stopped
- */
-using DubinsPathSamplingCallback = int (*)(const std::array<double, 3>&, double, void*);
+struct DubinsIntermediateResults {
+  double alpha;
+  double beta;
+  double d;
+  double sa;
+  double sb;
+  double ca;
+  double cb;
+  double c_ab;
+  double d_sq;
+};
+
+DubinsWordStatus DubinsWord(const DubinsIntermediateResults &in, DubinsPathType pathType,
+                            std::array<double, 3> &out);
+DubinsIntermediateResults ComputeDubinsIntermediateResults(const std::array<double, 3> &q0,
+                                                           const std::array<double, 3> &q1,
+                                                           double rho);
 
 /**
  * Generate a path from an initial configuration to
@@ -68,8 +99,8 @@ using DubinsPathSamplingCallback = int (*)(const std::array<double, 3>&, double,
  * velocity)
  * @return      - non-zero on error
  */
-int DubinsShortestPath(DubinsPath* path, std::array<double, 3> q0, std::array<double, 3> q1,
-                       double rho);
+DubinsStatus DubinsShortestPath(DubinsPath &path, const std::array<double, 3> &q0,
+                                const std::array<double, 3> &q1, double rho);
 
 /**
  * Generate a path with a specified word from an initial configuration to
@@ -83,39 +114,9 @@ int DubinsShortestPath(DubinsPath* path, std::array<double, 3> q0, std::array<do
  * @param pathType - the specific path type to use
  * @return         - non-zero on error
  */
-int ComputeDubinsPath(DubinsPath* path, std::array<double, 3> q0, std::array<double, 3> q1,
-                      double rho, DubinsPathType pathType);
-
-/**
- * Calculate the length of an initialised path
- *
- * @param path - the path to find the length of
- */
-double DubinsPathLength(DubinsPath* path);
-
-/**
- * Return the length of a specific segment in an initialized path
- *
- * @param path - the path to find the length of
- * @param i    - the segment you to get the length of (0-2)
- */
-double DubinsSegmentLength(DubinsPath* path, int i);
-
-/**
- * Return the normalized length of a specific segment in an initialized path
- *
- * @param path - the path to find the length of
- * @param i    - the segment you to get the length of (0-2)
- */
-double DubinsSegmentLengthNormalized(DubinsPath* path, int i);
-
-/**
- * Extract an integer that represents which path type was used
- *
- * @param path    - an initialised path
- * @return        - one of LSL, LSR, RSL, RSR, RLR or LRL
- */
-DubinsPathType ComputeDubinsPathType(DubinsPath* path);
+DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const std::array<double, 3> &q0,
+                                   const std::array<double, 3> &q1, double rho,
+                                   DubinsPathType pathType);
 
 /**
  * Calculate the configuration along the path, using the parameter t
@@ -125,24 +126,7 @@ DubinsPathType ComputeDubinsPathType(DubinsPath* path);
  * @param q    - the configuration result
  * @returns    - non-zero if 't' is not in the correct range
  */
-int DubinsPathSample(DubinsPath* path, double t, std::array<double, 3> q);
-
-/**
- * Walk along the path at a fixed sampling interval, calling the
- * callback function at each interval
- *
- * The sampling process continues until the whole path is sampled, or the callback returns a
- * non-zero value
- *
- * @param path      - the path to sample
- * @param stepSize  - the distance along the path for subsequent samples
- * @param cb        - the callback function to call for each sample
- * @param user_data - optional information to pass on to the callback
- *
- * @returns - zero on successful completion, or the result of the callback
- */
-int DubinsPathSampleMany(DubinsPath* path, double stepSize, DubinsPathSamplingCallback cb,
-                         void* user_data);
+DubinsStatus DubinsPathSample(const DubinsPath &path, double t, std::array<double, 3> &q);
 
 /**
  * Convenience function to identify the endpoint of a path
@@ -150,13 +134,4 @@ int DubinsPathSampleMany(DubinsPath* path, double stepSize, DubinsPathSamplingCa
  * @param path - an initialised path
  * @param q    - the configuration result
  */
-int DubinsPathEndpoint(DubinsPath* path, std::array<double, 3> q);
-
-/**
- * Convenience function to extract a subset of a path
- *
- * @param path    - an initialised path
- * @param t       - a length measure, where 0 < t < dubins_path_length(path)
- * @param newpath - the resultant path
- */
-int DubinsExtractSubpath(DubinsPath* path, double t, DubinsPath* newpath);
+DubinsStatus DubinsPathEndpoint(const DubinsPath &path, std::array<double, 3> &q);
