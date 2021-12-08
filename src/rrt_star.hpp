@@ -29,8 +29,8 @@ enum class StepResult {
 template <class Point, class Bridge, int D, class Tree, class Space>
 class Search {
  public:
-  Search(Point x_init, Point lb, Point ub, Space space, double eta)
-      : tree_(lb, ub, space.Periodic()), space_(space), eta_(eta) {
+  Search(Point x_init, Space space, double eta)
+      : space_(space), tree_(space_.Lb(), space_.Ub(), space.Periodic()), eta_(eta) {
     tree_.Insert({0, x_init});
     children_map_.emplace_back(std::set<size_t>{});
   }
@@ -40,8 +40,8 @@ class Search {
   std::vector<Edge<Point, Bridge> > edges_{};
   std::vector<std::set<size_t> > children_map_{};
 
-  Tree tree_;
   Space space_;
+  Tree tree_;
 
   // zeta_d is volume of the unit ball in d dimensions.
   static constexpr double kZetaD = VolumeOfNBall(D, 1.0);

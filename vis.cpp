@@ -37,7 +37,7 @@ struct Problem {
         goal_region_(goal_region),
         obstacles_(obstacles),
         r3_space_(lb, ub, obstacles),
-        search_(x_init, lb, ub, r3_space_, 0.55){};
+        search_(x_init, r3_space_, 0.55){};
   Point x_init = {0, 0, 0};
   Point lb_;
   Point ub_;
@@ -259,8 +259,8 @@ int Run(char *argv0) {
   bool pause = false;
   std::function<void(key_t)> handle_keypress = [&window, &pause](key_t key) {
     if (key == 80) {
-      std::cout << "pausing" << std::endl;
       pause = !pause;
+      std::cout << "pausing " << pause << std::endl;
     };
   };
 

@@ -50,6 +50,9 @@ class R3 : public SpaceBase<Point, Line, 3> {
   [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
   [[nodiscard]] std::array<bool, 3> Periodic() const override { return {false, false, false}; }
 
+  const Point &Lb() const override { return lb_; };
+  const Point &Ub() const override { return ub_; };
+
  private:
   Point Sample();
   [[nodiscard]] bool PointInSpheres(const Point &p) const;

@@ -53,6 +53,9 @@ class Se2 : public SpaceBase<Se2Coord, DubinsPath, 3> {
   [[nodiscard]] DubinsPath FormBridge(const Se2Coord &v0, const Se2Coord &v1) const override;
   [[nodiscard]] std::array<bool, 3> Periodic() const override { return {false, false, true}; }
 
+  const Se2Coord &Lb() const override { return lb_; };
+  const Se2Coord &Ub() const override { return ub_; };
+
  private:
   Se2Coord Sample();
   //[[nodiscard]] bool PointInSpheres(const Se2Coord &p) const;
