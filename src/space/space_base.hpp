@@ -15,7 +15,7 @@ class Trajectory {
  public:
   virtual ~Trajectory() = default;
   // This should be memoized, it will get called quite a bit.
-  virtual double TrajectoryCost() const = 0;
+  [[nodiscard]] virtual double TrajectoryCost() const = 0;
 };
 
 using BoundingBoxIntervals = rrts::tree::BoundingBoxIntervals;

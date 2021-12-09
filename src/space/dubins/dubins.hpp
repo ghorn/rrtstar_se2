@@ -90,24 +90,24 @@ enum class DubinsStatus {
 
 class DubinsPath : public rrts::space::Trajectory<Se2Coord> {
  public:
-  DubinsPath() : qi_{}, qf_{}, normalized_segment_lengths_{}, rho_{}, type_{}, total_length_{} {};
+  DubinsPath() = default;
   DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho);
   ~DubinsPath() override = default;
   [[nodiscard]] double TrajectoryCost() const override { return TotalLength(); }
 
  private:
   /* the initial configuration */
-  Se2Coord qi_;
+  Se2Coord qi_{};
   /* the final configuration */
-  Se2Coord qf_;
+  Se2Coord qf_{};
   /* the lengths of the three segments */
-  std::array<double, 3> normalized_segment_lengths_;
+  std::array<double, 3> normalized_segment_lengths_{};
   /* model forward velocity / model angular velocity */
-  double rho_;
+  double rho_{};
   /* the path type described */
-  DubinsPathType type_;
+  DubinsPathType type_{};
   /* total length */
-  double total_length_;
+  double total_length_{};
 
  public:
   [[nodiscard]] const Se2Coord &Endpoint() const { return qf_; }

@@ -120,8 +120,7 @@ using DubinsStatus = rrts::dubins::DubinsStatus;
 //}
 
 struct SixPaths {
-  SixPaths(const Se2Coord &c0, const Se2Coord &c1, double rho)
-      : shortest_path{}, paths{}, path_valid{} {
+  SixPaths(const Se2Coord &c0, const Se2Coord &c1, double rho) {
     for (size_t k = 0; k < 6; k++) {
       auto path_type = static_cast<DubinsPathType>(k);
       DubinsWordStatus errcode = ComputeDubinsPath(paths[k], c0, c1, rho, path_type);
@@ -135,9 +134,9 @@ struct SixPaths {
     shortest_path = DubinsPath(c0, c1, rho);
   }
 
-  DubinsPath shortest_path;
-  std::array<DubinsPath, 6> paths;
-  std::array<bool, 6> path_valid;
+  DubinsPath shortest_path{};
+  std::array<DubinsPath, 6> paths{};
+  std::array<bool, 6> path_valid{};
 
   std::vector<std::vector<bb3d::ColoredVec3> > DrawPaths() {
     std::vector<std::vector<bb3d::ColoredVec3> > all_paths;

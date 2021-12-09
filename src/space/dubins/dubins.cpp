@@ -86,8 +86,7 @@ double Mod2pi(double theta) {
 }
 
 // shortest path
-DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho)
-    : qi_{}, qf_{}, normalized_segment_lengths_{}, rho_{}, type_{}, total_length_{} {
+DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho) {
   const DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
 
   qi_ = q0;

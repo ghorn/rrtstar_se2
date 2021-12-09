@@ -7,7 +7,7 @@ template <class P>
 class Tagged {
  public:
   Tagged(size_t index, const P& point) : index_(index), point_(point) {}
-  size_t Index() const { return index_; }
+  [[nodiscard]] size_t Index() const { return index_; }
   const P& Point() const { return point_; }
 
  private:
