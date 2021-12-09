@@ -94,24 +94,23 @@ DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho)
   qf_ = q1;
   rho_ = rho;
 
-  int best_word = -1;
   double best_cost = INFINITY;
-  for (int i = 0; i < 6; i++) {
-    auto path_type = static_cast<DubinsPathType>(i);
+  for (DubinsPathType path_type :
+       {DubinsPathType::kLsl, DubinsPathType::kLsr, DubinsPathType::kRsl, DubinsPathType::kRsr,
+        DubinsPathType::kRlr, DubinsPathType::kLrl}) {
     std::array<double, 3> normalized_segment_lengths{};
     DubinsWordStatus errcode = DubinsWord(in, path_type, normalized_segment_lengths);
     if (errcode == DubinsWordStatus::kSuccess) {
       const double cost = normalized_segment_lengths[0] + normalized_segment_lengths[1] +
                           normalized_segment_lengths[2];
       if (cost < best_cost) {
-        best_word = i;
         best_cost = cost;
         normalized_segment_lengths_ = normalized_segment_lengths;
         type_ = path_type;
       }
     }
   }
-  ASSERT_MSG(best_word != -1, "DubinsShortestPath: no path found");  // lets see
+  ASSERT_MSG(best_cost < (double)INFINITY, "DubinsShortestPath: no path found");  // lets see
 
   total_length_ = best_cost * rho;
 }
