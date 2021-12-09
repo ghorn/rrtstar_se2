@@ -71,7 +71,7 @@ cc_library(
 cc_binary(
     name = "r3_vis",
     srcs = [
-        "r3_vis.cpp",
+        "apps/r3_vis.cpp",
     ],
     deps = [
         ":rrt_star",
@@ -84,7 +84,7 @@ cc_binary(
 cc_binary(
     name = "se2_vis",
     srcs = [
-        "se2_vis.cpp",
+        "apps/se2_vis.cpp",
     ],
     deps = [
         ":rrt_star",
@@ -97,7 +97,7 @@ cc_binary(
 cc_binary(
     name = "plot_dubins",
     srcs = [
-        "plot_dubins.cpp",
+        "apps/plot_dubins.cpp",
     ],
     deps = [
         ":rrt_star",
@@ -110,7 +110,7 @@ cc_binary(
 cc_binary(
     name = "run_for_profiling",
     srcs = [
-        "run_for_profiling.cpp",
+        "apps/run_for_profiling.cpp",
     ],
     deps = [
         ":rrt_star",
