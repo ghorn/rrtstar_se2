@@ -123,25 +123,25 @@ struct Node {
   void InsertPoint(const Tagged<Point> new_point, const int32_t axis, const Point tree_lb,
                    const Point tree_ub) {
     for (int32_t k = 0; k < static_cast<int32_t>(D); k++) {
-      assert(tree_lb[k] <= new_point.point[k]);
-      assert(new_point.point[k] <= tree_ub[k]);
+      assert(tree_lb[k] <= new_point.Point()[k]);
+      assert(new_point.Point()[k] <= tree_ub[k]);
     }
 
     std::visit(
         Overloaded{
             // Inserting a point in Empty promotes it to Leaf.
             [this, new_point](const Empty /*unused*/) {
-              // std::cerr << "Empty turning to Leaf " << new_point.index << std::endl;
+              // std::cerr << "Empty turning to Leaf " << new_point.Index() << std::endl;
               // value_ = std::variant<Empty, Leaf, Split>(Leaf(new_point));
               value_ = Leaf(new_point);
             },
             // Point inserted into Leaf must turn into Split.
             [this, new_point, tree_lb, tree_ub, axis](const Leaf leaf) {
-              // std::cerr << "Leaf " << leaf.point_.index << " splitting." << std::endl;
+              // std::cerr << "Leaf " << leaf.point_.Index() << " splitting." << std::endl;
               const Tagged<Point> &old_point = leaf.point_;  // convenience/readability
               const double mid = 0.5 * (tree_lb[axis] + tree_ub[axis]);
-              const double new_coord = new_point.point[axis];
-              const double old_coord = old_point.point[axis];
+              const double new_coord = new_point.Point()[axis];
+              const double old_coord = old_point.Point()[axis];
               const bool new_point_left = new_coord <= mid;
               const bool old_point_left = old_coord <= mid;
               const bool new_point_right = !new_point_left;
@@ -188,7 +188,7 @@ struct Node {
             [this, new_point, axis, tree_lb, tree_ub](const Split &split) {
               // std::cerr << "Split splitting." << std::endl;
               const double mid = 0.5 * (tree_lb[axis] + tree_ub[axis]);
-              const double new_coord = new_point.point[axis];
+              const double new_coord = new_point.Point()[axis];
               const bool new_point_left = new_coord <= mid;
               if (new_point_left) {
                 // new point left
@@ -219,7 +219,7 @@ struct Node {
             [](const Empty /*unused*/) {},
             // If we're at a leaf, it's worth testing.
             [&params, close_points](const Leaf leaf) {
-              Bridge test_bridge = params.distance_function(leaf.point_.point);
+              Bridge test_bridge = params.distance_function(leaf.point_.Point());
               if (test_bridge.TrajectoryCost() <= params.radius) {
                 close_points->push_back(std::make_tuple(leaf.point_, test_bridge));
               }
@@ -278,7 +278,7 @@ struct Node {
             [](const Empty /*unused*/) { return; },
             // If we're at a leaf, it's worth testing.
             [&closest_point, &bbs, &distance_function, &compute_bbs](const Leaf leaf) {
-              const Bridge test_bridge = distance_function(leaf.point_.point);
+              const Bridge test_bridge = distance_function(leaf.point_.Point());
 
               // if we haven't hit a node yet, then this is automatically our closest node
               if (!closest_point) {
@@ -330,7 +330,7 @@ struct Node {
                    [&prefix](const Empty /*unused*/) { std::cerr << prefix + " x" << std::endl; },
                    // If we're at a leaf, it's worth testing.
                    [&prefix](const Leaf leaf) {
-                     std::cerr << prefix + " " << leaf.point_.index << std::endl;
+                     std::cerr << prefix + " " << leaf.point_.Index() << std::endl;
                    },
                    [&prefix](const Split &split) {
                      std::cerr << prefix << std::endl;

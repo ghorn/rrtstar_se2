@@ -19,13 +19,13 @@ class Naive : public TreeBase<Point, Bridge, D> {
     ASSERT(!points_.empty());
 
     Tagged<Point> nearest_point = points_.at(0);
-    Bridge bridge0 = compute_distance(nearest_point.point);
+    Bridge bridge0 = compute_distance(nearest_point.Point());
     double lowest_cost = bridge0.TrajectoryCost();
     std::tuple<Tagged<Point>, Bridge> nearest_point_and_bridge(nearest_point, bridge0);
 
     for (size_t k = 1; k < points_.size(); k++) {
       Tagged<Point> x = points_.at(k);
-      Bridge bridge = compute_distance(x.point);
+      Bridge bridge = compute_distance(x.Point());
       if (bridge.TrajectoryCost() < lowest_cost) {
         lowest_cost = bridge.TrajectoryCost();
         nearest_point_and_bridge = std::make_tuple(x, bridge);
@@ -41,7 +41,7 @@ class Naive : public TreeBase<Point, Bridge, D> {
       double radius) const {
     std::vector<std::tuple<Tagged<Point>, Bridge>> near_points;
     for (const Tagged<Point> &x : points_) {
-      Bridge bridge = compute_distance(x.point);
+      Bridge bridge = compute_distance(x.Point());
       if (bridge.TrajectoryCost() <= radius) {
         near_points.push_back(std::make_tuple(x, bridge));
       }

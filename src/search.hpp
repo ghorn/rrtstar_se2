@@ -32,7 +32,7 @@ class Search {
  public:
   Search(Point x_init, Space space, double eta)
       : space_(space), tree_(space_.Lb(), space_.Ub()), eta_(eta) {
-    tree_.Insert({0, x_init});
+    tree_.Insert(Tagged{0, x_init});
     children_map_.emplace_back(std::set<size_t>{});
   }
 

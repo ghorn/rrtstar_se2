@@ -54,17 +54,17 @@ void TestNearest(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3>
   naive_time += t1 - t0;
   fast_time += t2 - t1;
 
-  if (fast_nearest.index != naive_nearest.index) {
-    std::cerr << "naive tree nearest index (" << naive_nearest.index
-              << ") != fast tree nearest index (" << fast_nearest.index << ")" << std::endl;
+  if (fast_nearest.Index() != naive_nearest.Index()) {
+    std::cerr << "naive tree nearest index (" << naive_nearest.Index()
+              << ") != fast tree nearest index (" << fast_nearest.Index() << ")" << std::endl;
     fprintf(stderr, "test  point: % 7.3f % 7.3f % 7.3f\n", test_point.x, test_point.y,
             test_point.z);
-    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.point.x,
-            fast_nearest.point.y, fast_nearest.point.z,
-            glm::distance2(glm::dvec3(test_point), glm::dvec3(fast_nearest.point)));
-    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.point.x,
-            naive_nearest.point.y, naive_nearest.point.z,
-            glm::distance2(glm::dvec3(test_point), glm::dvec3(naive_nearest.point)));
+    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.Point().x,
+            fast_nearest.Point().y, fast_nearest.Point().z,
+            glm::distance2(glm::dvec3(test_point), glm::dvec3(fast_nearest.Point())));
+    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.Point().x,
+            naive_nearest.Point().y, naive_nearest.Point().z,
+            glm::distance2(glm::dvec3(test_point), glm::dvec3(naive_nearest.Point())));
     std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality()
               << std::endl;
     fast_tree.Draw();
@@ -90,10 +90,10 @@ void TestNear(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &n
   std::set<size_t> naive_near_point_set;
   std::set<size_t> fast_near_point_set;
   for (const std::tuple<Tagged<Point>, Bridge> &naive_near_point : naive_near_points) {
-    naive_near_point_set.insert(std::get<0>(naive_near_point).index);
+    naive_near_point_set.insert(std::get<0>(naive_near_point).Index());
   }
   for (const std::tuple<Tagged<Point>, Bridge> &fast_near_point : fast_near_points) {
-    fast_near_point_set.insert(std::get<0>(fast_near_point).index);
+    fast_near_point_set.insert(std::get<0>(fast_near_point).Index());
   }
 
   bool fail = false;
