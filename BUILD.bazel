@@ -133,7 +133,7 @@ cc_test(
     visibility = ["//visibility:public"],
 )
 
-cc_binary(
+cc_test(
     name = "test_angle_difference",
     srcs = [
         "test/test_angle_difference.cpp",
