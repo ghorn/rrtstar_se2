@@ -10,6 +10,14 @@
 
 namespace rrts::space {
 
+template <typename Point>
+class Trajectory {
+ public:
+  virtual ~Trajectory() = default;
+  // This should be memoized, it will get called quite a bit.
+  virtual double TrajectoryCost() const = 0;
+};
+
 using BoundingBoxIntervals = rrts::tree::BoundingBoxIntervals;
 
 template <typename Point, typename Bridge, size_t D>
@@ -18,7 +26,7 @@ class SpaceBase {
   virtual ~SpaceBase() = default;
 
   virtual Point SampleFree() = 0;
-  virtual Point Steer(const Point &, const Point &, double eta) const = 0;
+  virtual std::tuple<Point, Bridge> Steer(const Point &, const Point &, double eta) const = 0;
 
   [[nodiscard]] virtual double MuXfree() const = 0;
   [[nodiscard]] virtual const Point &Lb() const = 0;
@@ -26,7 +34,7 @@ class SpaceBase {
 
   // bridges
   virtual bool CollisionFree(const Bridge &) const = 0;
-  virtual double BridgeCost(const Bridge &bridge) const = 0;
+  // TODO(greg): should this be a convenience function? doesn't steer take its place?
   virtual Bridge FormBridge(const Point &v0, const Point &v1) const = 0;
 
   // efficient K-D tree searching

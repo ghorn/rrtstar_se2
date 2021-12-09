@@ -85,14 +85,14 @@ double Mod2pi(double theta) {
   return ret;
 }
 
-DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
-                                double rho) {
+// shortest path
+DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho)
+    : qi_{}, qf_{}, normalized_segment_lengths_{}, rho_{}, type_{}, total_length_{} {
   const DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
 
-  // DubinsPath path{};
-  path.qi_ = q0;
-  path.qf_ = q1;
-  path.rho_ = rho;
+  qi_ = q0;
+  qf_ = q1;
+  rho_ = rho;
 
   int best_word = -1;
   double best_cost = INFINITY;
@@ -106,17 +106,14 @@ DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2C
       if (cost < best_cost) {
         best_word = i;
         best_cost = cost;
-        path.normalized_segment_lengths_ = normalized_segment_lengths;
-        path.type_ = path_type;
+        normalized_segment_lengths_ = normalized_segment_lengths;
+        type_ = path_type;
       }
     }
   }
   ASSERT_MSG(best_word != -1, "DubinsShortestPath: no path found");  // lets see
-  if (best_word == -1) {
-    return DubinsStatus::kNoPath;
-  }
-  path.total_length_ = best_cost * path.rho_;
-  return DubinsStatus::kSuccess;
+
+  total_length_ = best_cost * rho;
 }
 
 DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,

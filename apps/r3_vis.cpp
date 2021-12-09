@@ -23,10 +23,11 @@
 #include "src/tree/naive.hpp"
 
 using Line = rrts::space::r3::Line;
+using Bridge = Line;
 using Point = rrts::space::r3::Point;
 using Sphere = rrts::space::r3::Sphere;
-// using Tree = rrts::tree::Naive<Point, 3>;  // comment in for testing Fast tree
-using Tree = rrts::tree::Fast<Point, 3>;
+// using Tree = rrts::tree::Naive<Point, Bridge, 3>;  // comment in for testing Fast tree
+using Tree = rrts::tree::Fast<Point, Bridge, 3>;
 using Space = rrts::space::r3::R3;
 
 struct Problem {

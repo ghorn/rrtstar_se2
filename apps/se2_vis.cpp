@@ -29,8 +29,8 @@ using Line = DubinsPath;
 using Se2Coord = rrts::space::se2::Se2Coord;
 using Point = rrts::space::se2::Se2Coord;
 using Sphere = rrts::space::se2::Sphere;
-//using Tree = rrts::tree::Naive<Point, 3>;  // comment in for testing Fast tree
-using Tree = rrts::tree::Fast<Point, 3>;
+// using Tree = rrts::tree::Naive<Point, Line, 3>;  // comment in for testing Fast tree
+using Tree = rrts::tree::Fast<Point, Line, 3>;
 using Space = rrts::space::se2::Se2;
 
 using DubinsStatus = rrts::dubins::DubinsStatus;

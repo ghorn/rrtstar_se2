@@ -50,24 +50,20 @@ double Se2::MuXfree() const {
 }
 
 DubinsPath Se2::FormBridge(const Se2Coord &v0, const Se2Coord &v1) const {
-  DubinsPath dubins_path{};
-  const DubinsStatus errcode = DubinsShortestPath(dubins_path, v0, v1, rho_);
-  ASSERT_MSG(errcode == DubinsStatus::kSuccess,
-             "FormBridge failed (" << static_cast<int>(errcode) << ")");
-
-  return dubins_path;
+  return DubinsPath(v0, v1, rho_);
 }
 
-Se2Coord Se2::Steer(const Se2Coord &v0, const Se2Coord &v1, double eta) const {
-  DubinsPath dubins_path = FormBridge(v0, v1);
-  const double dist = dubins_path.TotalLength();
+std::tuple<Se2Coord, DubinsPath> Se2::Steer(const Se2Coord &v0, const Se2Coord &v1,
+                                            double eta) const {
+  const DubinsPath dubins_path = FormBridge(v0, v1);
 
   // if distance is shorter than eta, then go all the way to the second point
-  if (dist <= eta) {
-    return v1;
+  if (dubins_path.TotalLength() <= eta) {
+    return std::make_tuple(v1, dubins_path);
   }
 
-  return dubins_path.Sample(eta);
+  const Se2Coord vret = dubins_path.Sample(eta);
+  return std::make_tuple(vret, FormBridge(v0, vret));
 }
 
 bool Se2::CollisionFree(const DubinsPath &path) const {

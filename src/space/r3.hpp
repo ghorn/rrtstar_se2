@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "src/space/space_base.hpp"
-#include "src/tree/node.hpp"  // BoundingBox
+//#include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::r3 {
 
@@ -25,7 +25,11 @@ struct Sphere {
   double radius;
 };
 
-struct Line {
+class Line : public Trajectory<Point> {
+ public:
+  ~Line() override = default;
+  [[nodiscard]] double TrajectoryCost() const override { return dist; }
+
   Point p0{};
   Point p1{};
   double dist{0};
@@ -39,16 +43,16 @@ class R3 : public SpaceBase<Point, Line, 3> {
 
   [[nodiscard]] double MuXfree() const override;
   Point SampleFree() override;
-  [[nodiscard]] Point Steer(const Point &v0, const Point &v1, double eta) const override;
+  [[nodiscard]] std::tuple<Point, Line> Steer(const Point &v0, const Point &v1,
+                                              double eta) const override;
 
   // bridges
   [[nodiscard]] bool CollisionFree(const Line &line) const override;
-  [[nodiscard]] double BridgeCost(const Line &line) const override { return line.dist; };
   [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
 
   // efficient search
   [[nodiscard]] std::array<BoundingBoxIntervals, 3> BoundingBox(const Point &p,
-                                                  double max_distance) const override;
+                                                                double max_distance) const override;
 
   [[nodiscard]] const Point &Lb() const override { return lb_; };
   [[nodiscard]] const Point &Ub() const override { return ub_; };

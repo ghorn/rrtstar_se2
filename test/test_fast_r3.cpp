@@ -16,15 +16,15 @@ using SpaceBase = rrts::space::SpaceBase<Point, Bridge, D>;
 template <typename P>
 using Tagged = rrts::Tagged<P>;
 
-template <typename P, size_t D>
-using Naive = rrts::tree::Naive<P, D>;
+using Bridge = rrts::space::r3::Line;
 
 template <typename P, size_t D>
-using Fast = rrts::tree::Fast<P, D>;
+using Naive = rrts::tree::Naive<P, Bridge, D>;
+
+template <typename P, size_t D>
+using Fast = rrts::tree::Fast<P, Bridge, D>;
 
 using Point = rrts::space::r3::Point;
-
-using Bridge = rrts::space::r3::Line;
 
 using namespace std::chrono_literals;
 
@@ -42,19 +42,13 @@ void TestNearest(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3>
                  std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
-  Tagged<Point> naive_nearest = naive_tree.Nearest(
-      [&test_point, &space](const Point &p) {
-        Bridge p_to_rand_bridge = space.FormBridge(p, test_point);
-        return space.BridgeCost(p_to_rand_bridge);
-      },
-      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); });
+  Tagged<Point> naive_nearest = std::get<0>(naive_tree.Nearest(
+      [&test_point, &space](const Point &p) { return space.FormBridge(p, test_point); },
+      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); }));
   auto t1 = std::chrono::high_resolution_clock::now();
-  Tagged<Point> fast_nearest = fast_tree.Nearest(
-      [&test_point, &space](const Point &p) {
-        Bridge p_to_rand_bridge = space.FormBridge(p, test_point);
-        return space.BridgeCost(p_to_rand_bridge);
-      },
-      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); });
+  Tagged<Point> fast_nearest = std::get<0>(fast_tree.Nearest(
+      [&test_point, &space](const Point &p) { return space.FormBridge(p, test_point); },
+      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); }));
   auto t2 = std::chrono::high_resolution_clock::now();
 
   naive_time += t1 - t0;
@@ -82,18 +76,12 @@ void TestNear(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &n
               const Fast<Point, 3> &fast_tree, const Point &test_point, const double radius,
               std::chrono::duration<double> &naive_time, std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
-  const std::vector<Tagged<Point> > naive_near_points = naive_tree.Near(
-      [&test_point, &space](const Point &p) {
-        Bridge p_to_test_point_bridge = space.FormBridge(p, test_point);
-        return space.BridgeCost(p_to_test_point_bridge);
-      },
+  const std::vector<std::tuple<Tagged<Point>, Bridge> > naive_near_points = naive_tree.Near(
+      [&test_point, &space](const Point &p) { return space.FormBridge(p, test_point); },
       space.BoundingBox(test_point, radius), radius);
   auto t1 = std::chrono::high_resolution_clock::now();
-  const std::vector<Tagged<Point> > fast_near_points = fast_tree.Near(
-      [&test_point, &space](const Point &p) {
-        Bridge p_to_test_point_bridge = space.FormBridge(p, test_point);
-        return space.BridgeCost(p_to_test_point_bridge);
-      },
+  const std::vector<std::tuple<Tagged<Point>, Bridge> > fast_near_points = fast_tree.Near(
+      [&test_point, &space](const Point &p) { return space.FormBridge(p, test_point); },
       space.BoundingBox(test_point, radius), radius);
   auto t2 = std::chrono::high_resolution_clock::now();
   naive_time += t1 - t0;
@@ -101,11 +89,11 @@ void TestNear(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &n
 
   std::set<size_t> naive_near_point_set;
   std::set<size_t> fast_near_point_set;
-  for (const Tagged<Point> &naive_near_point : naive_near_points) {
-    naive_near_point_set.insert(naive_near_point.index);
+  for (const std::tuple<Tagged<Point>, Bridge> &naive_near_point : naive_near_points) {
+    naive_near_point_set.insert(std::get<0>(naive_near_point).index);
   }
-  for (const Tagged<Point> &fast_near_point : fast_near_points) {
-    fast_near_point_set.insert(fast_near_point.index);
+  for (const std::tuple<Tagged<Point>, Bridge> &fast_near_point : fast_near_points) {
+    fast_near_point_set.insert(std::get<0>(fast_near_point).index);
   }
 
   bool fail = false;

@@ -50,7 +50,7 @@ Line R3::FormBridge(const Point &v0, const Point &v1) const {
   return line;
 }
 
-Point R3::Steer(const Point &v0, const Point &v1, double eta) const {
+std::tuple<Point, Line> R3::Steer(const Point &v0, const Point &v1, double eta) const {
   const double dx = v1.x - v0.x;
   const double dy = v1.y - v0.y;
   const double dz = v1.z - v0.z;
@@ -59,7 +59,7 @@ Point R3::Steer(const Point &v0, const Point &v1, double eta) const {
 
   // if distance is shorter than eta, then go all the way to the second point
   if (dist <= eta) {
-    return v1;
+    return std::make_tuple(v1, FormBridge(v0, v1));
   }
 
   // otherwise we have to shorten the distance to eta
@@ -75,7 +75,7 @@ Point R3::Steer(const Point &v0, const Point &v1, double eta) const {
   assert(std::isnormal(vret.z));  // NOLINT
 
   // fprintf(stderr, "%8.4f %8.4f %8.4f\n", vret.x, vret.y, vret.z);
-  return vret;
+  return std::make_tuple(vret, FormBridge(v0, vret));
 }
 
 bool R3::CollisionFree(const Line &line) const {

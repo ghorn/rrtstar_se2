@@ -65,7 +65,7 @@ class Search {
 
     while (index != 0) {
       const Edge<Point, Bridge> &edge = edges_.at(index - 1);
-      cost += space_.BridgeCost(edge.bridge_);
+      cost += edge.bridge_.TrajectoryCost();
       index = edge.parent_index_;
     }
 
@@ -83,7 +83,7 @@ class Search {
           for (const size_t child_index : children_map_.at(index)) {
             // for each child, update it's cost to go
             const Edge<Point, Bridge> &edge = edges_.at(child_index - 1);
-            double child_cost_to_go = parent_cost + space_.BridgeCost(edge.bridge_);
+            double child_cost_to_go = parent_cost + edge.bridge_.TrajectoryCost();
             costs_to_go.at(child_index) = child_cost_to_go;
             // for each child, update all of its children recursively
             compute_child_costs(child_index, child_cost_to_go);
@@ -102,18 +102,19 @@ class Search {
     // L4 from paper
     // const Tagged<Point> x_nearest = tree_.Nearest(x_rand);
     // TODO(greg): return bridge to avoid recomputing it
-    const Tagged<Point> x_nearest = tree_.Nearest(
-        [&x_rand, this](const Point &p) {
-          Bridge p_to_rand_bridge = space_.FormBridge(p, x_rand);
-          return space_.BridgeCost(p_to_rand_bridge);
-        },
+    const std::tuple<Tagged<Point>, Bridge> xb_nearest = tree_.Nearest(
+        [&x_rand, this](const Point &p) { return space_.FormBridge(p, x_rand); },
         [&x_rand, this](double distance) { return space_.BoundingBox(x_rand, distance); });
+    Tagged<Point> x_nearest = std::get<0>(xb_nearest);
 
     // L5 from paper
-    const Point x_new = space_.Steer(x_nearest.point, x_rand, eta_);
+    const std::tuple<Point, Bridge> xb_new =
+        space_.Steer(x_nearest.Point(), x_rand,
+                     eta_);  // TODO(greg): is this redundant with FormBridge in Nearest?
+    const Point &x_new = std::get<0>(xb_new);
+    const Bridge &nearest_to_new_bridge = std::get<1>(xb_new);
 
     // L6 from paper
-    Bridge nearest_to_new_bridge = space_.FormBridge(x_nearest.point, x_new);
     if (!space_.CollisionFree(nearest_to_new_bridge)) {
       return StepResult::kNotObstacleFree;
     }
@@ -121,18 +122,9 @@ class Search {
     // L7 from paper
     const double card_v = tree_.Cardinality();
     const double radius = fmin(gamma_rrts_ * pow(log(card_v) / card_v, 1 / kD), eta_);
-    // TODO(greg): return bridges to avoid recomputing them
-    std::vector<Tagged<Point> > x_nears = tree_.Near(
-        [&x_new, this](const Point &p) {
-          Bridge p_to_x_new_bridge = space_.FormBridge(p, x_new);
-          return space_.BridgeCost(p_to_x_new_bridge);
-        },
-        space_.BoundingBox(x_new, radius), radius);
-
-    // ASSERT(!x_nears.empty());
-    // if (x_nears.empty()) {
-    //  std::cerr << "empty X_nears" << std::endl;
-    //}
+    std::vector<std::tuple<Tagged<Point>, Bridge> > xb_nears =
+        tree_.Near([&x_new, this](const Point &p) { return space_.FormBridge(p, x_new); },
+                   space_.BoundingBox(x_new, radius), radius);
 
     // ************** Add new node to graph. ****************
     // L8 from paper
@@ -144,12 +136,13 @@ class Search {
     // L9 from paper
     Tagged<Point> x_min = x_nearest;
     Bridge b_min = nearest_to_new_bridge;
-    double c_min = CostToGo(x_min.index) + space_.BridgeCost(b_min);
+    double c_min = CostToGo(x_min.Index()) + b_min.TrajectoryCost();
 
     // L10-12 in paper
-    for (const Tagged<Point> x_near : x_nears) {
-      Bridge near_to_new_bridge = space_.FormBridge(x_near.point, x_new);
-      double c = CostToGo(x_near.index) + space_.BridgeCost(near_to_new_bridge);
+    for (const std::tuple<Tagged<Point>, Bridge> xb_near : xb_nears) {
+      Tagged<Point> x_near = std::get<0>(xb_near);
+      const Bridge &near_to_new_bridge = std::get<1>(xb_near);
+      double c = CostToGo(x_near.Index()) + near_to_new_bridge.TrajectoryCost();
       if (space_.CollisionFree(near_to_new_bridge) && c < c_min) {
         x_min = x_near;
         c_min = c;
@@ -159,25 +152,31 @@ class Search {
 
     // L13 in paper
     // Insert edge for new node.
-    Edge<Point, Bridge> new_edge(x_min.index, b_min);
+    Edge<Point, Bridge> new_edge(x_min.Index(), b_min);
     edges_.push_back(new_edge);
-    children_map_.emplace_back(std::set<size_t>{});   // new node initially has no children
-    children_map_.at(x_min.index).insert(new_index);  // new node is a child of x_min
+    children_map_.emplace_back(std::set<size_t>{});     // new node initially has no children
+    children_map_.at(x_min.Index()).insert(new_index);  // new node is a child of x_min
 
     // ******* Rewire tree: see if any near node is better off going to new node. ******
     // L14-16 in paper
-    for (const Tagged<Point> x_near : x_nears) {
-      if (x_near.index != 0) {  // don't rewire root node, it has no parents
-        Bridge new_to_near_bridge = space_.FormBridge(x_new, x_near.point);
-        const double c = c_min + space_.BridgeCost(new_to_near_bridge);
-        if (space_.CollisionFree(new_to_near_bridge) && c < CostToGo(x_near.index)) {
+    for (const std::tuple<Tagged<Point>, Bridge> xb_near : xb_nears) {
+      const Tagged<Point> &x_near = std::get<0>(xb_near);
+      if (x_near.Index() != 0 &&
+          x_near.Index() !=
+              x_min.Index()) {  // don't rewire root node, it has no parents, don't rewire z_min
+        Bridge new_to_near_bridge = space_.FormBridge(
+            x_new, x_near.Point());  // don't try to reuse the above bridge, it goes the wrong way.
+                                     // though in reversable cases like R3 and dubins it could
+                                     // simply be reversed instead of recomputed......
+        const double c = c_min + new_to_near_bridge.TrajectoryCost();
+        if (space_.CollisionFree(new_to_near_bridge) && c < CostToGo(x_near.Index())) {
           // Update parent map.
-          size_t old_parent_index = edges_.at(x_near.index - 1).parent_index_;
-          children_map_.at(old_parent_index).erase(x_near.index);
-          children_map_.at(new_index).insert(x_near.index);
+          size_t old_parent_index = edges_.at(x_near.Index() - 1).parent_index_;
+          children_map_.at(old_parent_index).erase(x_near.Index());
+          children_map_.at(new_index).insert(x_near.Index());
 
           // Update edge.
-          edges_.at(x_near.index - 1) = Edge<Point, Bridge>{new_index, new_to_near_bridge};
+          edges_.at(x_near.Index() - 1) = Edge<Point, Bridge>{new_index, new_to_near_bridge};
         }
       }
     }

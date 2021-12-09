@@ -132,10 +132,7 @@ struct SixPaths {
       }
     }
 
-    DubinsStatus ret = DubinsShortestPath(shortest_path, c0, c1, rho);
-    ASSERT(DubinsStatus::kSuccess == ret);
-
-    // std::cerr << shortest_path.Describe() << std::endl;
+    shortest_path = DubinsPath(c0, c1, rho);
   }
 
   DubinsPath shortest_path;
@@ -166,7 +163,7 @@ struct SixPaths {
 
  private:
   static std::vector<bb3d::ColoredVec3> DrawPath(const DubinsPath &path, const glm::vec4 &color,
-                                          double z) {
+                                                 double z) {
     std::vector<bb3d::ColoredVec3> line;
 
     for (int j = 0; j < 50; j++) {

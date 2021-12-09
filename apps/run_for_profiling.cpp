@@ -9,7 +9,7 @@
 using Line = rrts::space::r3::Line;
 using Point = rrts::space::r3::Point;
 using Sphere = rrts::space::r3::Sphere;
-using Tree = rrts::tree::Fast<Point, 3>;
+using Tree = rrts::tree::Fast<Point, Line, 3>;
 using Space = rrts::space::r3::R3;
 
 int RunIt() {

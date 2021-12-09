@@ -30,7 +30,6 @@ Overloaded(Ts...) -> Overloaded<Ts...>;  // NOLINT(fuchsia-trailing-return)
 //              |-------------|
 static inline bool IntervalIntersects(const double tree_lb, const double tree_ub,
                                       const BoundingBoxIntervals &bbs) {
-
   auto one_interval_intersects = [tree_lb, tree_ub](const BoundingBoxInterval &bb) {
     assert(tree_lb < tree_ub);  // NOLINT
     assert(bb.lb < bb.ub);      // NOLINT
@@ -47,7 +46,7 @@ struct Empty {
 
 // K-D tree with all points on leaves, not splits. Splits happen on half planes every time
 // so that the tree is approximately balanced if the space is sampled uniformly.
-template <typename Point, size_t D>
+template <typename Point, typename Bridge, size_t D>
 struct Node {
   // A single data point.
   struct Leaf {
@@ -68,39 +67,38 @@ struct Node {
     std::unique_ptr<Node> left_;
     std::unique_ptr<Node> right_;
 
-    void SearchNearestLeft(Tagged<Point> *const closest_point, double *const closest_point_distance,
-                           std::array<BoundingBoxIntervals, D> *const bbs, const int32_t axis,
+    void SearchNearestLeft(std::optional<std::tuple<Tagged<Point>, Bridge> > &closest_point,
+                           std::array<BoundingBoxIntervals, D> &bbs, const int32_t axis,
                            const Point &tree_lb, const Point &tree_ub,
-                           const DistanceFunction<Point> &distance_function,
-                           const BoundingBoxesFunction<Point, D> &compute_bbs) const {
+                           const DistanceFunction<Point, Bridge> &distance_function,
+                           const BoundingBoxesFunction<D> &compute_bbs) const {
       const double tree_axis_lb = tree_lb[axis];
       const double tree_axis_ub = tree_ub[axis];
       const double tree_axis_mid = 0.5 * (tree_axis_lb + tree_axis_ub);
 
-      const BoundingBoxIntervals &bb_axis = (*bbs)[static_cast<size_t>(axis)];
+      const BoundingBoxIntervals &bb_axis = bbs[static_cast<size_t>(axis)];
       if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis)) {
         Point left_branch_ub = tree_ub;
         left_branch_ub[axis] = tree_axis_mid;
-        left_->Nearest(closest_point, closest_point_distance, bbs, NextAxis(axis), tree_lb,
-                       left_branch_ub, distance_function, compute_bbs);
+        left_->Nearest(closest_point, bbs, NextAxis(axis), tree_lb, left_branch_ub,
+                       distance_function, compute_bbs);
       }
     }
-    void SearchNearestRight(Tagged<Point> *const closest_point,
-                            double *const closest_point_distance,
-                            std::array<BoundingBoxIntervals, D> *const bbs, const int32_t axis,
+    void SearchNearestRight(std::optional<std::tuple<Tagged<Point>, Bridge> > &closest_point,
+                            std::array<BoundingBoxIntervals, D> &bbs, const int32_t axis,
                             const Point &tree_lb, const Point &tree_ub,
-                            const DistanceFunction<Point> &distance_function,
-                            const BoundingBoxesFunction<Point, D> &compute_bbs) const {
+                            const DistanceFunction<Point, Bridge> &distance_function,
+                            const BoundingBoxesFunction<D> &compute_bbs) const {
       const double tree_axis_lb = tree_lb[axis];
       const double tree_axis_ub = tree_ub[axis];
       const double tree_axis_mid = 0.5 * (tree_axis_lb + tree_axis_ub);
 
-      const BoundingBoxIntervals &bb_axis = (*bbs)[static_cast<size_t>(axis)];
+      const BoundingBoxIntervals &bb_axis = bbs[static_cast<size_t>(axis)];
       if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis)) {
         Point right_branch_lb = tree_lb;
         right_branch_lb[axis] = tree_axis_mid;
-        right_->Nearest(closest_point, closest_point_distance, bbs, NextAxis(axis), right_branch_lb,
-                        tree_ub, distance_function, compute_bbs);
+        right_->Nearest(closest_point, bbs, NextAxis(axis), right_branch_lb, tree_ub,
+                        distance_function, compute_bbs);
       }
     }
   };  // struct Split
@@ -209,19 +207,21 @@ struct Node {
 
   struct SearchParams {
     double radius{0};
-    DistanceFunction<Point> distance_function{};
+    DistanceFunction<Point, Bridge> distance_function{};
     std::array<BoundingBoxIntervals, D> bounding_boxes{};
   };
-  void Near(std::vector<Tagged<Point>> *const close_points, const SearchParams &params,
-            const int32_t axis, const Point tree_lb, const Point tree_ub) const {
+  void Near(std::vector<std::tuple<Tagged<Point>, Bridge> > *const close_points,
+            const SearchParams &params, const int32_t axis, const Point tree_lb,
+            const Point tree_ub) const {
     std::visit(
         Overloaded{
             // There are no close points inside an empty node.
             [](const Empty /*unused*/) {},
             // If we're at a leaf, it's worth testing.
             [&params, close_points](const Leaf leaf) {
-              if (params.distance_function(leaf.point_.point) <= params.radius) {
-                close_points->push_back(leaf.point_);
+              Bridge test_bridge = params.distance_function(leaf.point_.point);
+              if (test_bridge.TrajectoryCost() <= params.radius) {
+                close_points->push_back(std::make_tuple(leaf.point_, test_bridge));
               }
             },
             // If we're at a Split, only test branches which intersect the sphere's bounding box.
@@ -268,23 +268,29 @@ struct Node {
         value_);
   }
 
-  void Nearest(Tagged<Point> *const closest_point, double *const closest_point_distance,
-               std::array<BoundingBoxIntervals, D> *const bbs, const int32_t axis,
-               const Point &tree_lb, const Point &tree_ub,
-               const DistanceFunction<Point> &distance_function,
-               const BoundingBoxesFunction<Point, D> &compute_bbs) const {
+  void Nearest(std::optional<std::tuple<Tagged<Point>, Bridge> > &closest_point,
+               std::array<BoundingBoxIntervals, D> &bbs, const int32_t axis, const Point &tree_lb,
+               const Point &tree_ub, const DistanceFunction<Point, Bridge> &distance_function,
+               const BoundingBoxesFunction<D> &compute_bbs) const {
     std::visit(
         Overloaded{
             // There are no close points inside an empty node.
             [](const Empty /*unused*/) { return; },
             // If we're at a leaf, it's worth testing.
-            [closest_point, closest_point_distance, bbs, &distance_function,
-             &compute_bbs](const Leaf leaf) {
-              const double test_distance = distance_function(leaf.point_.point);
-              if (test_distance < *closest_point_distance) {
-                *closest_point = leaf.point_;
-                *closest_point_distance = test_distance;
-                *bbs = compute_bbs(test_distance);
+            [&closest_point, &bbs, &distance_function, &compute_bbs](const Leaf leaf) {
+              const Bridge test_bridge = distance_function(leaf.point_.point);
+
+              // if we haven't hit a node yet, then this is automatically our closest node
+              if (!closest_point) {
+                closest_point = std::make_tuple(leaf.point_, test_bridge);
+                bbs = compute_bbs(test_bridge.TrajectoryCost());
+                return;
+              }
+
+              // if we already have a closest point, then we have to compare it
+              if (test_bridge.TrajectoryCost() < std::get<1>(*closest_point).TrajectoryCost()) {
+                closest_point = std::make_tuple(leaf.point_, test_bridge);
+                bbs = compute_bbs(test_bridge.TrajectoryCost());
               }
             },
             // If we're at a Split, only test branches which intersect the sphere's bounding box.
@@ -294,25 +300,25 @@ struct Node {
             //
             //                                       bb_lb                bb_ub
             // Bounding box:                           |----------------------|
-            [this, axis, &tree_lb, &tree_ub, closest_point, closest_point_distance, bbs,
-             &distance_function, &compute_bbs](const Split &split) {
+            [this, axis, &tree_lb, &tree_ub, &closest_point, &bbs, &distance_function,
+             &compute_bbs](const Split &split) {
               // The order of searching matters. If we go left to right always,
               // it'll be a breadth first search at worst.
               // We should first search the branch that is more likely to contain the close point
               // so that the bounding box can be shrunk as rapidly as possible
               const double tree_axis_mid = 0.5 * (tree_lb[axis] + tree_ub[axis]);
 
-              const BoundingBoxIntervals &intervals = (*bbs)[static_cast<size_t>(axis)];
+              const BoundingBoxIntervals &intervals = bbs[static_cast<size_t>(axis)];
               if (intervals.centroid < tree_axis_mid) {
-                split.SearchNearestLeft(closest_point, closest_point_distance, bbs, axis, tree_lb,
-                                        tree_ub, distance_function, compute_bbs);
-                split.SearchNearestRight(closest_point, closest_point_distance, bbs, axis, tree_lb,
-                                         tree_ub, distance_function, compute_bbs);
+                split.SearchNearestLeft(closest_point, bbs, axis, tree_lb, tree_ub,
+                                        distance_function, compute_bbs);
+                split.SearchNearestRight(closest_point, bbs, axis, tree_lb, tree_ub,
+                                         distance_function, compute_bbs);
               } else {
-                split.SearchNearestRight(closest_point, closest_point_distance, bbs, axis, tree_lb,
-                                         tree_ub, distance_function, compute_bbs);
-                split.SearchNearestLeft(closest_point, closest_point_distance, bbs, axis, tree_lb,
-                                        tree_ub, distance_function, compute_bbs);
+                split.SearchNearestRight(closest_point, bbs, axis, tree_lb, tree_ub,
+                                         distance_function, compute_bbs);
+                split.SearchNearestLeft(closest_point, bbs, axis, tree_lb, tree_ub,
+                                        distance_function, compute_bbs);
               }
             }},
         value_);

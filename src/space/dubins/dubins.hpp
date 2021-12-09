@@ -29,6 +29,7 @@
 #include <string>
 
 #include "src/assert.hpp"
+#include "src/space/space_base.hpp"
 
 namespace rrts::dubins {
 
@@ -87,7 +88,13 @@ enum class DubinsStatus {
   kNoPath,      /* no connection between configurations with this word */
 };
 
-struct DubinsPath {
+class DubinsPath : public rrts::space::Trajectory<Se2Coord> {
+ public:
+  DubinsPath() : qi_{}, qf_{}, normalized_segment_lengths_{}, rho_{}, type_{}, total_length_{} {};
+  DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho);
+  ~DubinsPath() override = default;
+  [[nodiscard]] double TrajectoryCost() const override { return TotalLength(); }
+
  private:
   /* the initial configuration */
   Se2Coord qi_;
@@ -120,9 +127,7 @@ struct DubinsPath {
     return message.str();
   }
 
-  // TODO(greg): consider making into constructors
-  friend DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
-                                         double rho);
+  // TODO(greg): consider into constructor
   friend DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0,
                                             const Se2Coord &q1, double rho,
                                             DubinsPathType pathType);
@@ -144,24 +149,6 @@ DubinsWordStatus DubinsWord(const DubinsIntermediateResults &in, DubinsPathType 
                             std::array<double, 3> &normalized_segment_lengths);
 DubinsIntermediateResults ComputeDubinsIntermediateResults(const Se2Coord &q0, const Se2Coord &q1,
                                                            double rho);
-
-/**
- * Generate a path from an initial configuration to
- * a target configuration, with a specified maximum turning
- * radii
- *
- * A configuration is (x, y, theta), where theta is in radians, with zero
- * along the line x = 0, and counter-clockwise is positive
- *
- * @param path  - the resultant path
- * @param q0    - a configuration specified as an array of x, y, theta
- * @param q1    - a configuration specified as an array of x, y, theta
- * @param rho   - turning radius of the vehicle (forward velocity divided by maximum angular
- * velocity)
- * @return      - non-zero on error
- */
-DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
-                                double rho);
 
 /**
  * Generate a path with a specified word from an initial configuration to

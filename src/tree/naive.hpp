@@ -6,41 +6,44 @@
 
 namespace rrts::tree {
 
-template <typename Point, size_t D>
-class Naive : public TreeBase<Point, D> {
+template <typename Point, typename Bridge, size_t D>
+class Naive : public TreeBase<Point, Bridge, D> {
  public:
   Naive(const Point & /*unused*/, const Point & /*unused*/) : points_{} {};
 
   void Insert(const Tagged<Point> &new_point) { points_.push_back(new_point); }
 
-  Tagged<Point> Nearest(const DistanceFunction<Point> &compute_distance,
-                        const BoundingBoxesFunction<Point, D> &bb_fun
-                        __attribute__((unused))) const {
+  std::tuple<Tagged<Point>, Bridge> Nearest(const DistanceFunction<Point, Bridge> &compute_distance,
+                                            const BoundingBoxesFunction<D> &bb_fun
+                                            __attribute__((unused))) const {
     ASSERT(!points_.empty());
 
     Tagged<Point> nearest_point = points_.at(0);
-    double nearest_distance = compute_distance(nearest_point.point);
+    Bridge bridge0 = compute_distance(nearest_point.point);
+    double lowest_cost = bridge0.TrajectoryCost();
+    std::tuple<Tagged<Point>, Bridge> nearest_point_and_bridge(nearest_point, bridge0);
 
     for (size_t k = 1; k < points_.size(); k++) {
       Tagged<Point> x = points_.at(k);
-      double distance = compute_distance(x.point);
-      if (distance < nearest_distance) {
-        nearest_distance = distance;
-        nearest_point = x;
+      Bridge bridge = compute_distance(x.point);
+      if (bridge.TrajectoryCost() < lowest_cost) {
+        lowest_cost = bridge.TrajectoryCost();
+        nearest_point_and_bridge = std::make_tuple(x, bridge);
       }
     }
 
-    return nearest_point;
+    return nearest_point_and_bridge;
   }
 
-  std::vector<Tagged<Point>> Near(const DistanceFunction<Point> &compute_distance,
-                                  std::array<BoundingBoxIntervals, D> bounding_boxes
-                                  __attribute__((unused)),
-                                  double radius) const {
-    std::vector<Tagged<Point>> near_points;
+  std::vector<std::tuple<Tagged<Point>, Bridge>> Near(
+      const DistanceFunction<Point, Bridge> &compute_distance,
+      std::array<BoundingBoxIntervals, D> bounding_boxes __attribute__((unused)),
+      double radius) const {
+    std::vector<std::tuple<Tagged<Point>, Bridge>> near_points;
     for (const Tagged<Point> &x : points_) {
-      if (compute_distance(x.point) <= radius) {
-        near_points.push_back(x);
+      Bridge bridge = compute_distance(x.point);
+      if (bridge.TrajectoryCost() <= radius) {
+        near_points.push_back(std::make_tuple(x, bridge));
       }
     }
     return near_points;

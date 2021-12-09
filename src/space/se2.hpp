@@ -9,7 +9,7 @@
 #include "src/assert.hpp"
 #include "src/space/dubins/dubins.hpp"
 #include "src/space/space_base.hpp"
-#include "src/tree/node.hpp"  // BoundingBox
+//#include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::se2 {
 
@@ -35,18 +35,16 @@ class Se2 : public SpaceBase<Se2Coord, DubinsPath, 3> {
 
   [[nodiscard]] double MuXfree() const override;
   Se2Coord SampleFree() override;
-  [[nodiscard]] Se2Coord Steer(const Se2Coord &v0, const Se2Coord &v1, double eta) const override;
+  [[nodiscard]] std::tuple<Se2Coord, DubinsPath> Steer(const Se2Coord &v0, const Se2Coord &v1,
+                                                       double eta) const override;
 
   // bridges
   [[nodiscard]] bool CollisionFree(const DubinsPath &path) const override;
-  [[nodiscard]] double BridgeCost(const DubinsPath &line) const override {
-    return line.TotalLength();
-  };
   [[nodiscard]] DubinsPath FormBridge(const Se2Coord &v0, const Se2Coord &v1) const override;
 
   // efficient search
   [[nodiscard]] std::array<BoundingBoxIntervals, 3> BoundingBox(const Se2Coord &p,
-                                                  double max_distance) const override;
+                                                                double max_distance) const override;
 
   [[nodiscard]] const Se2Coord &Lb() const override { return lb_; };
   [[nodiscard]] const Se2Coord &Ub() const override { return ub_; };
