@@ -89,7 +89,7 @@ std::vector<bb3d::ColoredVec3> DrawBridge(const DubinsPath &path, double ctg0, d
     Se2Coord q = path.Sample(t);
     double ctg = ctg0 * (1 - t) + ctg1 * t;
     // std::cout << "t " << t << ": " << q[0] << ", " << q[1] << "   | " << ctg << std::endl;
-    glm::vec4 color = {ctg, 0, 1 - ctg, 0.6};
+    glm::vec4 color = {1 - ctg, 0, ctg, 0.6};
     bb3d::ColoredVec3 v = {{q[0], q[1], z}, color};
     // bb3d::ColoredVec3 v = {{q[0], q[1], q[2]}, color};
 
@@ -222,6 +222,11 @@ struct Problem {
       // bridges.insert(bridges.end(), next_bridge.begin(), next_bridge.end());
       node_index++;
     }
+    std::sort(
+        bridges.begin(), bridges.end(),
+        [](const std::vector<bb3d::ColoredVec3> &b0, const std::vector<bb3d::ColoredVec3> &b1) {
+          return b0.at(b0.size() - 1).color[0] > b1.at(b1.size() - 1).color[0];
+        });
     lines.Update(bridges);
   }
 
@@ -332,7 +337,7 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
   }
 
   double rho = 0.6;
-  double eta = 2.5;
+  double eta = 4.5;
   return Problem(rho, eta, lb, ub, goal_region, obstacles);
 }
 

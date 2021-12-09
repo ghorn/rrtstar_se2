@@ -123,11 +123,17 @@ struct Problem {
       cv1.position = static_cast<glm::dvec3>(edge.bridge_.p1);
       const double ctg0 = cost_to_go.at(edge.parent_index_) / max_cost_to_go;
       const double ctg1 = cost_to_go.at(node_index) / max_cost_to_go;
-      cv0.color = {ctg0, 0, 1 - ctg0, 0.6};
-      cv1.color = {ctg1, 0, 1 - ctg1, 0.6};
+      cv0.color = {1 - ctg0, 0, ctg0, 0.6};
+      cv1.color = {1 - ctg1, 0, ctg1, 0.6};
       bridges.push_back({cv0, cv1});
       node_index++;
     }
+    std::sort(
+        bridges.begin(), bridges.end(),
+        [](const std::vector<bb3d::ColoredVec3> &b0, const std::vector<bb3d::ColoredVec3> &b1) {
+          return b0.at(b0.size() - 1).color[0] > b1.at(b1.size() - 1).color[0];
+        });
+
     lines.Update(bridges);
   }
 
