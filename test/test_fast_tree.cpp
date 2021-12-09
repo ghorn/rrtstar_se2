@@ -1,7 +1,6 @@
-#include <gtest/gtest.h>
-
 #include <bits/exception.h>  // for exception
-#include <stdio.h>           // for size_t, fprintf, stderr
+#include <gtest/gtest.h>
+#include <stdio.h>  // for size_t, fprintf, stderr
 
 #include <cassert>           // for assert
 #include <chrono>            // for duration, operator-, high_resolution_clock, time_point
@@ -18,7 +17,7 @@
 
 #include "src/space/n_ball.hpp"      // for VolumeOfNBall
 #include "src/space/r3.hpp"          // for Point, R3, Sphere, Line
-#include "src/space/se2.hpp"          // for Point, R3, Sphere, Line
+#include "src/space/se2.hpp"         // for Point, R3, Sphere, Line
 #include "src/space/space_base.hpp"  // for SpaceBase
 #include "src/tagged.hpp"            // for Tagged
 #include "src/tree/fast.hpp"         // for Fast
@@ -38,11 +37,10 @@ using Naive = rrts::tree::Naive<Point, Bridge, D>;
 template <typename Point, typename Bridge, size_t D>
 using Fast = rrts::tree::Fast<Point, Bridge, D>;
 
-
 template <typename Point, typename Bridge, size_t D>
-bool TestNearest(const SpaceBase<Point, Bridge, D> &space, const Naive<Point, Bridge, D> &naive_tree,
-                 const Fast<Point, Bridge, D> &fast_tree, const Point &test_point,
-                 std::chrono::duration<double> &naive_time,
+bool TestNearest(const SpaceBase<Point, Bridge, D> &space,
+                 const Naive<Point, Bridge, D> &naive_tree, const Fast<Point, Bridge, D> &fast_tree,
+                 const Point &test_point, std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
   std::tuple<Tagged<Point>, Bridge> naive_nearest_ret = naive_tree.Nearest(
@@ -62,25 +60,26 @@ bool TestNearest(const SpaceBase<Point, Bridge, D> &space, const Naive<Point, Br
   naive_time += t1 - t0;
   fast_time += t2 - t1;
 
-  EXPECT_EQ(fast_nearest.Index(), naive_nearest.Index()) << "naive tree nearest index (" << naive_nearest.Index()
-                                                         << ") != fast tree nearest index (" << fast_nearest.Index() << ")" << std::endl;
+  EXPECT_EQ(fast_nearest.Index(), naive_nearest.Index())
+      << "naive tree nearest index (" << naive_nearest.Index() << ") != fast tree nearest index ("
+      << fast_nearest.Index() << ")" << std::endl;
 
   if (fast_nearest.Index() != naive_nearest.Index()) {
     // test point
     fprintf(stderr, "test  point:");
-    for (int32_t k=0; k<static_cast<int32_t>(D); k++) {
+    for (int32_t k = 0; k < static_cast<int32_t>(D); k++) {
       fprintf(stderr, " % 7.3f", test_point[k]);
     }
     fprintf(stderr, "\n");
     // fast point
     fprintf(stderr, "fast  point:");
-    for (int32_t k=0; k<static_cast<int32_t>(D); k++) {
+    for (int32_t k = 0; k < static_cast<int32_t>(D); k++) {
       fprintf(stderr, " % 7.3f", fast_nearest.Point()[k]);
     }
     fprintf(stderr, " (distance: % 7.3f)\n", fast_nearest_bridge.TrajectoryCost());
     // naive point
     fprintf(stderr, "naive point:");
-    for (int32_t k=0; k<static_cast<int32_t>(D); k++) {
+    for (int32_t k = 0; k < static_cast<int32_t>(D); k++) {
       fprintf(stderr, " % 7.3f", naive_nearest.Point()[k]);
     }
     fprintf(stderr, " (distance: % 7.3f)\n", naive_nearest_bridge.TrajectoryCost());
@@ -172,14 +171,16 @@ void TestSpace(Space space) {
 
     // do a nearest search
     const Point test_point = space.SampleFree();
-    ASSERT_FALSE(TestNearest(space, naive_tree, fast_tree, test_point, naive_nearest_time, fast_nearest_time));
+    ASSERT_FALSE(TestNearest(space, naive_tree, fast_tree, test_point, naive_nearest_time,
+                             fast_nearest_time));
 
     // do a near search
     // const double radius = pow(100 * volume / fast_tree.Cardinality(), 1/3);
     const double card_v = naive_tree.Cardinality();
     const double radius = gamma_rrts * pow(log(card_v) / card_v, 1 / d);
 
-    ASSERT_FALSE(TestNear(space, naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time));
+    ASSERT_FALSE(TestNear(space, naive_tree, fast_tree, test_point, radius, naive_near_time,
+                          fast_near_time));
   }
 
   double n = naive_tree.Cardinality();
