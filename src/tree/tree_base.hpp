@@ -1,12 +1,14 @@
 #pragma once
 
-#include <array>
-#include <functional>
-#include <iostream>
-#include <tuple>
-#include <vector>
+#include <array>       // for array
+#include <cstddef>     // for size_t
+#include <functional>  // for function
+#include <iostream>    // for operator<<, endl, basic_ostream, cerr, ostream, basic_ostream<...
+#include <tuple>       // for tuple
+#include <variant>     // for tuple
+#include <vector>      // for vector
 
-#include "src/tagged.hpp"
+#include "src/tagged.hpp"  // for Tagged
 
 namespace rrts::tree {
 

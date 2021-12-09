@@ -1,12 +1,14 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <iostream>
-#include <set>
-#include <utility>
-#include <vector>
+#include <array>        // for array
+#include <glm/glm.hpp>  // for dvec3, vec, vec<>::vec
+#include <random>       // for mt19937_64, uniform_real_distribution
+#include <tuple>        // for tuple
+#include <utility>      // for move
+#include <vector>       // for vector
 
-#include "src/space/space_base.hpp"
+#include "src/space/space_base.hpp"  // for BoundingBoxIntervals, SpaceBase, Trajectory
+#include "src/tree/tree_base.hpp"    // for BoundingBoxInterval
 //#include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::r3 {

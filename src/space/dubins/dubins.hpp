@@ -23,13 +23,15 @@
  * THE SOFTWARE.
  */
 
-#include <array>
-#include <glm/glm.hpp>
-#include <sstream>
-#include <string>
+#include <array>                       // for array
+#include <cstdint>                     // for int32_t
+#include <glm/ext/vector_double2.hpp>  // for dvec2
+#include <glm/glm.hpp>                 // for vec<>::(anonymous), vec
+#include <sstream>                     // for operator<<, basic_ostream, endl, basic_ostream::op...
+#include <string>                      // for char_traits, string
 
-#include "src/assert.hpp"
-#include "src/space/space_base.hpp"
+#include "src/assert.hpp"            // for FAIL_MSG
+#include "src/space/space_base.hpp"  // for Trajectory
 
 namespace rrts::dubins {
 

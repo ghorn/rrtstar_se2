@@ -1,11 +1,10 @@
 #include "src/space/se2.hpp"
 
-#include <algorithm>
-#include <glm/gtx/intersect.hpp>
-#include <glm/gtx/norm.hpp>
+#include <algorithm>         // for any_of
+#include <glm/glm.hpp>       // for vec<>::(anonymous), dot, operator-
+#include <glm/gtx/norm.hpp>  // for distance2
 
-#include "src/assert.hpp"
-#include "src/space/dubins/dubins.hpp"
+#include "src/space/dubins/dubins.hpp"  // for DubinsStatus
 
 namespace rrts::space::se2 {
 

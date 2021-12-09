@@ -1,14 +1,18 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <iostream>
-#include <set>
-#include <utility>
-#include <vector>
+#include <array>                       // for array
+#include <cmath>                       // for M_PI
+#include <cstdint>                     // for int32_t
+#include <functional>                  // for function
+#include <glm/ext/vector_double2.hpp>  // for dvec2
+#include <random>                      // for mt19937_64, uniform_real_distribution
+#include <tuple>                       // for tuple
+#include <utility>                     // for move
+#include <vector>                      // for vector
 
-#include "src/assert.hpp"
-#include "src/space/dubins/dubins.hpp"
-#include "src/space/space_base.hpp"
+#include "src/space/dubins/dubins.hpp"  // for DubinsPath, Se2Coord
+#include "src/space/space_base.hpp"     // for SpaceBase
+#include "src/tree/tree_base.hpp"       // for BoundingBoxInterval, BoundingBoxIntervals
 //#include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::se2 {

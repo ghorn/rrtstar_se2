@@ -1,10 +1,9 @@
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for Test, EXPECT_EQ, Message, TestPartResult, SuiteAp...
 
-#include <cassert>
-#include <cmath>  // M_PI
+#include <cmath>   // for M_PI
+#include <memory>  // for allocator
 
-#include "src/space/dubins/dubins.hpp"
-#include "src/space/se2.hpp"
+#include "src/space/dubins/dubins.hpp"  // for AngleDifference
 
 namespace rrts {
 

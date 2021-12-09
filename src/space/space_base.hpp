@@ -1,12 +1,11 @@
 #pragma once
 
-#include <array>
-#include <iostream>
-#include <random>
-#include <set>
-#include <vector>
+#include <array>    // for array
+#include <cstddef>  // for size_t
+#include <tuple>    // for tuple
+#include <variant>  // for tuple
 
-#include "src/tree/tree_base.hpp"  // BoundingBoxIntervals
+#include "src/tree/tree_base.hpp"  // for BoundingBoxIntervals
 
 namespace rrts::space {
 

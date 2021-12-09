@@ -1,14 +1,25 @@
-#include <chrono>  // for operator""s, chrono_literals
-#include <glm/gtx/norm.hpp>
-#include <iostream>
-#include <random>
-#include <set>
+#include <bits/exception.h>  // for exception
+#include <stdio.h>           // for size_t, fprintf, stderr
 
-#include "src/space/n_ball.hpp"
-#include "src/space/r3.hpp"
-#include "src/space/space_base.hpp"
-#include "src/tree/fast.hpp"
-#include "src/tree/naive.hpp"
+#include <cassert>           // for assert
+#include <chrono>            // for duration, operator-, high_resolution_clock, time_point
+#include <cmath>             // for pow, log
+#include <cstdlib>           // for exit, EXIT_FAILURE, EXIT_SUCCESS
+#include <glm/glm.hpp>       // for vec<>::(anonymous), vec, dot, operator-, dvec3
+#include <glm/gtx/norm.hpp>  // for distance2
+#include <iostream>          // for operator<<, basic_ostream, endl, basic_ostream<>::__...
+#include <random>            // for mt19937_64, uniform_real_distribution
+#include <set>               // for set, operator!=, operator==, _Rb_tree_const_iterator
+#include <tuple>             // for get, tuple
+#include <utility>           // for __tuple_element_t
+#include <vector>            // for vector
+
+#include "src/space/n_ball.hpp"      // for VolumeOfNBall
+#include "src/space/r3.hpp"          // for Point, R3, Sphere, Line
+#include "src/space/space_base.hpp"  // for SpaceBase
+#include "src/tagged.hpp"            // for Tagged
+#include "src/tree/fast.hpp"         // for Fast
+#include "src/tree/naive.hpp"        // for Naive
 
 template <typename Point, typename Bridge, size_t D>
 using SpaceBase = rrts::space::SpaceBase<Point, Bridge, D>;

@@ -1,10 +1,15 @@
-#include <cstdlib>   // for EXIT_SUCCESS
-#include <iostream>  // for operator<<, basic_ostream, cerr, endl, ostream, cha...
+#include <bits/exception.h>  // for exception
 
-#include "src/search.hpp"
-#include "src/space/r3.hpp"
-#include "src/tree/fast.hpp"
-#include "src/tree/naive.hpp"
+#include <algorithm>  // for max
+#include <cstdint>    // for int64_t
+#include <cstdlib>    // for EXIT_SUCCESS
+#include <iostream>   // for operator<<, cerr, endl, ostream, basic_ostream
+#include <tuple>      // for tuple
+#include <vector>     // for vector
+
+#include "src/search.hpp"     // for Search, StepResult, StepResult::kSuccess
+#include "src/space/r3.hpp"   // for Sphere, Line, Point, R3
+#include "src/tree/fast.hpp"  // for Fast
 
 using Line = rrts::space::r3::Line;
 using Point = rrts::space::r3::Point;

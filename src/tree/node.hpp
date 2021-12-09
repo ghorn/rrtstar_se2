@@ -1,17 +1,21 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>  // M_PI
-#include <functional>
-#include <glm/glm.hpp>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <variant>
-#include <vector>
+#include <algorithm>  // for any_of
+#include <array>      // for array
+#include <cassert>    // for assert
+#include <cstddef>    // for size_t
+#include <cstdint>    // for int32_t
+#include <iostream>   // for endl, cerr, ostream, basic_ostream
+#include <memory>     // for make_unique, unique_ptr
+#include <optional>   // for optional
+#include <string>     // for operator+, operator<<, string
+#include <tuple>      // for get, make_tuple
+#include <utility>    // for move, forward
+#include <variant>    // for tuple, visit, variant
+#include <vector>     // for vector
 
-#include "src/tagged.hpp"
-#include "src/tree/tree_base.hpp"
+#include "src/tagged.hpp"          // for Tagged
+#include "src/tree/tree_base.hpp"  // for BoundingBoxIntervals, DistanceFunction, BoundingBoxInt...
 
 namespace rrts::tree {
 

@@ -1,17 +1,17 @@
 #pragma once
 
-#include <cmath>  // M_PI
-#include <glm/glm.hpp>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <variant>
-#include <vector>
+#include <array>     // for array
+#include <cstddef>   // for size_t
+#include <cstdint>   // for int64_t
+#include <optional>  // for optional
+#include <tuple>     // for tuple
+#include <variant>   // for tuple
+#include <vector>    // for vector
 
-#include "src/assert.hpp"
-#include "src/tagged.hpp"
-#include "src/tree/node.hpp"
-#include "src/tree/tree_base.hpp"
+#include "src/assert.hpp"          // for ASSERT
+#include "src/tagged.hpp"          // for Tagged
+#include "src/tree/node.hpp"       // for Node, Empty
+#include "src/tree/tree_base.hpp"  // for BoundingBoxIntervals, DistanceFunction, BoundingBoxesF...
 
 namespace rrts::tree {
 

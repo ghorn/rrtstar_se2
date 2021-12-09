@@ -1,25 +1,22 @@
+#include <GL/glew.h>         // for GL_LINE_STRIP
 #include <bits/exception.h>  // for exception
-#include <sys/types.h>       // for key_t, uint
+#include <sys/types.h>       // for key_t
 
-#include <algorithm>   // for copy, max
-#include <chrono>      // for operator""s, chrono_literals
-#include <cstdio>      // for fprintf, stderr
-#include <cstdlib>     // for EXIT_SUCCESS
-#include <functional>  // for function
-#include <iostream>    // for operator<<, basic_ostream, cerr, endl, ostream, cha...
-#include <mutex>       // for mutex, lock_guard
-#include <optional>    // for optional, nullopt
-#include <queue>       // for queue
-#include <sstream>
-#include <thread>  // for sleep_for, thread
-#include <vector>  // for vector
+#include <algorithm>    // for max
+#include <array>        // for array
+#include <cmath>        // for cos, sin
+#include <cstdlib>      // for size_t, EXIT_SUCCESS
+#include <functional>   // for function
+#include <glm/glm.hpp>  // for vec4, mat4, vec3
+#include <iostream>     // for operator<<, basic_ostream, ostream, endl, basic_o...
+#include <sstream>      // for stringstream
+#include <string>       // for string
+#include <vector>       // for vector
 
-#include "bb3d/opengl_context.hpp"  // for Window
-#include "bb3d/shader/colorlines.hpp"
-#include "bb3d/shader/lines.hpp"
-#include "src/space/dubins/dubins.hpp"
-#include "src/tree/fast.hpp"
-#include "src/tree/naive.hpp"
+#include "bb3d/opengl_context.hpp"      // for Window
+#include "bb3d/shader/colorlines.hpp"   // for ColoredVec3, ColorLines
+#include "bb3d/shader/freetype.hpp"     // for Freetype
+#include "src/space/dubins/dubins.hpp"  // for ComputeDubinsPath, operator<<, DubinsPath, Dubins...
 
 using Se2Coord = rrts::dubins::Se2Coord;
 using DubinsPath = rrts::dubins::DubinsPath;

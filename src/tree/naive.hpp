@@ -1,8 +1,14 @@
 #pragma once
 
-#include "src/assert.hpp"
-#include "src/tagged.hpp"
-#include "src/tree/tree_base.hpp"
+#include <array>    // for array
+#include <cstddef>  // for size_t
+#include <tuple>    // for tuple, make_tuple
+#include <variant>  // for tuple
+#include <vector>   // for vector
+
+#include "src/assert.hpp"          // for ASSERT
+#include "src/tagged.hpp"          // for Tagged
+#include "src/tree/tree_base.hpp"  // for DistanceFunction, BoundingBoxIntervals, BoundingBoxesF...
 
 namespace rrts::tree {
 

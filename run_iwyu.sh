@@ -22,6 +22,7 @@ do
 	-Xiwyu --no_fwd_decls \
 	-std=c++17 \
 	-I. \
+	-Ibazel-rrtstar_se2/external/bb3d \
 	-isystem $(clang -print-resource-dir)/include \
 	-isystem /usr/include/freetype2 \
 	-c $file \
@@ -37,6 +38,16 @@ do
     fi
 done
 
+# apply fixes and remove tmp file
 fix_include --nosafe_headers --comments < iwyu.out
-
 rm iwyu.out
+
+# rename deprecated headers only in C++ files
+git ls-files "*.cpp" "*.hpp" | xargs sed -i 's/<assert.h>/<cassert>/g'
+git ls-files "*.cpp" "*.hpp" | xargs sed -i 's/<stddef.h>/<cstddef>/g'
+git ls-files "*.cpp" "*.hpp" | xargs sed -i 's/<stdint.h>/<cstdint>/g'
+git ls-files "*.cpp" "*.hpp" | xargs sed -i 's/<math.h>/<cmath>/g'
+git ls-files "*.cpp" "*.hpp" | xargs sed -i 's/<stdlib.h>/<cstdlib>/g'
+
+# reformat to get comment alignment pretty
+./run_clang_format.sh

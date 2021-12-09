@@ -1,8 +1,12 @@
 #include "src/space/r3.hpp"
 
-#include <algorithm>
-#include <glm/gtx/intersect.hpp>
-#include <glm/gtx/norm.hpp>
+#include <algorithm>              // for any_of
+#include <cassert>                // for assert
+#include <cmath>                  // for isnormal, sqrt
+#include <cstddef>                // for size_t
+#include <cstdint>                // for int32_t
+#include <glm/gtx/intersect.hpp>  // for intersectLineSphere
+#include <glm/gtx/norm.hpp>       // for distance2
 
 namespace rrts::space::r3 {
 Point R3::Sample() {

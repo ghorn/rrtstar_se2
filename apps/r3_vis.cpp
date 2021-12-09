@@ -1,26 +1,30 @@
+#include <GL/glew.h>         // for GL_LINES, GL_LINE_STRIP, GL_POINTS
 #include <bits/exception.h>  // for exception
-#include <sys/types.h>       // for key_t, uint
+#include <sys/types.h>       // for key_t
 
-#include <algorithm>   // for copy, max
-#include <chrono>      // for operator""s, chrono_literals
-#include <cstdio>      // for fprintf, stderr
-#include <cstdlib>     // for EXIT_SUCCESS
-#include <functional>  // for function
-#include <iostream>    // for operator<<, basic_ostream, cerr, endl, ostream, cha...
-#include <mutex>       // for mutex, lock_guard
-#include <optional>    // for optional, nullopt
-#include <queue>       // for queue
-#include <sstream>
-#include <thread>  // for sleep_for, thread
-#include <vector>  // for vector
+#include <algorithm>           // for max
+#include <chrono>              // for operator""ms, operator""us, chrono_literals
+#include <cmath>               // for pow, M_PI
+#include <cstdio>              // for fprintf, size_t, stderr
+#include <cstdlib>             // for EXIT_SUCCESS
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <functional>          // for function
+#include <glm/glm.hpp>         // for vec<>::(anonymous), vec3, operator+, operator-, dvec3
+#include <iostream>            // for operator<<, basic_ostream, endl, ostream, basic_os...
+#include <mutex>               // for mutex, lock_guard
+#include <random>              // for mt19937_64, uniform_real_distribution, uniform_int...
+#include <sstream>             // for stringstream
+#include <thread>              // for sleep_for, thread
+#include <tuple>               // for tuple
+#include <vector>              // for vector
 
-#include "bb3d/opengl_context.hpp"  // for Window
-#include "bb3d/shader/colorlines.hpp"
-#include "bb3d/shader/lines.hpp"
-#include "src/search.hpp"
-#include "src/space/r3.hpp"
-#include "src/tree/fast.hpp"
-#include "src/tree/naive.hpp"
+#include "bb3d/opengl_context.hpp"     // for Window
+#include "bb3d/shader/colorlines.hpp"  // for ColoredVec3, ColorLines
+#include "bb3d/shader/freetype.hpp"    // for Freetype
+#include "bb3d/shader/lines.hpp"       // for Lines
+#include "src/search.hpp"              // for Edge, Search, StepResult, StepResult::kSuccess
+#include "src/space/r3.hpp"            // for Sphere, Point, Line, R3
+#include "src/tree/fast.hpp"           // for Fast
 
 using Line = rrts::space::r3::Line;
 using Bridge = Line;

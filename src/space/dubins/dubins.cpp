@@ -22,12 +22,12 @@
  */
 #include "dubins.hpp"
 
-#include <cassert>
-#include <cmath>
-#include <cstdlib>
-#include <iostream>
+#include <cassert>           // for assert
+#include <cmath>             // for atan2, cos, sin, sqrt, M_PI, acos, fabs, floor, fmod, INFINITY
+#include <cstdlib>           // for size_t
+#include <initializer_list>  // for initializer_list
 
-#include "src/assert.hpp"
+#include "src/assert.hpp"  // for ASSERT_MSG, FAIL_MSG
 
 namespace rrts::dubins {
 
