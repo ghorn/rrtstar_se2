@@ -29,6 +29,8 @@
 
 #include "src/assert.hpp"
 
+namespace rrts::dubins {
+
 #define EPSILON (10e-10)
 
 enum class SegmentType { kLSeg = 0, kSSeg = 1, kRSeg = 2 };
@@ -44,6 +46,26 @@ const std::array<std::array<SegmentType, 3>, 6> kDirdata = {
 
 static inline const std::array<SegmentType, 3> &Dirdata(DubinsPathType type) {
   return kDirdata.at(static_cast<size_t>(type));
+}
+
+// Same as computing x - y but guaranteed to be in [-pi, pi].
+double AngleDifference(double x, double y) {
+  const double diff = x - y;
+  double correction{};
+  if (diff <= -M_PI) {
+    correction = M_PI;
+  } else {
+    correction = -M_PI;
+  }
+
+  const double wrapped_difference = fmod(diff + M_PI, 2 * M_PI) + correction;
+
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+  assert(wrapped_difference <= M_PI);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+  assert(wrapped_difference >= -M_PI);
+
+  return wrapped_difference;
 }
 
 /**
@@ -63,27 +85,29 @@ double Mod2pi(double theta) {
   return ret;
 }
 
-DubinsStatus DubinsShortestPath(DubinsPath &path, const std::array<double, 3> &q0,
-                                const std::array<double, 3> &q1, double rho) {
+DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                double rho) {
   const DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
 
   // DubinsPath path{};
-  path.qi = q0;
-  path.rho = rho;
+  path.qi_ = q0;
+  path.qf_ = q1;
+  path.rho_ = rho;
 
   int best_word = -1;
   double best_cost = INFINITY;
   for (int i = 0; i < 6; i++) {
     auto path_type = static_cast<DubinsPathType>(i);
-    std::array<double, 3> params{};
-    DubinsWordStatus errcode = DubinsWord(in, path_type, params);
+    std::array<double, 3> normalized_segment_lengths{};
+    DubinsWordStatus errcode = DubinsWord(in, path_type, normalized_segment_lengths);
     if (errcode == DubinsWordStatus::kSuccess) {
-      const double cost = params[0] + params[1] + params[2];
+      const double cost = normalized_segment_lengths[0] + normalized_segment_lengths[1] +
+                          normalized_segment_lengths[2];
       if (cost < best_cost) {
         best_word = i;
         best_cost = cost;
-        path.param = params;
-        path.type = path_type;
+        path.normalized_segment_lengths_ = normalized_segment_lengths;
+        path.type_ = path_type;
       }
     }
   }
@@ -91,23 +115,24 @@ DubinsStatus DubinsShortestPath(DubinsPath &path, const std::array<double, 3> &q
   if (best_word == -1) {
     return DubinsStatus::kNoPath;
   }
-  path.total_length = best_cost * path.rho;
+  path.total_length_ = best_cost * path.rho_;
   return DubinsStatus::kSuccess;
 }
 
-DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const std::array<double, 3> &q0,
-                                   const std::array<double, 3> &q1, double rho,
-                                   DubinsPathType pathType) {
+DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                   double rho, DubinsPathType pathType) {
   DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
 
-  std::array<double, 3> params{};
-  DubinsWordStatus errcode = DubinsWord(in, pathType, params);
+  std::array<double, 3> normalized_segment_lengths{};
+  DubinsWordStatus errcode = DubinsWord(in, pathType, normalized_segment_lengths);
   if (errcode == DubinsWordStatus::kSuccess) {
-    path.param = params;
-    path.qi = q0;
-    path.rho = rho;
-    path.type = pathType;
-    path.total_length = rho * (params[0] + params[1] + params[2]);
+    path.normalized_segment_lengths_ = normalized_segment_lengths;
+    path.qi_ = q0;
+    path.qf_ = q1;
+    path.rho_ = rho;
+    path.type_ = pathType;
+    path.total_length_ = rho * (normalized_segment_lengths[0] + normalized_segment_lengths[1] +
+                                normalized_segment_lengths[2]);
   }
   return errcode;
 }
@@ -138,73 +163,47 @@ std::array<double, 3> DubinsSegment(double t, const std::array<double, 3> &qi, S
   return qt;
 }
 
-DubinsStatus DubinsPathSample(const DubinsPath &path, double t, std::array<double, 3> &q) {
+Se2Coord DubinsPath::Sample(double t) const {
   /* tprime is the normalised variant of the parameter t */
-  double tprime = t / path.rho;
-  const std::array<SegmentType, 3> &types = Dirdata(path.type);
+  double tprime = t / rho_;
+  const std::array<SegmentType, 3> &types = Dirdata(type_);
 
-  if (t < 0 || t > path.total_length) {
-    return DubinsStatus::kPathParameterizationError;
-  }
+  ASSERT_MSG(t >= 0 && t <= total_length_, "DubinsPathSample got bad input");
 
   /* initial configuration */
   /* The translated initial configuration */
-  const std::array<double, 3> qi = {0.0, 0.0, path.qi[2]};
+  const std::array<double, 3> qi_translated = {0.0, 0.0, qi_[2]};
 
   /* generate the target configuration */
-  const double p1 = path.param[0];
-  const double p2 = path.param[1];
+  const double p1 = normalized_segment_lengths_[0];
+  const double p2 = normalized_segment_lengths_[1];
   /* end-of segment 1 */
-  std::array<double, 3> q1 = DubinsSegment(p1, qi, types[0]);
+  std::array<double, 3> q1 = DubinsSegment(p1, qi_translated, types[0]);
   /* end-of segment 2 */
   std::array<double, 3> q2 = DubinsSegment(p2, q1, types[1]);
+  std::array<double, 3> q3{};
   if (tprime < p1) {
-    q = DubinsSegment(tprime, qi, types[0]);
+    q3 = DubinsSegment(tprime, qi_translated, types[0]);
   } else if (tprime < (p1 + p2)) {
-    q = DubinsSegment(tprime - p1, q1, types[1]);
+    q3 = DubinsSegment(tprime - p1, q1, types[1]);
   } else {
-    q = DubinsSegment(tprime - p1 - p2, q2, types[2]);
+    q3 = DubinsSegment(tprime - p1 - p2, q2, types[2]);
   }
 
   /* scale the target configuration, translate back to the original starting point */
-  q[0] = q[0] * path.rho + path.qi[0];
-  q[1] = q[1] * path.rho + path.qi[1];
-  q[2] = Mod2pi(q[2]);
+  Se2Coord q{};
+  q.position.x = q3[0] * rho_ + qi_[0];
+  q.position.y = q3[1] * rho_ + qi_[1];
+  q.theta = Mod2pi(q3[2]);
 
-  if (q[2] > M_PI) {
-    q[2] -= 2 * M_PI;
+  if (q.theta > M_PI) {
+    q.theta -= 2 * M_PI;
   }
 
-  return DubinsStatus::kSuccess;
+  return q;
 }
 
-DubinsStatus DubinsPathEndpoint(const DubinsPath &path, std::array<double, 3> &q) {
-  return DubinsPathSample(path, path.total_length - EPSILON, q);
-}
-
-DubinsStatus DubinsExtractSubpath(DubinsPath *path, double t, DubinsPath *newpath) {
-  /* calculate the true parameter */
-  double tprime = t / path->rho;
-
-  if ((t < 0) || (t > path->total_length)) {
-    return DubinsStatus::kPathParameterizationError;
-  }
-
-  /* copy most of the data */
-  newpath->qi = path->qi;
-  newpath->rho = path->rho;
-  newpath->type = path->type;
-
-  /* fix the parameters */
-  newpath->param.at(0) = fmin(path->param.at(0), tprime);
-  newpath->param.at(1) = fmin(path->param.at(1), tprime - newpath->param.at(0));
-  newpath->param.at(2) =
-      fmin(path->param.at(2), tprime - newpath->param.at(0) - newpath->param.at(1));
-  return DubinsStatus::kSuccess;
-}
-
-DubinsIntermediateResults ComputeDubinsIntermediateResults(const std::array<double, 3> &q0,
-                                                           const std::array<double, 3> &q1,
+DubinsIntermediateResults ComputeDubinsIntermediateResults(const Se2Coord &q0, const Se2Coord &q1,
                                                            double rho) {
   ASSERT_MSG(rho > 0.0, "invalid rho: " << rho);
 
@@ -318,25 +317,25 @@ DubinsWordStatus DubinsLrl(const DubinsIntermediateResults &in, std::array<doubl
 }
 
 DubinsWordStatus DubinsWord(const DubinsIntermediateResults &in, DubinsPathType pathType,
-                            std::array<double, 3> &out) {
+                            std::array<double, 3> &normalized_segment_lengths) {
   switch (pathType) {
     case DubinsPathType::kLsl:
-      return DubinsLsl(in, out);
+      return DubinsLsl(in, normalized_segment_lengths);
       break;
     case DubinsPathType::kRsl:
-      return DubinsRsl(in, out);
+      return DubinsRsl(in, normalized_segment_lengths);
       break;
     case DubinsPathType::kLsr:
-      return DubinsLsr(in, out);
+      return DubinsLsr(in, normalized_segment_lengths);
       break;
     case DubinsPathType::kRsr:
-      return DubinsRsr(in, out);
+      return DubinsRsr(in, normalized_segment_lengths);
       break;
     case DubinsPathType::kLrl:
-      return DubinsLrl(in, out);
+      return DubinsLrl(in, normalized_segment_lengths);
       break;
     case DubinsPathType::kRlr:
-      return DubinsRlr(in, out);
+      return DubinsRlr(in, normalized_segment_lengths);
       break;
     default:
       FAIL_MSG("invalid dubins path type " << pathType);
@@ -369,3 +368,10 @@ std::ostream &operator<<(std::ostream &os, const DubinsPathType path_type) {
       return (os << "<INVALID>");
   }
 }
+
+// NOLINTNEXTLINE(fuchsia-overloaded-operator)
+std::ostream &operator<<(std::ostream &os, const Se2Coord &coord) {
+  return os << "{{" << coord.position.x << ", " << coord.position.y << "}, " << coord.theta << "}";
+}
+
+}  //  namespace rrts::dubins

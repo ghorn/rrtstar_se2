@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>  // M_PI
+#include <functional>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <memory>
@@ -26,11 +28,16 @@ Overloaded(Ts...) -> Overloaded<Ts...>;  // NOLINT(fuchsia-trailing-return)
 //     |---------------|
 //             lb1           ub1
 //              |-------------|
-static inline bool IntervalIntersects(const double lb0, const double ub0, const double lb1,
-                                      const double ub1) {
-  assert(lb0 < ub0);  // NOLINT
-  assert(lb1 < ub1);  // NOLINT
-  return lb0 <= ub1 && lb1 <= ub0;
+static inline bool IntervalIntersects(const double tree_lb, const double tree_ub,
+                                      const BoundingBoxIntervals &bbs) {
+
+  auto one_interval_intersects = [tree_lb, tree_ub](const BoundingBoxInterval &bb) {
+    assert(tree_lb < tree_ub);  // NOLINT
+    assert(bb.lb < bb.ub);      // NOLINT
+    return tree_lb <= bb.ub && bb.lb <= tree_ub;
+  };
+
+  return std::any_of(bbs.intervals.cbegin(), bbs.intervals.cend(), one_interval_intersects);
 }
 
 // No data points.
@@ -38,10 +45,9 @@ struct Empty {
   // TODO(greg): std::monostate
 };
 
-// 3-dimensional binary tree. Not a K-D tree, I forget the real name for it.
-// Each branch in the tree divides a spatial dimension in half. Each layer of the tree
-// rotates the axis being divided.
-template <typename Point>
+// K-D tree with all points on leaves, not splits. Splits happen on half planes every time
+// so that the tree is approximately balanced if the space is sampled uniformly.
+template <typename Point, size_t D>
 struct Node {
   // A single data point.
   struct Leaf {
@@ -59,61 +65,46 @@ struct Node {
         : left_{std::make_unique<Node>(Node{std::forward<L>(l)})},
           right_{std::make_unique<Node>(Node{std::forward<R>(r)})} {}
 
-    // // Forwarding constructor which will accept arguments of any type which can be implicitly
-    // // converted to an `Node`
-    // template <typename L, typename R>
-    // Split(L &&l, R &&r) :
-    //   left_{std::make_unique<Node>(std::forward<L>(l))},
-    //   right_{std::make_unique<Node>(std::forward<R>(r))} {}
-
-    // Split(Node &&left, Node &&right) :
-    //  left_{std::make_unique<Node>(std::move(left))},
-    //  right_{std::make_unique<Node>(std::move(right))} {}
-
-    // Split(std::unique_ptr<Node> left, std::unique_ptr<Node> right) :
-    //  left_{std::move(left)},
-    //  right_{std::move(right)} {}
     std::unique_ptr<Node> left_;
     std::unique_ptr<Node> right_;
 
     void SearchNearestLeft(Tagged<Point> *const closest_point, double *const closest_point_distance,
-                           double *const closest_point_distance_squared, const Point test_point,
-                           const int32_t axis, const Point tree_lb, const Point tree_ub) const {
+                           std::array<BoundingBoxIntervals, D> *const bbs, const int32_t axis,
+                           const Point &tree_lb, const Point &tree_ub,
+                           const DistanceFunction<Point> &distance_function,
+                           const BoundingBoxesFunction<Point, D> &compute_bbs) const {
       const double tree_axis_lb = tree_lb[axis];
       const double tree_axis_ub = tree_ub[axis];
       const double tree_axis_mid = 0.5 * (tree_axis_lb + tree_axis_ub);
 
-      double bb_axis_lb = test_point[axis] - *closest_point_distance;
-      double bb_axis_ub = test_point[axis] + *closest_point_distance;
-      if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
+      const BoundingBoxIntervals &bb_axis = (*bbs)[static_cast<size_t>(axis)];
+      if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis)) {
         Point left_branch_ub = tree_ub;
         left_branch_ub[axis] = tree_axis_mid;
-        left_->Nearest(closest_point, closest_point_distance, closest_point_distance_squared,
-                       test_point, NextAxis(axis), tree_lb, left_branch_ub);
+        left_->Nearest(closest_point, closest_point_distance, bbs, NextAxis(axis), tree_lb,
+                       left_branch_ub, distance_function, compute_bbs);
       }
     }
     void SearchNearestRight(Tagged<Point> *const closest_point,
                             double *const closest_point_distance,
-                            double *const closest_point_distance_squared, const Point test_point,
-                            const int32_t axis, const Point tree_lb, const Point tree_ub) const {
+                            std::array<BoundingBoxIntervals, D> *const bbs, const int32_t axis,
+                            const Point &tree_lb, const Point &tree_ub,
+                            const DistanceFunction<Point> &distance_function,
+                            const BoundingBoxesFunction<Point, D> &compute_bbs) const {
       const double tree_axis_lb = tree_lb[axis];
       const double tree_axis_ub = tree_ub[axis];
       const double tree_axis_mid = 0.5 * (tree_axis_lb + tree_axis_ub);
 
-      double bb_axis_lb = test_point[axis] - *closest_point_distance;
-      double bb_axis_ub = test_point[axis] + *closest_point_distance;
-      if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
+      const BoundingBoxIntervals &bb_axis = (*bbs)[static_cast<size_t>(axis)];
+      if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis)) {
         Point right_branch_lb = tree_lb;
         right_branch_lb[axis] = tree_axis_mid;
-        right_->Nearest(closest_point, closest_point_distance, closest_point_distance_squared,
-                        test_point, NextAxis(axis), right_branch_lb, tree_ub);
+        right_->Nearest(closest_point, closest_point_distance, bbs, NextAxis(axis), right_branch_lb,
+                        tree_ub, distance_function, compute_bbs);
       }
     }
   };  // struct Split
 
-  // Node(Empty empty) : value_(empty){}
-  // Node(Leaf leaf) : value_(leaf){}
-  // Node(Split split) :value_(std::move(split)){}
   explicit Node(const Empty &e) : value_{e} {}
   explicit Node(const Leaf &l) : value_{l} {}
   explicit Node(Split &&s) : value_{std::move(s)} {}
@@ -129,22 +120,14 @@ struct Node {
     value_ = std::move(s);
     return *this;
   };
-  // Node(const Empty &e) : value_{e} {}
-  // Node(const Leaf &l) : value_{l} {}
-  // Node(Split &&s) : value_{std::move(s)} {}
-  // Node &operator=(const Empty &e) { value_ = e; return *this; };
-  // Node &operator=(const Leaf &l) { value_ = l; return *this; };
-  // Node &operator=(Split &&s) { value_ = std::move(s); return *this; };
 
   // Insert a new point into the node.
   void InsertPoint(const Tagged<Point> new_point, const int32_t axis, const Point tree_lb,
                    const Point tree_ub) {
-    assert(tree_lb.x <= new_point.point.x);
-    assert(tree_lb.y <= new_point.point.y);
-    assert(tree_lb.z <= new_point.point.z);
-    assert(new_point.point.x <= tree_ub.x);
-    assert(new_point.point.y <= tree_ub.y);
-    assert(new_point.point.z <= tree_ub.z);
+    for (int32_t k = 0; k < static_cast<int32_t>(D); k++) {
+      assert(tree_lb[k] <= new_point.point[k]);
+      assert(new_point.point[k] <= tree_ub[k]);
+    }
 
     std::visit(
         Overloaded{
@@ -226,10 +209,8 @@ struct Node {
 
   struct SearchParams {
     double radius{0};
-    double radius_squared{0};
-    Point test_point{};
-    Point bounding_box_lb{};
-    Point bounding_box_ub{};
+    DistanceFunction<Point> distance_function{};
+    std::array<BoundingBoxIntervals, D> bounding_boxes{};
   };
   void Near(std::vector<Tagged<Point>> *const close_points, const SearchParams &params,
             const int32_t axis, const Point tree_lb, const Point tree_ub) const {
@@ -239,7 +220,7 @@ struct Node {
             [](const Empty /*unused*/) {},
             // If we're at a leaf, it's worth testing.
             [&params, close_points](const Leaf leaf) {
-              if (leaf.point_.point.DistanceSquared(params.test_point) <= params.radius_squared) {
+              if (params.distance_function(leaf.point_.point) <= params.radius) {
                 close_points->push_back(leaf.point_);
               }
             },
@@ -251,8 +232,8 @@ struct Node {
             //                                       bb_lb                bb_ub
             // Bounding box:                           |----------------------|
             [&params, close_points, axis, &tree_lb, &tree_ub](const Split &split) {
-              const double bb_axis_lb = params.bounding_box_lb[axis];
-              const double bb_axis_ub = params.bounding_box_ub[axis];
+              const BoundingBoxIntervals &bb_axis =
+                  params.bounding_boxes.at(static_cast<size_t>(axis));
               const double tree_axis_lb = tree_lb[axis];
               const double tree_axis_ub = tree_ub[axis];
               const double tree_axis_mid = 0.5 * (tree_axis_lb + tree_axis_ub);
@@ -263,11 +244,11 @@ struct Node {
               {
                 // Normal search, no angle wrapping.
                 // Left branch intersects bounding box:
-                if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis_lb, bb_axis_ub)) {
+                if (IntervalIntersects(tree_axis_lb, tree_axis_mid, bb_axis)) {
                   should_search_left = true;
                 }
                 // Right branch intersects bounding box:
-                if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis_lb, bb_axis_ub)) {
+                if (IntervalIntersects(tree_axis_mid, tree_axis_ub, bb_axis)) {
                   should_search_right = true;
                 }
               }
@@ -288,20 +269,22 @@ struct Node {
   }
 
   void Nearest(Tagged<Point> *const closest_point, double *const closest_point_distance,
-               double *const closest_point_distance_squared, const Point test_point,
-               const int32_t axis, const Point tree_lb, const Point tree_ub) const {
+               std::array<BoundingBoxIntervals, D> *const bbs, const int32_t axis,
+               const Point &tree_lb, const Point &tree_ub,
+               const DistanceFunction<Point> &distance_function,
+               const BoundingBoxesFunction<Point, D> &compute_bbs) const {
     std::visit(
         Overloaded{
             // There are no close points inside an empty node.
             [](const Empty /*unused*/) { return; },
             // If we're at a leaf, it's worth testing.
-            [&test_point, closest_point, closest_point_distance,
-             closest_point_distance_squared](const Leaf leaf) {
-              const double test_distance_squared = leaf.point_.point.DistanceSquared(test_point);
-              if (test_distance_squared < *closest_point_distance_squared) {
+            [closest_point, closest_point_distance, bbs, &distance_function,
+             &compute_bbs](const Leaf leaf) {
+              const double test_distance = distance_function(leaf.point_.point);
+              if (test_distance < *closest_point_distance) {
                 *closest_point = leaf.point_;
-                *closest_point_distance_squared = test_distance_squared;
-                *closest_point_distance = sqrt(test_distance_squared);
+                *closest_point_distance = test_distance;
+                *bbs = compute_bbs(test_distance);
               }
             },
             // If we're at a Split, only test branches which intersect the sphere's bounding box.
@@ -311,27 +294,25 @@ struct Node {
             //
             //                                       bb_lb                bb_ub
             // Bounding box:                           |----------------------|
-            [this, &test_point, axis, &tree_lb, &tree_ub, closest_point, closest_point_distance,
-             closest_point_distance_squared](const Split &split) {
+            [this, axis, &tree_lb, &tree_ub, closest_point, closest_point_distance, bbs,
+             &distance_function, &compute_bbs](const Split &split) {
               // The order of searching matters. If we go left to right always,
               // it'll be a breadth first search at worst.
               // We should first search the branch that is more likely to contain the close point
               // so that the bounding box can be shrunk as rapidly as possible
               const double tree_axis_mid = 0.5 * (tree_lb[axis] + tree_ub[axis]);
-              if (test_point[axis] < tree_axis_mid) {
-                split.SearchNearestLeft(closest_point, closest_point_distance,
-                                        closest_point_distance_squared, test_point, axis, tree_lb,
-                                        tree_ub);
-                split.SearchNearestRight(closest_point, closest_point_distance,
-                                         closest_point_distance_squared, test_point, axis, tree_lb,
-                                         tree_ub);
+
+              const BoundingBoxIntervals &intervals = (*bbs)[static_cast<size_t>(axis)];
+              if (intervals.centroid < tree_axis_mid) {
+                split.SearchNearestLeft(closest_point, closest_point_distance, bbs, axis, tree_lb,
+                                        tree_ub, distance_function, compute_bbs);
+                split.SearchNearestRight(closest_point, closest_point_distance, bbs, axis, tree_lb,
+                                         tree_ub, distance_function, compute_bbs);
               } else {
-                split.SearchNearestRight(closest_point, closest_point_distance,
-                                         closest_point_distance_squared, test_point, axis, tree_lb,
-                                         tree_ub);
-                split.SearchNearestLeft(closest_point, closest_point_distance,
-                                        closest_point_distance_squared, test_point, axis, tree_lb,
-                                        tree_ub);
+                split.SearchNearestRight(closest_point, closest_point_distance, bbs, axis, tree_lb,
+                                         tree_ub, distance_function, compute_bbs);
+                split.SearchNearestLeft(closest_point, closest_point_distance, bbs, axis, tree_lb,
+                                        tree_ub, distance_function, compute_bbs);
               }
             }},
         value_);

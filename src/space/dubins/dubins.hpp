@@ -24,8 +24,53 @@
  */
 
 #include <array>
+#include <glm/glm.hpp>
 #include <sstream>
 #include <string>
+
+#include "src/assert.hpp"
+
+namespace rrts::dubins {
+
+// Same as computing x - y but guaranteed to be in [-pi, pi].
+double AngleDifference(double x, double y);
+
+struct Se2Coord {
+  Se2Coord() = default;
+  glm::dvec2 position;
+  double theta;
+
+  // NOLINTNEXTLINE(fuchsia-overloaded-operator)
+  double &operator[](int32_t axis) {
+    switch (axis) {
+      case 0:
+        return position.x;
+      case 1:
+        return position.y;
+      case 2:
+        return theta;
+      default:
+        FAIL_MSG("Se2Coord doesn't have axis " << axis);
+    }
+  }
+
+  // NOLINTNEXTLINE(fuchsia-overloaded-operator)
+  const double &operator[](int32_t axis) const {
+    switch (axis) {
+      case 0:
+        return position.x;
+      case 1:
+        return position.y;
+      case 2:
+        return theta;
+      default:
+        FAIL_MSG("Se2Coord doesn't have axis " << axis);
+    }
+  }
+};
+
+// NOLINTNEXTLINE(fuchsia-overloaded-operator)
+std::ostream &operator<<(std::ostream &os, const Se2Coord &coordpath_type);
 
 enum class DubinsPathType { kLsl = 0, kLsr = 1, kRsl = 2, kRsr = 3, kRlr = 4, kLrl = 5 };
 
@@ -37,33 +82,50 @@ enum class DubinsWordStatus {
   kNoPath, /* no connection between configurations with this word */
 };
 
+enum class DubinsStatus {
+  kSuccess = 0, /* No error */
+  kNoPath,      /* no connection between configurations with this word */
+};
+
 struct DubinsPath {
+ private:
   /* the initial configuration */
-  std::array<double, 3> qi;
+  Se2Coord qi_;
+  /* the final configuration */
+  Se2Coord qf_;
   /* the lengths of the three segments */
-  std::array<double, 3> param;
+  std::array<double, 3> normalized_segment_lengths_;
   /* model forward velocity / model angular velocity */
-  double rho;
+  double rho_;
   /* the path type described */
-  DubinsPathType type;
+  DubinsPathType type_;
   /* total length */
-  double total_length;
+  double total_length_;
+
+ public:
+  [[nodiscard]] const Se2Coord &Endpoint() const { return qf_; }
+  [[nodiscard]] DubinsPathType Type() const { return type_; }
+  [[nodiscard]] double TotalLength() const { return total_length_; }
+
+  [[nodiscard]] Se2Coord Sample(double t) const;
 
   std::string Describe() {
     std::stringstream message;
-    message << "type: " << type << std::endl;
-    message << "qi: " << qi.at(0) << " " << qi.at(1) << " " << qi.at(2) << std::endl;
-    message << "lengths: " << param.at(0) << " " << param.at(1) << " " << param.at(2) << std::endl;
-    message << "rho: " << rho << std::endl;
+    message << "type: " << type_ << std::endl;
+    message << "qi: " << qi_ << std::endl;
+    message << "normalized lengths: " << normalized_segment_lengths_.at(0) << " "
+            << normalized_segment_lengths_.at(1) << " " << normalized_segment_lengths_.at(2)
+            << std::endl;
+    message << "rho: " << rho_ << std::endl;
     return message.str();
   }
-};
 
-enum class DubinsStatus {
-  kSuccess = 0,               /* No error */
-  kPathParameterizationError, /* Path parameterisitation error */
-                              //  kInvalidRho,                /* the rho value is invalid */
-  kNoPath,                    /* no connection between configurations with this word */
+  // TODO(greg): consider making into constructors
+  friend DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                         double rho);
+  friend DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0,
+                                            const Se2Coord &q1, double rho,
+                                            DubinsPathType pathType);
 };
 
 struct DubinsIntermediateResults {
@@ -79,9 +141,8 @@ struct DubinsIntermediateResults {
 };
 
 DubinsWordStatus DubinsWord(const DubinsIntermediateResults &in, DubinsPathType pathType,
-                            std::array<double, 3> &out);
-DubinsIntermediateResults ComputeDubinsIntermediateResults(const std::array<double, 3> &q0,
-                                                           const std::array<double, 3> &q1,
+                            std::array<double, 3> &normalized_segment_lengths);
+DubinsIntermediateResults ComputeDubinsIntermediateResults(const Se2Coord &q0, const Se2Coord &q1,
                                                            double rho);
 
 /**
@@ -99,8 +160,8 @@ DubinsIntermediateResults ComputeDubinsIntermediateResults(const std::array<doub
  * velocity)
  * @return      - non-zero on error
  */
-DubinsStatus DubinsShortestPath(DubinsPath &path, const std::array<double, 3> &q0,
-                                const std::array<double, 3> &q1, double rho);
+DubinsStatus DubinsShortestPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                double rho);
 
 /**
  * Generate a path with a specified word from an initial configuration to
@@ -114,24 +175,7 @@ DubinsStatus DubinsShortestPath(DubinsPath &path, const std::array<double, 3> &q
  * @param pathType - the specific path type to use
  * @return         - non-zero on error
  */
-DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const std::array<double, 3> &q0,
-                                   const std::array<double, 3> &q1, double rho,
-                                   DubinsPathType pathType);
+DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                   double rho, DubinsPathType pathType);
 
-/**
- * Calculate the configuration along the path, using the parameter t
- *
- * @param path - an initialised path
- * @param t    - a length measure, where 0 <= t < dubins_path_length(path)
- * @param q    - the configuration result
- * @returns    - non-zero if 't' is not in the correct range
- */
-DubinsStatus DubinsPathSample(const DubinsPath &path, double t, std::array<double, 3> &q);
-
-/**
- * Convenience function to identify the endpoint of a path
- *
- * @param path - an initialised path
- * @param q    - the configuration result
- */
-DubinsStatus DubinsPathEndpoint(const DubinsPath &path, std::array<double, 3> &q);
+}  //  namespace rrts::dubins

@@ -10,7 +10,7 @@ namespace rrts {
 
 #define ASSERT(expr)                                                                             \
   {                                                                                              \
-    if (!expr) {                                                                                 \
+    if (!(expr)) {                                                                                 \
       fprintf(stderr, "\n  Assertion '" #expr "' failed at %s, line %d.\n", __FILE__, __LINE__); \
       rrts::ExitThreadSafe(EXIT_FAILURE);                                                        \
     }                                                                                            \
@@ -22,7 +22,7 @@ namespace rrts {
       std::cerr << std::endl                                                                 \
                 << "  Assertion '" #expr "' failed at " << __FILE__ << ", line " << __LINE__ \
                 << "." << std::endl;                                                         \
-      std::cerr << msg << std::endl;                                                         \
+      std::cerr << msg << std::endl;            /* NOLINT */                                 \
       rrts::ExitThreadSafe(EXIT_FAILURE);                                                    \
     }                                                                                        \
   }
@@ -30,7 +30,7 @@ namespace rrts {
 #define FAIL_MSG(msg)                                                     \
   {                                                                       \
     fprintf(stderr, "\n  Failure at %s, line %d.\n", __FILE__, __LINE__); \
-    std::cerr << msg << std::endl;                                        \
+    std::cerr << msg << std::endl;                /* NOLINT */            \
     rrts::ExitThreadSafe(EXIT_FAILURE);                                   \
   }
 

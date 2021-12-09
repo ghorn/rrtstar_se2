@@ -14,7 +14,7 @@ Point R3::Sample() {
 
 bool R3::PointInSpheres(const Point &p) const {
   auto point_in_sphere = [&p](const Sphere &s) {
-    return p.DistanceSquared(Point(s.center)) <= s.radius * s.radius;
+    return glm::distance2(p, s.center) <= s.radius * s.radius;
   };
   return std::any_of(sphere_obstacles_.cbegin(), sphere_obstacles_.cend(), point_in_sphere);
 }
@@ -45,7 +45,7 @@ Line R3::FormBridge(const Point &v0, const Point &v1) const {
   Line line{};
   line.p0 = v0;
   line.p1 = v1;
-  line.dist = sqrt(v0.DistanceSquared(v1));
+  line.dist = glm::distance(glm::dvec3(v0), glm::dvec3(v1));
 
   return line;
 }
@@ -58,7 +58,7 @@ Point R3::Steer(const Point &v0, const Point &v1, double eta) const {
   const double dist = sqrt(dx * dx + dy * dy + dz * dz);
 
   // if distance is shorter than eta, then go all the way to the second point
-  if (dist < eta) {
+  if (dist <= eta) {
     return v1;
   }
 
@@ -96,4 +96,17 @@ bool R3::CollisionFree(const Line &line) const {
   }
   return true;
 }
+
+std::array<BoundingBoxIntervals, 3> R3::BoundingBox(const Point &p, double max_distance) const {
+  std::array<BoundingBoxIntervals, 3> bbs{};
+
+  for (size_t k = 0; k < 3; k++) {
+    double coord = p[static_cast<int32_t>(k)];
+    bbs[k].centroid = coord;
+    bbs[k].intervals.push_back(BoundingBoxInterval{coord - max_distance, coord + max_distance});
+  }
+
+  return bbs;
+}
+
 }  // namespace rrts::space::r3

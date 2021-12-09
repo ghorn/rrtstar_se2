@@ -17,11 +17,15 @@
 #include "bb3d/opengl_context.hpp"  // for Window
 #include "bb3d/shader/colorlines.hpp"
 #include "bb3d/shader/lines.hpp"
-#include "src/rrt_star.hpp"
 #include "src/space/dubins/dubins.hpp"
-#include "src/space/r3.hpp"
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
+
+using Se2Coord = rrts::dubins::Se2Coord;
+using DubinsPath = rrts::dubins::DubinsPath;
+using DubinsPathType = rrts::dubins::DubinsPathType;
+using DubinsWordStatus = rrts::dubins::DubinsWordStatus;
+using DubinsStatus = rrts::dubins::DubinsStatus;
 
 // std::array<double, 3> DrawDubinsSegment(double t, const std::array<double, 3> &qi, SegmentType
 // type) {
@@ -116,7 +120,7 @@
 //}
 
 struct SixPaths {
-  SixPaths(const std::array<double, 3> &c0, const std::array<double, 3> &c1, double rho)
+  SixPaths(const Se2Coord &c0, const Se2Coord &c1, double rho)
       : shortest_path{}, paths{}, path_valid{} {
     for (size_t k = 0; k < 6; k++) {
       auto path_type = static_cast<DubinsPathType>(k);
@@ -129,10 +133,7 @@ struct SixPaths {
     }
 
     DubinsStatus ret = DubinsShortestPath(shortest_path, c0, c1, rho);
-    if (DubinsStatus::kSuccess != ret) {
-      std::cerr << "ruh roh" << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
+    ASSERT(DubinsStatus::kSuccess == ret);
 
     // std::cerr << shortest_path.Describe() << std::endl;
   }
@@ -144,12 +145,12 @@ struct SixPaths {
   std::vector<std::vector<bb3d::ColoredVec3> > DrawPaths() {
     std::vector<std::vector<bb3d::ColoredVec3> > all_paths;
     std::vector<glm::vec4> colors;
-    colors.push_back({1, 0, 0, 1});
-    colors.push_back({0, 1, 0, 1});
-    colors.push_back({0, 0, 1, 1});
-    colors.push_back({0, 1, 1, 1});
-    colors.push_back({1, 0, 1, 1});
-    colors.push_back({1, 1, 0, 1});
+    colors.emplace_back(1, 0, 0, 1);
+    colors.emplace_back(0, 1, 0, 1);
+    colors.emplace_back(0, 0, 1, 1);
+    colors.emplace_back(0, 1, 1, 1);
+    colors.emplace_back(1, 0, 1, 1);
+    colors.emplace_back(1, 1, 0, 1);
 
     for (size_t k = 0; k < 6; k++) {
       if (path_valid[k]) {
@@ -164,22 +165,13 @@ struct SixPaths {
   }
 
  private:
-  std::vector<bb3d::ColoredVec3> DrawPath(const DubinsPath &path, const glm::vec4 &color,
+  static std::vector<bb3d::ColoredVec3> DrawPath(const DubinsPath &path, const glm::vec4 &color,
                                           double z) {
     std::vector<bb3d::ColoredVec3> line;
 
     for (int j = 0; j < 50; j++) {
-      double t = 0.999 * path.total_length * static_cast<double>(j) / (50 - 1);  // static_cast)
-      std::array<double, 3> q{};
-      DubinsStatus sample_ret = DubinsPathSample(path, t, q);
-      if (sample_ret != DubinsStatus::kSuccess) {
-        std::cerr << "bad return code for sampling: " << static_cast<int>(sample_ret) << std::endl;
-        // double q[3];
-        // int sample_ret = dubins_path_sample(&path, t, q);
-        // if (sample_ret != 0) {
-        //  std::cerr << "bad return code for sampling: " << sample_ret << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
+      double t = 0.999 * path.TotalLength() * static_cast<double>(j) / (50 - 1);  // static_cast)
+      Se2Coord q = path.Sample(t);
       // if (first) {
       //  std::cout << "t " << t << ": " << q[0] << ", " << q[1] << std::endl;
       //}
@@ -215,16 +207,16 @@ int Run(char *argv0) {
   int counter = 0;
   std::function<void()> update_visualization = [&counter, &message_string, &color_lines]() {
     double t = static_cast<double>(counter) / 60.0;
-    std::array<double, 3> configuration0 = {0, 0, 0};
-    std::array<double, 3> configurationF = {1 + 3.5 * sin(t), 1 + cos(0.2 * t), 0.2 * t};
+    Se2Coord configuration0 = {{1, 1}, 0.1 * t};
+    Se2Coord configuration_f = {{1 + 3.5 * sin(t), 1 + cos(0.2 * t)}, 0.2 * t};
     const double rho = 1;
-    SixPaths six_paths(configuration0, configurationF, rho);
+    SixPaths six_paths(configuration0, configuration_f, rho);
     std::vector<std::vector<bb3d::ColoredVec3> > lines = six_paths.DrawPaths();
     color_lines.Update(lines);
     counter++;
     std::stringstream message;
     const DubinsPath &best = six_paths.shortest_path;
-    message << "best path " << best.type << " , cost " << best.total_length;
+    message << "best path " << best.Type() << " , cost " << best.TotalLength();
     message_string = message.str();
   };
 

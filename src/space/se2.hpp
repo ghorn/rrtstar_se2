@@ -6,41 +6,31 @@
 #include <utility>
 #include <vector>
 
+#include "src/assert.hpp"
+#include "src/space/dubins/dubins.hpp"
 #include "src/space/space_base.hpp"
+#include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::se2 {
 
-// Same as computing x - y but guaranteed to be in [-pi, pi].
-double AngleDifference(double x, double y);
+using Se2Coord = dubins::Se2Coord;
+using DubinsPath = dubins::DubinsPath;
+using BoundingBoxInterval = rrts::tree::BoundingBoxInterval;
+using BoundingBoxIntervals = rrts::tree::BoundingBoxIntervals;
 
-using glm::dvec3;
-struct Se2Coord : public dvec3 {
-  using dvec3::dvec3;
-  explicit Se2Coord(const glm::dvec3 &v) : dvec3(v){};
-  [[nodiscard]] double DistanceSquared(const Se2Coord &other) const {
-    const double dx = x - other.x;
-    const double dy = y - other.y;
-    const double dz = AngleDifference(z, other.z);
-    return dx * dx + dy * dy + dz * dz;
-  }
+// simple obstacle
+struct Sphere {
+  glm::dvec2 center;
+  double radius;
 };
 
-//  // simple obstacle
-//  struct Sphere {
-//    glm::dvec3 center;
-//    double radius;
-//  };
-
-struct DubinsPath {
-  int dummy{};
-  Se2Coord p0{};
-  Se2Coord p1{};
-  double dist{0};
-};
+using BoundingBoxReflector =
+    std::function<std::vector<BoundingBoxInterval>(int32_t axis, BoundingBoxInterval bb)>;
 
 class Se2 : public SpaceBase<Se2Coord, DubinsPath, 3> {
  public:
-  Se2(Se2Coord lb, Se2Coord ub) : lb_(lb), ub_(ub){};
+  Se2(double rho, const glm::dvec2 &lb, const glm::dvec2 &ub, std::vector<Sphere> sphere_obstacles)
+      : rho_(rho), lb_{lb, -M_PI}, ub_{ub, M_PI}, sphere_obstacles_(std::move(sphere_obstacles)){};
   ~Se2() override = default;
 
   [[nodiscard]] double MuXfree() const override;
@@ -48,21 +38,27 @@ class Se2 : public SpaceBase<Se2Coord, DubinsPath, 3> {
   [[nodiscard]] Se2Coord Steer(const Se2Coord &v0, const Se2Coord &v1, double eta) const override;
 
   // bridges
-  [[nodiscard]] bool CollisionFree(const DubinsPath &line) const override;
-  [[nodiscard]] double BridgeCost(const DubinsPath &line) const override { return line.dist; };
+  [[nodiscard]] bool CollisionFree(const DubinsPath &path) const override;
+  [[nodiscard]] double BridgeCost(const DubinsPath &line) const override {
+    return line.TotalLength();
+  };
   [[nodiscard]] DubinsPath FormBridge(const Se2Coord &v0, const Se2Coord &v1) const override;
-  [[nodiscard]] std::array<bool, 3> Periodic() const override { return {false, false, true}; }
 
-  const Se2Coord &Lb() const override { return lb_; };
-  const Se2Coord &Ub() const override { return ub_; };
+  // efficient search
+  [[nodiscard]] std::array<BoundingBoxIntervals, 3> BoundingBox(const Se2Coord &p,
+                                                  double max_distance) const override;
+
+  [[nodiscard]] const Se2Coord &Lb() const override { return lb_; };
+  [[nodiscard]] const Se2Coord &Ub() const override { return ub_; };
 
  private:
   Se2Coord Sample();
-  //[[nodiscard]] bool PointInSpheres(const Se2Coord &p) const;
+  [[nodiscard]] bool Se2CoordInSpheres(const Se2Coord &p) const;
 
+  double rho_;
   Se2Coord lb_;
   Se2Coord ub_;
-  // std::vector<Sphere> sphere_obstacles_;
+  std::vector<Sphere> sphere_obstacles_;
   std::mt19937_64 rng_engine_{};  // NOLINT(cert-msc32-c,cert-msc51-cpp)
   std::uniform_real_distribution<double> uniform_distribution_{};
 };

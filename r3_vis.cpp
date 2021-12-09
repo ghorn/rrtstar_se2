@@ -17,7 +17,7 @@
 #include "bb3d/opengl_context.hpp"  // for Window
 #include "bb3d/shader/colorlines.hpp"
 #include "bb3d/shader/lines.hpp"
-#include "src/rrt_star.hpp"
+#include "src/search.hpp"
 #include "src/space/r3.hpp"
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
@@ -127,11 +127,8 @@ struct Problem {
   }
 
   [[nodiscard]] bool InGoalRegion(const Point &p) const {
-    Point goal;
-    goal.x = goal_region_.center.x;
-    goal.y = goal_region_.center.y;
-    goal.z = goal_region_.center.z;
-    return sqrt(p.DistanceSquared(goal)) <= goal_region_.radius;
+    double dist = glm::distance(glm::dvec3(p), goal_region_.center);
+    return dist <= goal_region_.radius;
   }
 
   double UpdateGoalLine(bb3d::Lines &goal_line, const std::vector<double> &cost_to_go) const {
@@ -217,8 +214,9 @@ static Problem RandomProblem(std::mt19937_64 &rng_engine) {
   while (obstacles.size() < n) {
     const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
     const Point p = {dx * uniform(), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
-    const bool avoids_goal = sqrt(p.DistanceSquared(goal)) > obstacle_radius + goal_radius;
-    const bool avoids_start = sqrt(p.DistanceSquared(Point(0, 0, 0))) > obstacle_radius + 0.5;
+    const bool avoids_goal =
+        glm::distance(glm::dvec3(p), glm::dvec3(goal)) > obstacle_radius + goal_radius;
+    const bool avoids_start = glm::length(glm::dvec3(p)) > obstacle_radius + 0.5;
     if (avoids_goal && avoids_start) {
       Sphere obstacle = {p, obstacle_radius};
       obstacles.push_back(obstacle);

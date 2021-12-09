@@ -6,7 +6,11 @@
 #include <set>
 #include <vector>
 
+#include "src/tree/tree_base.hpp"  // BoundingBoxIntervals
+
 namespace rrts::space {
+
+using BoundingBoxIntervals = rrts::tree::BoundingBoxIntervals;
 
 template <typename Point, typename Bridge, size_t D>
 class SpaceBase {
@@ -25,8 +29,9 @@ class SpaceBase {
   virtual double BridgeCost(const Bridge &bridge) const = 0;
   virtual Bridge FormBridge(const Point &v0, const Point &v1) const = 0;
 
-  // periodic
-  virtual std::array<bool, D> Periodic() const = 0;
+  // efficient K-D tree searching
+  virtual std::array<BoundingBoxIntervals, 3> BoundingBox(const Point &p,
+                                                          double max_distance) const = 0;
 };
 
 }  // namespace rrts::space

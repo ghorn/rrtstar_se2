@@ -7,19 +7,16 @@
 #include <vector>
 
 #include "src/space/space_base.hpp"
+#include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::r3 {
+
+using BoundingBoxInterval = rrts::tree::BoundingBoxInterval;
 
 using glm::dvec3;
 struct Point : public dvec3 {
   using dvec3::dvec3;
   explicit Point(const glm::dvec3 &v) : dvec3(v){};
-  [[nodiscard]] double DistanceSquared(const Point &other) const {
-    const double dx = x - other.x;
-    const double dy = y - other.y;
-    const double dz = z - other.z;
-    return dx * dx + dy * dy + dz * dz;
-  }
 };
 
 // simple obstacle
@@ -48,10 +45,13 @@ class R3 : public SpaceBase<Point, Line, 3> {
   [[nodiscard]] bool CollisionFree(const Line &line) const override;
   [[nodiscard]] double BridgeCost(const Line &line) const override { return line.dist; };
   [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
-  [[nodiscard]] std::array<bool, 3> Periodic() const override { return {false, false, false}; }
 
-  const Point &Lb() const override { return lb_; };
-  const Point &Ub() const override { return ub_; };
+  // efficient search
+  [[nodiscard]] std::array<BoundingBoxIntervals, 3> BoundingBox(const Point &p,
+                                                  double max_distance) const override;
+
+  [[nodiscard]] const Point &Lb() const override { return lb_; };
+  [[nodiscard]] const Point &Ub() const override { return ub_; };
 
  private:
   Point Sample();

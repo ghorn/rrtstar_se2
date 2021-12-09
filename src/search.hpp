@@ -6,6 +6,7 @@
 #include <random>
 #include <set>
 
+#include "src/assert.hpp"
 #include "src/space/n_ball.hpp"
 #include "src/tagged.hpp"
 
@@ -30,7 +31,7 @@ template <class Point, class Bridge, int D, class Tree, class Space>
 class Search {
  public:
   Search(Point x_init, Space space, double eta)
-      : space_(space), tree_(space_.Lb(), space_.Ub(), space.Periodic()), eta_(eta) {
+      : space_(space), tree_(space_.Lb(), space_.Ub()), eta_(eta) {
     tree_.Insert({0, x_init});
     children_map_.emplace_back(std::set<size_t>{});
   }
@@ -99,7 +100,14 @@ class Search {
     const Point x_rand = space_.SampleFree();
 
     // L4 from paper
-    const Tagged<Point> x_nearest = tree_.Nearest(x_rand);
+    // const Tagged<Point> x_nearest = tree_.Nearest(x_rand);
+    // TODO(greg): return bridge to avoid recomputing it
+    const Tagged<Point> x_nearest = tree_.Nearest(
+        [&x_rand, this](const Point &p) {
+          Bridge p_to_rand_bridge = space_.FormBridge(p, x_rand);
+          return space_.BridgeCost(p_to_rand_bridge);
+        },
+        [&x_rand, this](double distance) { return space_.BoundingBox(x_rand, distance); });
 
     // L5 from paper
     const Point x_new = space_.Steer(x_nearest.point, x_rand, eta_);
@@ -113,7 +121,18 @@ class Search {
     // L7 from paper
     const double card_v = tree_.Cardinality();
     const double radius = fmin(gamma_rrts_ * pow(log(card_v) / card_v, 1 / kD), eta_);
-    std::vector<Tagged<Point> > x_nears = tree_.Near(x_new, radius);
+    // TODO(greg): return bridges to avoid recomputing them
+    std::vector<Tagged<Point> > x_nears = tree_.Near(
+        [&x_new, this](const Point &p) {
+          Bridge p_to_x_new_bridge = space_.FormBridge(p, x_new);
+          return space_.BridgeCost(p_to_x_new_bridge);
+        },
+        space_.BoundingBox(x_new, radius), radius);
+
+    // ASSERT(!x_nears.empty());
+    // if (x_nears.empty()) {
+    //  std::cerr << "empty X_nears" << std::endl;
+    //}
 
     // ************** Add new node to graph. ****************
     // L8 from paper

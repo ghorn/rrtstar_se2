@@ -1,7 +1,7 @@
 #include <cstdlib>   // for EXIT_SUCCESS
 #include <iostream>  // for operator<<, basic_ostream, cerr, endl, ostream, cha...
 
-#include "src/rrt_star.hpp"
+#include "src/search.hpp"
 #include "src/space/r3.hpp"
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"

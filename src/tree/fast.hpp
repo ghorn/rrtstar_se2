@@ -8,6 +8,7 @@
 #include <variant>
 #include <vector>
 
+#include "src/assert.hpp"
 #include "src/tagged.hpp"
 #include "src/tree/node.hpp"
 #include "src/tree/tree_base.hpp"
@@ -17,18 +18,10 @@ namespace rrts::tree {
 // Just a Node with some meta-information and helper functions.
 template <typename Point, size_t D>
 struct Fast : public TreeBase<Point, D> {
-  Fast(Point lb, Point ub, std::array<bool, 3> periodic)
-      : TreeBase<Point, D>(periodic), num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}) {
-    for (bool p : periodic) {
-      if (p) {
-        throw std::runtime_error("ERROR: Fast tree doesn't yet support periodicity.");
-      }
-    }
-  };
+  Fast(Point lb, Point ub) : num_nodes_(0), lb_(lb), ub_(ub), root_(Empty{}){};
 
   void Draw() const { root_.Draw(""); }
-  void Insert(const Tagged<Point> &new_point) {
-    // std::cerr << "inserting point " << new_point.index << std::endl;
+  void Insert(const Tagged<Point> &new_point) override {
     num_nodes_++;
     root_.InsertPoint(new_point, 0, lb_, ub_);
   }
@@ -39,47 +32,40 @@ struct Fast : public TreeBase<Point, D> {
   Point ub_;
 
  public:
-  Tagged<Point> Nearest(const Point &test_point) const {
+  Tagged<Point> Nearest(const DistanceFunction<Point> &distance_fun,
+                        const BoundingBoxesFunction<Point, D> &compute_bbs) const override {
     // Test point will be overwritten because closest point distance is so high.
-    // This is potentially violated if bounds are anything besides (0, 1).
-    Tagged<Point> closest_point = {2222222222222222, test_point};
+    Tagged<Point> closest_point = {2222222222222222, {}};
     double closest_point_distance = 1e9;
-    double closest_point_distance_squared = 1e18;
+    std::array<BoundingBoxIntervals, D> bbs = compute_bbs(closest_point_distance);
 
-    root_.Nearest(&closest_point, &closest_point_distance, &closest_point_distance_squared,
-                  test_point, 0, lb_, ub_);
+    root_.Nearest(&closest_point, &closest_point_distance, &bbs, 0, lb_, ub_, distance_fun,
+                  compute_bbs);
 
     return closest_point;
   }
-  std::vector<Tagged<Point>> Near(const Point &test_point, const double radius) const {
+
+  std::vector<Tagged<Point>> Near(const DistanceFunction<Point> &distance_fun,
+                                  std::array<BoundingBoxIntervals, D> bounding_boxes,
+                                  double radius) const override {
     std::vector<Tagged<Point>> close_points;
 
-    typename Node<Point>::SearchParams search_params;
+    typename Node<Point, D>::SearchParams search_params;
     search_params.radius = radius;
-    search_params.radius_squared = radius * radius;
-    search_params.test_point = test_point;
-
-    search_params.bounding_box_lb = test_point;
-    search_params.bounding_box_lb.x -= radius;
-    search_params.bounding_box_lb.y -= radius;
-    search_params.bounding_box_lb.z -= radius;
-
-    search_params.bounding_box_ub = test_point;
-    search_params.bounding_box_ub.x += radius;
-    search_params.bounding_box_ub.y += radius;
-    search_params.bounding_box_ub.z += radius;
+    search_params.distance_function = distance_fun;
+    search_params.bounding_boxes = bounding_boxes;
 
     root_.Near(&close_points, search_params, 0, lb_, ub_);
     return close_points;
   }
 
-  [[nodiscard]] double Cardinality() const {
+  [[nodiscard]] double Cardinality() const override {
     // TODO(greg): this might be wrong
     return static_cast<double>(num_nodes_);
   }
 
  private:
-  Node<Point> root_;
+  Node<Point, D> root_;
 
 };  // struct Fast
 

@@ -1,20 +1,30 @@
 #include <chrono>  // for operator""s, chrono_literals
+#include <glm/gtx/norm.hpp>
 #include <iostream>
 #include <random>
 #include <set>
 
 #include "src/space/n_ball.hpp"
 #include "src/space/r3.hpp"
+#include "src/space/space_base.hpp"
 #include "src/tree/fast.hpp"
 #include "src/tree/naive.hpp"
 
-using Point = rrts::space::r3::Point;
-template <typename P, size_t D>
-using Naive = rrts::tree::Naive<P, D>;
-template <typename P, size_t D>
-using Fast = rrts::tree::Fast<P, D>;
+template <typename Point, typename Bridge, size_t D>
+using SpaceBase = rrts::space::SpaceBase<Point, Bridge, D>;
+
 template <typename P>
 using Tagged = rrts::Tagged<P>;
+
+template <typename P, size_t D>
+using Naive = rrts::tree::Naive<P, D>;
+
+template <typename P, size_t D>
+using Fast = rrts::tree::Fast<P, D>;
+
+using Point = rrts::space::r3::Point;
+
+using Bridge = rrts::space::r3::Line;
 
 using namespace std::chrono_literals;
 
@@ -27,13 +37,24 @@ static inline Point Sample(std::mt19937_64 &rng_engine,
   return Point{x, y, z};
 }
 
-void TestNearest(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_tree,
-                 const Point &test_point, std::chrono::duration<double> &naive_time,
+void TestNearest(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &naive_tree,
+                 const Fast<Point, 3> &fast_tree, const Point &test_point,
+                 std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
-  Tagged<Point> naive_nearest = naive_tree.Nearest(test_point);
+  Tagged<Point> naive_nearest = naive_tree.Nearest(
+      [&test_point, &space](const Point &p) {
+        Bridge p_to_rand_bridge = space.FormBridge(p, test_point);
+        return space.BridgeCost(p_to_rand_bridge);
+      },
+      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); });
   auto t1 = std::chrono::high_resolution_clock::now();
-  Tagged<Point> fast_nearest = fast_tree.Nearest(test_point);
+  Tagged<Point> fast_nearest = fast_tree.Nearest(
+      [&test_point, &space](const Point &p) {
+        Bridge p_to_rand_bridge = space.FormBridge(p, test_point);
+        return space.BridgeCost(p_to_rand_bridge);
+      },
+      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); });
   auto t2 = std::chrono::high_resolution_clock::now();
 
   naive_time += t1 - t0;
@@ -46,10 +67,10 @@ void TestNearest(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_t
             test_point.z);
     fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.point.x,
             fast_nearest.point.y, fast_nearest.point.z,
-            test_point.DistanceSquared(fast_nearest.point));
+            glm::distance2(glm::dvec3(test_point), glm::dvec3(fast_nearest.point)));
     fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.point.x,
             naive_nearest.point.y, naive_nearest.point.z,
-            test_point.DistanceSquared(naive_nearest.point));
+            glm::distance2(glm::dvec3(test_point), glm::dvec3(naive_nearest.point)));
     std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality()
               << std::endl;
     fast_tree.Draw();
@@ -57,13 +78,23 @@ void TestNearest(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_t
   }
 }
 
-void TestNear(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_tree,
-              const Point &test_point, const double radius,
+void TestNear(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &naive_tree,
+              const Fast<Point, 3> &fast_tree, const Point &test_point, const double radius,
               std::chrono::duration<double> &naive_time, std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
-  const std::vector<Tagged<Point> > naive_near_points = naive_tree.Near(test_point, radius);
+  const std::vector<Tagged<Point> > naive_near_points = naive_tree.Near(
+      [&test_point, &space](const Point &p) {
+        Bridge p_to_test_point_bridge = space.FormBridge(p, test_point);
+        return space.BridgeCost(p_to_test_point_bridge);
+      },
+      space.BoundingBox(test_point, radius), radius);
   auto t1 = std::chrono::high_resolution_clock::now();
-  const std::vector<Tagged<Point> > fast_near_points = fast_tree.Near(test_point, radius);
+  const std::vector<Tagged<Point> > fast_near_points = fast_tree.Near(
+      [&test_point, &space](const Point &p) {
+        Bridge p_to_test_point_bridge = space.FormBridge(p, test_point);
+        return space.BridgeCost(p_to_test_point_bridge);
+      },
+      space.BoundingBox(test_point, radius), radius);
   auto t2 = std::chrono::high_resolution_clock::now();
   naive_time += t1 - t0;
   fast_time += t2 - t1;
@@ -81,13 +112,13 @@ void TestNear(const Naive<Point, 3> &naive_tree, const Fast<Point, 3> &fast_tree
   for (size_t index : naive_near_point_set) {
     if (fast_near_point_set.find(index) == fast_near_point_set.end()) {
       fail = true;
-      std::cerr << "node " << index << " is missing from fast test" << std::endl;
+      std::cerr << "node " << index << " is missing from fast tree" << std::endl;
     }
   }
   for (size_t index : fast_near_point_set) {
     if (naive_near_point_set.find(index) == naive_near_point_set.end()) {
       fail = true;
-      std::cerr << "node " << index << " was incorrectly found by fast test" << std::endl;
+      std::cerr << "node " << index << " was incorrectly found by fast tree" << std::endl;
     }
   }
   if (fail) {
@@ -99,9 +130,8 @@ void Run() {
   const Point lb = {-2, -3, -0.3};
   const Point ub = {1, 1.1, 0.6};
 
-  std::array<bool, 3> periodic = {false, false, false};
-  Naive<Point, 3> naive_tree(lb, ub, periodic);
-  Fast<Point, 3> fast_tree(lb, ub, periodic);
+  Naive<Point, 3> naive_tree(lb, ub);
+  Fast<Point, 3> fast_tree(lb, ub);
 
   std::mt19937_64 rng_engine;  // NOLINT(cert-msc32-c,cert-msc51-cpp)
   std::uniform_real_distribution<double> uniform_distribution;
@@ -119,6 +149,8 @@ void Run() {
 
   std::chrono::duration<double> fast_near_time{};
   std::chrono::duration<double> naive_near_time{};
+
+  rrts::space::r3::R3 space(lb, ub, {});
 
   for (size_t count = 0; count < 50000; count++) {
     const Tagged<Point> p = {count, Sample(rng_engine, uniform_distribution, lb, ub)};
@@ -138,14 +170,14 @@ void Run() {
 
     // do a nearest search
     const Point test_point = Sample(rng_engine, uniform_distribution, lb, ub);
-    TestNearest(naive_tree, fast_tree, test_point, naive_nearest_time, fast_nearest_time);
+    TestNearest(space, naive_tree, fast_tree, test_point, naive_nearest_time, fast_nearest_time);
 
     // do a near search
     // const double radius = pow(100 * volume / fast_tree.Cardinality(), 1/3);
     const double card_v = naive_tree.Cardinality();
     const double radius = gamma_rrts * pow(log(card_v) / card_v, 1 / d);
 
-    TestNear(naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time);
+    TestNear(space, naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time);
   }
 
   double n = naive_tree.Cardinality();
