@@ -1,5 +1,5 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-modernize-use-trailing-return-type,-llvmlibc-restrict-system-libc-headers,-llvm-header-guard,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-cppcoreguidelines-pro-type-union-access,-altera-struct-pack-align,-readability-function-cognitive-complexity,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-special-member-functions,-hicpp-special-member-functions,-fuchsia-default-arguments-declarations,-fuchsia-default-arguments-calls'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-modernize-use-trailing-return-type,-llvmlibc-restrict-system-libc-headers,-llvm-header-guard,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-cppcoreguidelines-pro-type-union-access,-altera-struct-pack-align,-readability-function-cognitive-complexity,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-pro-type-reinterpret-cast,-fuchsia-default-arguments-declarations,-fuchsia-default-arguments-calls,-cppcoreguidelines-pro-bounds-constant-array-index'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
@@ -30,6 +30,10 @@ CheckOptions:
   - key:             modernize-loop-convert.MaxCopySize
     value:           '16'
   - key:             cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
+    value:           '1'
+  - key:             cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value:           '1'
+  - key:             hicpp-special-member-functions.AllowSoleDefaultDtor
     value:           '1'
   - key:             modernize-use-nullptr.NullMacros
     value:           'NULL'
