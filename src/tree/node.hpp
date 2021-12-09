@@ -335,10 +335,9 @@ struct Node {
         value_);
   }
 
-  static const int32_t kTreeDimension = 3;  // TODO(greg): don't hardcode!!!
   static int32_t NextAxis(int32_t axis) {
     int32_t next_axis = axis + 1;
-    if (next_axis >= kTreeDimension) {
+    if (next_axis >= static_cast<int32_t>(D)) {
       next_axis = 0;
     }
     return next_axis;
