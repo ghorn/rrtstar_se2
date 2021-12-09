@@ -151,7 +151,7 @@ void Run() {
 
   rrts::space::r3::R3 space(lb, ub, {});
 
-  for (size_t count = 0; count < 50000; count++) {
+  for (size_t count = 0; count < 5000; count++) {
     const Tagged<Point> p = {count, Sample(rng_engine, uniform_distribution, lb, ub)};
 
     // insert a new point
