@@ -96,8 +96,8 @@ DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho)
 
   double best_cost = INFINITY;
   for (DubinsPathType path_type :
-       {DubinsPathType::kLsl, DubinsPathType::kLsr, DubinsPathType::kRsl, DubinsPathType::kRsr,
-        DubinsPathType::kRlr, DubinsPathType::kLrl}) {
+       // The paper states without justification that we can skip RLR and LRL.
+       {DubinsPathType::kLsl, DubinsPathType::kLsr, DubinsPathType::kRsl, DubinsPathType::kRsr}) {
     std::array<double, 3> normalized_segment_lengths{};
     DubinsWordStatus errcode = DubinsWord(in, path_type, normalized_segment_lengths);
     if (errcode == DubinsWordStatus::kSuccess) {
