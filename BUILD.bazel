@@ -120,11 +120,15 @@ cc_binary(
 )
 
 cc_test(
-    name = "test_fast_r3",
+    name = "test_fast_tree",
     srcs = [
-        "test/test_fast_r3.cpp",
+        "test/test_fast_tree.cpp",
     ],
-    deps = [":rrt_star"],
+    deps = [
+        ":rrt_star",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
 )

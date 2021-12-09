@@ -1,3 +1,5 @@
+#include <gtest/gtest.h>
+
 #include <bits/exception.h>  // for exception
 #include <stdio.h>           // for size_t, fprintf, stderr
 
@@ -16,75 +18,85 @@
 
 #include "src/space/n_ball.hpp"      // for VolumeOfNBall
 #include "src/space/r3.hpp"          // for Point, R3, Sphere, Line
+#include "src/space/se2.hpp"          // for Point, R3, Sphere, Line
 #include "src/space/space_base.hpp"  // for SpaceBase
 #include "src/tagged.hpp"            // for Tagged
 #include "src/tree/fast.hpp"         // for Fast
 #include "src/tree/naive.hpp"        // for Naive
 
+using namespace std::chrono_literals;
+
+template <typename Point>
+using Tagged = rrts::Tagged<Point>;
+
 template <typename Point, typename Bridge, size_t D>
 using SpaceBase = rrts::space::SpaceBase<Point, Bridge, D>;
 
-template <typename P>
-using Tagged = rrts::Tagged<P>;
+template <typename Point, typename Bridge, size_t D>
+using Naive = rrts::tree::Naive<Point, Bridge, D>;
 
-using Bridge = rrts::space::r3::Line;
+template <typename Point, typename Bridge, size_t D>
+using Fast = rrts::tree::Fast<Point, Bridge, D>;
 
-template <typename P, size_t D>
-using Naive = rrts::tree::Naive<P, Bridge, D>;
 
-template <typename P, size_t D>
-using Fast = rrts::tree::Fast<P, Bridge, D>;
-
-using Point = rrts::space::r3::Point;
-
-using namespace std::chrono_literals;
-
-static inline Point Sample(std::mt19937_64 &rng_engine,
-                           std::uniform_real_distribution<double> &uniform_distribution,
-                           const Point &lb, const Point &ub) {
-  const double x = lb.x + (ub.x - lb.x) * uniform_distribution(rng_engine);
-  const double y = lb.y + (ub.y - lb.y) * uniform_distribution(rng_engine);
-  const double z = lb.z + (ub.z - lb.z) * uniform_distribution(rng_engine);
-  return Point{x, y, z};
-}
-
-void TestNearest(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &naive_tree,
-                 const Fast<Point, 3> &fast_tree, const Point &test_point,
+template <typename Point, typename Bridge, size_t D>
+bool TestNearest(const SpaceBase<Point, Bridge, D> &space, const Naive<Point, Bridge, D> &naive_tree,
+                 const Fast<Point, Bridge, D> &fast_tree, const Point &test_point,
                  std::chrono::duration<double> &naive_time,
                  std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
-  Tagged<Point> naive_nearest = std::get<0>(naive_tree.Nearest(
+  std::tuple<Tagged<Point>, Bridge> naive_nearest_ret = naive_tree.Nearest(
       [&test_point, &space](const Point &p) { return space.FormBridge(p, test_point); },
-      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); }));
+      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); });
   auto t1 = std::chrono::high_resolution_clock::now();
-  Tagged<Point> fast_nearest = std::get<0>(fast_tree.Nearest(
+  std::tuple<Tagged<Point>, Bridge> fast_nearest_ret = fast_tree.Nearest(
       [&test_point, &space](const Point &p) { return space.FormBridge(p, test_point); },
-      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); }));
+      [&test_point, &space](double distance) { return space.BoundingBox(test_point, distance); });
   auto t2 = std::chrono::high_resolution_clock::now();
+  Tagged<Point> naive_nearest = std::get<0>(naive_nearest_ret);
+  Tagged<Point> fast_nearest = std::get<0>(fast_nearest_ret);
+
+  Bridge naive_nearest_bridge = std::get<1>(naive_nearest_ret);
+  Bridge fast_nearest_bridge = std::get<1>(fast_nearest_ret);
 
   naive_time += t1 - t0;
   fast_time += t2 - t1;
 
+  EXPECT_EQ(fast_nearest.Index(), naive_nearest.Index()) << "naive tree nearest index (" << naive_nearest.Index()
+                                                         << ") != fast tree nearest index (" << fast_nearest.Index() << ")" << std::endl;
+
   if (fast_nearest.Index() != naive_nearest.Index()) {
-    std::cerr << "naive tree nearest index (" << naive_nearest.Index()
-              << ") != fast tree nearest index (" << fast_nearest.Index() << ")" << std::endl;
-    fprintf(stderr, "test  point: % 7.3f % 7.3f % 7.3f\n", test_point.x, test_point.y,
-            test_point.z);
-    fprintf(stderr, "fast  point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", fast_nearest.Point().x,
-            fast_nearest.Point().y, fast_nearest.Point().z,
-            glm::distance2(glm::dvec3(test_point), glm::dvec3(fast_nearest.Point())));
-    fprintf(stderr, "naive point: % 7.3f % 7.3f % 7.3f (dist: %7.3f)\n", naive_nearest.Point().x,
-            naive_nearest.Point().y, naive_nearest.Point().z,
-            glm::distance2(glm::dvec3(test_point), glm::dvec3(naive_nearest.Point())));
+    // test point
+    fprintf(stderr, "test  point:");
+    for (int32_t k=0; k<static_cast<int32_t>(D); k++) {
+      fprintf(stderr, " % 7.3f", test_point[k]);
+    }
+    fprintf(stderr, "\n");
+    // fast point
+    fprintf(stderr, "fast  point:");
+    for (int32_t k=0; k<static_cast<int32_t>(D); k++) {
+      fprintf(stderr, " % 7.3f", fast_nearest.Point()[k]);
+    }
+    fprintf(stderr, " (distance: % 7.3f)\n", fast_nearest_bridge.TrajectoryCost());
+    // naive point
+    fprintf(stderr, "naive point:");
+    for (int32_t k=0; k<static_cast<int32_t>(D); k++) {
+      fprintf(stderr, " % 7.3f", naive_nearest.Point()[k]);
+    }
+    fprintf(stderr, " (distance: % 7.3f)\n", naive_nearest_bridge.TrajectoryCost());
+
     std::cerr << "points in tree: " << naive_tree.Cardinality() << ", " << fast_tree.Cardinality()
               << std::endl;
     fast_tree.Draw();
-    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+    return true;
   }
+
+  return false;
 }
 
-void TestNear(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &naive_tree,
-              const Fast<Point, 3> &fast_tree, const Point &test_point, const double radius,
+template <typename Point, typename Bridge, size_t D>
+bool TestNear(const SpaceBase<Point, Bridge, D> &space, const Naive<Point, Bridge, D> &naive_tree,
+              const Fast<Point, Bridge, D> &fast_tree, const Point &test_point, const double radius,
               std::chrono::duration<double> &naive_time, std::chrono::duration<double> &fast_time) {
   auto t0 = std::chrono::high_resolution_clock::now();
   const std::vector<std::tuple<Tagged<Point>, Bridge> > naive_near_points = naive_tree.Near(
@@ -120,24 +132,17 @@ void TestNear(const SpaceBase<Point, Bridge, 3> &space, const Naive<Point, 3> &n
       std::cerr << "node " << index << " was incorrectly found by fast tree" << std::endl;
     }
   }
-  if (fail) {
-    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
-  }
+  return fail;
 }
 
-void Run() {
-  const Point lb = {-2, -3, -0.3};
-  const Point ub = {1, 1.1, 0.6};
+template <typename Point, typename Bridge, typename Space, size_t D>
+void TestSpace(Space space) {
+  Naive<Point, Bridge, D> naive_tree(space.Lb(), space.Ub());
+  Fast<Point, Bridge, D> fast_tree(space.Lb(), space.Ub());
 
-  Naive<Point, 3> naive_tree(lb, ub);
-  Fast<Point, 3> fast_tree(lb, ub);
-
-  std::mt19937_64 rng_engine;  // NOLINT(cert-msc32-c,cert-msc51-cpp)
-  std::uniform_real_distribution<double> uniform_distribution;
-
-  const double zeta_d = VolumeOfNBall(3, 1.0);
-  const double d = 3;
-  const double mu_xfree = (ub[0] - lb[0]) * (ub[1] - lb[1]) * (ub[2] - lb[2]);
+  const double zeta_d = VolumeOfNBall(D, 1.0);
+  const double d = static_cast<double>(D);
+  const double mu_xfree = space.MuXfree();
   const double gamma_rrts = pow(2 * (1 + 1 / d), 1 / d) * pow(mu_xfree / zeta_d, 1 / d);
 
   std::chrono::duration<double> fast_insert_time{};
@@ -149,10 +154,8 @@ void Run() {
   std::chrono::duration<double> fast_near_time{};
   std::chrono::duration<double> naive_near_time{};
 
-  rrts::space::r3::R3 space(lb, ub, {});
-
   for (size_t count = 0; count < 5000; count++) {
-    const Tagged<Point> p = {count, Sample(rng_engine, uniform_distribution, lb, ub)};
+    const Tagged<Point> p = {count, space.SampleFree()};
 
     // insert a new point
     auto t0 = std::chrono::high_resolution_clock::now();
@@ -165,18 +168,18 @@ void Run() {
 
     // compare cardinality
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-    assert(naive_tree.Cardinality() == fast_tree.Cardinality());
+    ASSERT_EQ(naive_tree.Cardinality(), fast_tree.Cardinality());
 
     // do a nearest search
-    const Point test_point = Sample(rng_engine, uniform_distribution, lb, ub);
-    TestNearest(space, naive_tree, fast_tree, test_point, naive_nearest_time, fast_nearest_time);
+    const Point test_point = space.SampleFree();
+    ASSERT_FALSE(TestNearest(space, naive_tree, fast_tree, test_point, naive_nearest_time, fast_nearest_time));
 
     // do a near search
     // const double radius = pow(100 * volume / fast_tree.Cardinality(), 1/3);
     const double card_v = naive_tree.Cardinality();
     const double radius = gamma_rrts * pow(log(card_v) / card_v, 1 / d);
 
-    TestNear(space, naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time);
+    ASSERT_FALSE(TestNear(space, naive_tree, fast_tree, test_point, radius, naive_near_time, fast_near_time));
   }
 
   double n = naive_tree.Cardinality();
@@ -189,12 +192,25 @@ void Run() {
           1e6 * fast_near_time.count() / n);
 }
 
-int main() {
-  try {
-    Run();
-    return EXIT_SUCCESS;
-  } catch (const std::exception &e) {
-    std::cerr << e.what();
-    return EXIT_FAILURE;
-  }
+TEST(TestTreeInSpace, R3) {
+  using R3Line = rrts::space::r3::Line;
+  using R3Point = rrts::space::r3::Point;
+  using R3 = rrts::space::r3::R3;
+
+  const R3Point lb = {-2, -3, -0.3};
+  const R3Point ub = {1, 1.1, 0.6};
+  R3 space(lb, ub, {});
+  TestSpace<R3Point, R3Line, R3, 3>(space);
+}
+
+TEST(TestTreeInSpace, Se2) {
+  using DubinsPath = rrts::dubins::DubinsPath;
+  using Se2Coord = rrts::space::se2::Se2Coord;
+  using Se2 = rrts::space::se2::Se2;
+
+  const glm::dvec2 lb = {-2, -3};
+  const glm::dvec2 ub = {1, 1.1};
+  const double rho = 0.6;
+  Se2 space(rho, lb, ub, {});
+  TestSpace<Se2Coord, DubinsPath, Se2, 3>(space);
 }
