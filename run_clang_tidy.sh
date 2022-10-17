@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-./bazelisk-linux-amd64 build //...
+./bazel build //...
 
 git ls-files "*.cpp" "*.hpp" | \
     xargs -n 1 -P 16 \

@@ -2,7 +2,7 @@
 
 set -e
 rm -f callgrind.out.*
-./bazelisk-linux-amd64 build -c dbg --strip=never --copt="-g" //...
+bazel build -c dbg --strip=never --copt="-g" //...
 #valgrind --tool=callgrind ./bazel-bin/run_for_profiling
 valgrind --tool=callgrind ./bazel-bin/test_fast_r3
 rm -f test_fast_r3
