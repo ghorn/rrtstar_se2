@@ -142,7 +142,7 @@ class Search {
     double c_min = CostToGo(x_min.Index()) + b_min.TrajectoryCost();
 
     // L10-12 in paper
-    for (const std::tuple<Tagged<Point>, Bridge> xb_near : xb_nears) {
+    for (const std::tuple<Tagged<Point>, Bridge> &xb_near : xb_nears) {
       Tagged<Point> x_near = std::get<0>(xb_near);
       const Bridge &near_to_new_bridge = std::get<1>(xb_near);
       double c = CostToGo(x_near.Index()) + near_to_new_bridge.TrajectoryCost();
@@ -162,7 +162,7 @@ class Search {
 
     // ******* Rewire tree: see if any near node is better off going to new node. ******
     // L14-16 in paper
-    for (const std::tuple<Tagged<Point>, Bridge> xb_near : xb_nears) {
+    for (const std::tuple<Tagged<Point>, Bridge> &xb_near : xb_nears) {
       const Tagged<Point> &x_near = std::get<0>(xb_near);
       if (x_near.Index() != 0 &&
           x_near.Index() !=
