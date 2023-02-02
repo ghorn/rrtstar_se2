@@ -21,3 +21,30 @@ git_repository(
     remote = "https://github.com/ghorn/bb3d.git",
     shallow_since = "1638764865 -0800",
 )
+
+http_archive(
+    name = "glm",
+    build_file_content = """
+cc_library(
+  name = "glm",
+  hdrs = glob([
+    "glm/*.hpp",
+    "glm/**/*.hpp",
+    "glm/*.h",
+    "glm/**/*.h",
+  ]),
+  srcs = glob([
+    "glm/*.cpp",
+    "glm/**/*.cpp",
+    "glm/*.c",
+    "glm/**/*.c",
+  ]),
+  includes = ["."],
+  textual_hdrs = glob(["glm/**/*.inl"]),
+  visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "37e2a3d62ea3322e43593c34bae29f57e3e251ea89f4067506c94043769ade4c",
+    strip_prefix = "glm",
+    urls = ["https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip"],
+)

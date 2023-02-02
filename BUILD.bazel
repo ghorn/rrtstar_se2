@@ -67,6 +67,7 @@ cc_library(
     copts = cxx_opts,
     linkopts = ["-lpthread"],
     visibility = ["//visibility:public"],
+    deps = ["@glm"],
 )
 
 cc_binary(
