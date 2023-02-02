@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2018, Andrew Walker
- * Copyright (c)      2021, Greg Horn (heavily modified)
+ * Copyright (c) 2021,2023, Greg Horn (heavily modified)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -93,7 +93,7 @@ DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho) {
   qf_ = q1;
   rho_ = rho;
 
-  double best_cost = INFINITY;
+  double best_cost = std::numeric_limits<double>::infinity();
   for (DubinsPathType path_type :
        // The paper states without justification that we can skip RLR and LRL.
        {DubinsPathType::kLsl, DubinsPathType::kLsr, DubinsPathType::kRsl, DubinsPathType::kRsr}) {
