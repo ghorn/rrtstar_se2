@@ -1,3 +1,5 @@
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+
 common_opts = [
     "-Wall",
     "-Wextra",
@@ -118,11 +120,16 @@ cc_binary(
     srcs = [
         "apps/run_for_profiling.cpp",
     ],
-    copts = cxx_opts,
+    copts = cxx_opts + ["-fexceptions"],
     visibility = ["//visibility:public"],
     deps = [
         ":rrt_star",
     ],
+)
+
+wasm_cc_binary(
+    name = "hello_world_wasm",
+    cc_target = ":run_for_profiling",
 )
 
 cc_test(

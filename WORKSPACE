@@ -48,3 +48,22 @@ cc_library(
     strip_prefix = "glm",
     urls = ["https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip"],
 )
+
+http_archive(
+    name = "emsdk",
+    sha256 = "1d38b7375e12e85197165a4c51d76d90e1d9db8c2c593b64cfaec4338af54750",
+    strip_prefix = "emsdk-3.1.31/bazel",
+    url = "https://github.com/emscripten-core/emsdk/archive/refs/tags/3.1.31.tar.gz",
+)
+
+load("@emsdk//:deps.bzl", emsdk_deps = "deps")
+
+emsdk_deps()
+
+load("@emsdk//:emscripten_deps.bzl", emsdk_emscripten_deps = "emscripten_deps")
+
+emsdk_emscripten_deps(emscripten_version = "3.1.31")
+
+load("@emsdk//:toolchains.bzl", "register_emscripten_toolchains")
+
+register_emscripten_toolchains()
