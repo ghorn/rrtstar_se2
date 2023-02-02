@@ -189,7 +189,7 @@ struct Node {
             },
             // Point inserted to Split will be inserted into either left or right child, depending
             // on its coordinate.
-            [this, new_point, axis, tree_lb, tree_ub](const Split &split) {
+            [new_point, axis, tree_lb, tree_ub](const Split &split) {
               // std::cerr << "Split splitting." << std::endl;
               const double mid = 0.5 * (tree_lb[axis] + tree_ub[axis]);
               const double new_coord = new_point.Point()[axis];
@@ -304,7 +304,7 @@ struct Node {
             //
             //                                       bb_lb                bb_ub
             // Bounding box:                           |----------------------|
-            [this, axis, &tree_lb, &tree_ub, &closest_point, &bbs, &distance_function,
+            [axis, &tree_lb, &tree_ub, &closest_point, &bbs, &distance_function,
              &compute_bbs](const Split &split) {
               // The order of searching matters. If we go left to right always,
               // it'll be a breadth first search at worst.
