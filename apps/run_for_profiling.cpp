@@ -1,5 +1,3 @@
-#include <bits/exception.h>  // for exception
-
 #include <algorithm>  // for max
 #include <cstdint>    // for int64_t
 #include <cstdlib>    // for EXIT_SUCCESS

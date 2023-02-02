@@ -1,4 +1,3 @@
-#include <bits/exception.h>  // for exception
 #include <gtest/gtest.h>
 #include <stdio.h>  // for size_t, fprintf, stderr
 
