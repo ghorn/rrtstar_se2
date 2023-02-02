@@ -20,23 +20,31 @@ common_opts = [
     "-Wundef",
     "-Wunused",
     "-Wwrite-strings",
-    "-Wduplicated-branches",
-    "-Wduplicated-cond",
-    "-Wlogical-op",
     "-Wmisleading-indentation",
     "-Wunused-but-set-parameter",
     "-Winit-self",
     #"-Wold-style-cast",
     "-fdiagnostics-color=always",
-]
+] + select({
+    "@bazel_tools//src/conditions:darwin": [],
+    "//conditions:default": [
+        "-Wduplicated-branches",
+        "-Wduplicated-cond",
+        "-Wlogical-op",
+    ],
+})
 
 cxx_opts = [
-    "-Wuseless-cast",
     "-Wnon-virtual-dtor",
     "-Woverloaded-virtual",
     "-Weffc++",
     "-std=c++17",
-] + common_opts
+] + common_opts + select({
+    "@bazel_tools//src/conditions:darwin": [],
+    "//conditions:default": [
+        "-Wuseless-cast",
+    ],
+})
 
 cc_library(
     name = "rrt_star",
