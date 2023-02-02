@@ -66,7 +66,6 @@ cc_library(
     ],
     copts = cxx_opts,
     linkopts = ["-lpthread"],
-    copts = cxx_opts,
     visibility = ["//visibility:public"],
 )
 
