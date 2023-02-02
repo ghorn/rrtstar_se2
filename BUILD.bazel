@@ -29,6 +29,7 @@ common_opts = [
     #"-Wold-style-cast",
     "-fdiagnostics-color=always",
 ]
+
 c_opts = [
     "-std=gnu11",
 ] + common_opts
@@ -44,25 +45,26 @@ cxx_opts = [
 cc_library(
     name = "rrt_star",
     srcs = [
+        "src/assert.cpp",
+        "src/space/dubins/dubins.cpp",
         "src/space/r3.cpp",
         "src/space/se2.cpp",
-        "src/space/dubins/dubins.cpp",
-        "src/assert.cpp",
     ],
     hdrs = [
+        "src/assert.hpp",
         "src/search.hpp",
-        "src/tagged.hpp",
-        "src/tree/tree_base.hpp",
-        "src/tree/fast.hpp",
-        "src/tree/node.hpp",
-        "src/tree/naive.hpp",
-        "src/space/space_base.hpp",
+        "src/space/dubins/dubins.hpp",
         "src/space/n_ball.hpp",
         "src/space/r3.hpp",
         "src/space/se2.hpp",
-        "src/space/dubins/dubins.hpp",
-        "src/assert.hpp",
+        "src/space/space_base.hpp",
+        "src/tagged.hpp",
+        "src/tree/fast.hpp",
+        "src/tree/naive.hpp",
+        "src/tree/node.hpp",
+        "src/tree/tree_base.hpp",
     ],
+    copts = cxx_opts,
     linkopts = ["-lpthread"],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
@@ -73,12 +75,12 @@ cc_binary(
     srcs = [
         "apps/r3_vis.cpp",
     ],
-    deps = [
-        ":rrt_star",
-        "@bb3d//:bb3d",
-    ],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
+    deps = [
+        ":rrt_star",
+        "@bb3d",
+    ],
 )
 
 cc_binary(
@@ -86,12 +88,12 @@ cc_binary(
     srcs = [
         "apps/se2_vis.cpp",
     ],
-    deps = [
-        ":rrt_star",
-        "@bb3d//:bb3d",
-    ],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
+    deps = [
+        ":rrt_star",
+        "@bb3d",
+    ],
 )
 
 cc_binary(
@@ -99,12 +101,12 @@ cc_binary(
     srcs = [
         "apps/plot_dubins.cpp",
     ],
-    deps = [
-        ":rrt_star",
-        "@bb3d//:bb3d",
-    ],
     copts = cxx_opts,
     visibility = ["//visibility:public"],
+    deps = [
+        ":rrt_star",
+        "@bb3d",
+    ],
 )
 
 cc_binary(
@@ -112,11 +114,11 @@ cc_binary(
     srcs = [
         "apps/run_for_profiling.cpp",
     ],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
     deps = [
         ":rrt_star",
     ],
-    copts = cxx_opts,
-    visibility = ["//visibility:public"],
 )
 
 cc_test(
@@ -124,13 +126,13 @@ cc_test(
     srcs = [
         "test/test_fast_tree.cpp",
     ],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
     deps = [
         ":rrt_star",
         "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
-    copts = cxx_opts,
-    visibility = ["//visibility:public"],
 )
 
 cc_test(
@@ -138,11 +140,11 @@ cc_test(
     srcs = [
         "test/test_angle_difference.cpp",
     ],
+    copts = cxx_opts,
+    visibility = ["//visibility:public"],
     deps = [
         ":rrt_star",
         "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
-    copts = cxx_opts,
-    visibility = ["//visibility:public"],
 )
