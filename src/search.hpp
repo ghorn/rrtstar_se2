@@ -1,14 +1,13 @@
 #pragma once
 
-#include <algorithm>           // for max
-#include <cassert>             // for assert
-#include <cmath>               // for pow, fmin, log
-#include <cstddef>             // for size_t
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <functional>          // for function
-#include <set>                 // for set, operator!=, _Rb_tree_const_iterator, _Rb_tree_const...
-#include <tuple>               // for get, tuple
-#include <vector>              // for vector
+#include <algorithm>   // for max
+#include <cassert>     // for assert
+#include <cmath>       // for pow, fmin, log
+#include <cstddef>     // for size_t
+#include <functional>  // for function
+#include <set>         // for set, operator!=, _Rb_tree_const_iterator, _Rb_tree_const...
+#include <tuple>       // for get, tuple
+#include <vector>      // for vector
 
 #include "src/space/n_ball.hpp"  // for VolumeOfNBall
 #include "src/tagged.hpp"        // for Tagged
