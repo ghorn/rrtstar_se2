@@ -1,14 +1,15 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
-import Stats from 'three/addons/libs/stats.module.js';
-import { GPUStatsPanel } from 'three/addons/utils/GPUStatsPanel.js';
+import Stats from "three/addons/libs/stats.module.js";
+import { GPUStatsPanel } from "three/addons/utils/GPUStatsPanel.js";
 
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Line2 } from 'three/addons/lines/Line2.js';
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import * as GeometryUtils from 'three/addons/utils/GeometryUtils.js';
+import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+import * as GeometryUtils from "three/addons/utils/GeometryUtils.js";
+import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
 
 let line, renderer, scene, camera, camera2, controls;
 let line1;
@@ -20,271 +21,280 @@ let gui;
 let insetWidth;
 let insetHeight;
 
+try {
+  console.log("Initializing wasmModule...");
+  const instance_promise = wasmModule({
+    onRuntimeInitialized() {
+      console.log("Runtime initialized!");
+    },
+  });
+  const instance = await instance_promise;
+  console.log("calling C++ function...");
+  console.log(instance.sayHello2());
+  console.log("Hello was said!");
+} catch (e) {
+  console.log("Got an error");
+  console.log(e);
+}
+
 init();
 animate();
 
 function init() {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor(0x000000, 0.0);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setClearColor( 0x000000, 0.0 );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
+  scene = new THREE.Scene();
 
-    scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(
+    40,
+    window.innerWidth / window.innerHeight,
+    1,
+    1000
+  );
+  camera.position.set(-40, 0, 60);
 
-    camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
-    camera.position.set( - 40, 0, 60 );
+  camera2 = new THREE.PerspectiveCamera(40, 1, 1, 1000);
+  camera2.position.copy(camera.position);
 
-    camera2 = new THREE.PerspectiveCamera( 40, 1, 1, 1000 );
-    camera2.position.copy( camera.position );
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.minDistance = 10;
+  controls.maxDistance = 500;
 
-    controls = new OrbitControls( camera, renderer.domElement );
-    controls.minDistance = 10;
-    controls.maxDistance = 500;
+  // Position and THREE.Color Data
 
+  const positions = [];
+  const colors = [];
 
-    // Position and THREE.Color Data
+  const points = GeometryUtils.hilbert3D(
+    new THREE.Vector3(0, 0, 0),
+    20.0,
+    1,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  );
 
-    const positions = [];
-    const colors = [];
+  const spline = new THREE.CatmullRomCurve3(points);
+  const divisions = Math.round(12 * points.length);
+  const point = new THREE.Vector3();
+  const color = new THREE.Color();
 
-    const points = GeometryUtils.hilbert3D( new THREE.Vector3( 0, 0, 0 ), 20.0, 1, 0, 1, 2, 3, 4, 5, 6, 7 );
+  for (let i = 0, l = divisions; i < l; i++) {
+    const t = i / l;
 
-    const spline = new THREE.CatmullRomCurve3( points );
-    const divisions = Math.round( 12 * points.length );
-    const point = new THREE.Vector3();
-    const color = new THREE.Color();
+    spline.getPoint(t, point);
+    positions.push(point.x, point.y, point.z);
 
-    for ( let i = 0, l = divisions; i < l; i ++ ) {
+    color.setHSL(t, 1.0, 0.5);
+    colors.push(color.r, color.g, color.b);
+  }
 
-        const t = i / l;
+  // Line2 ( LineGeometry, LineMaterial )
 
-        spline.getPoint( t, point );
-        positions.push( point.x, point.y, point.z );
+  const geometry = new LineGeometry();
+  geometry.setPositions(positions);
+  geometry.setColors(colors);
 
-        color.setHSL( t, 1.0, 0.5 );
-        colors.push( color.r, color.g, color.b );
+  matLine = new LineMaterial({
+    color: 0xffffff,
+    linewidth: 5, // in world units with size attenuation, pixels otherwise
+    vertexColors: true,
 
-    }
+    //resolution:  // to be set by renderer, eventually
+    dashed: false,
+    alphaToCoverage: true,
+  });
 
+  line = new Line2(geometry, matLine);
+  line.computeLineDistances();
+  line.scale.set(1, 1, 1);
+  scene.add(line);
 
-    // Line2 ( LineGeometry, LineMaterial )
+  // THREE.Line ( THREE.BufferGeometry, THREE.LineBasicMaterial ) - rendered with gl.LINE_STRIP
 
-    const geometry = new LineGeometry();
-    geometry.setPositions( positions );
-    geometry.setColors( colors );
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
-    matLine = new LineMaterial( {
+  matLineBasic = new THREE.LineBasicMaterial({ vertexColors: true });
+  matLineDashed = new THREE.LineDashedMaterial({
+    vertexColors: true,
+    scale: 2,
+    dashSize: 1,
+    gapSize: 1,
+  });
 
-        color: 0xffffff,
-        linewidth: 5, // in world units with size attenuation, pixels otherwise
-        vertexColors: true,
+  line1 = new THREE.Line(geo, matLineBasic);
+  line1.computeLineDistances();
+  line1.visible = false;
+  scene.add(line1);
 
-        //resolution:  // to be set by renderer, eventually
-        dashed: false,
-        alphaToCoverage: true,
+  //
 
-    } );
+  window.addEventListener("resize", onWindowResize);
+  onWindowResize();
 
-    line = new Line2( geometry, matLine );
-    line.computeLineDistances();
-    line.scale.set( 1, 1, 1 );
-    scene.add( line );
+  stats = new Stats();
+  document.body.appendChild(stats.dom);
 
+  gpuPanel = new GPUStatsPanel(renderer.getContext());
+  stats.addPanel(gpuPanel);
+  stats.showPanel(0);
 
-    // THREE.Line ( THREE.BufferGeometry, THREE.LineBasicMaterial ) - rendered with gl.LINE_STRIP
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-    geo.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-
-    matLineBasic = new THREE.LineBasicMaterial( { vertexColors: true } );
-    matLineDashed = new THREE.LineDashedMaterial( { vertexColors: true, scale: 2, dashSize: 1, gapSize: 1 } );
-
-    line1 = new THREE.Line( geo, matLineBasic );
-    line1.computeLineDistances();
-    line1.visible = false;
-    scene.add( line1 );
-
-    //
-
-    window.addEventListener( 'resize', onWindowResize );
-    onWindowResize();
-
-    stats = new Stats();
-    document.body.appendChild( stats.dom );
-
-    gpuPanel = new GPUStatsPanel( renderer.getContext() );
-    stats.addPanel( gpuPanel );
-    stats.showPanel( 0 );
-
-    initGui();
-
+  initGui();
 }
 
 function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-    renderer.setSize( window.innerWidth, window.innerHeight );
+  insetWidth = window.innerHeight / 4; // square
+  insetHeight = window.innerHeight / 4;
 
-    insetWidth = window.innerHeight / 4; // square
-    insetHeight = window.innerHeight / 4;
-
-    camera2.aspect = insetWidth / insetHeight;
-    camera2.updateProjectionMatrix();
-
+  camera2.aspect = insetWidth / insetHeight;
+  camera2.updateProjectionMatrix();
 }
 
 function animate() {
+  requestAnimationFrame(animate);
 
-    requestAnimationFrame( animate );
+  stats.update();
 
-    stats.update();
+  // main scene
 
-    // main scene
+  renderer.setClearColor(0x000000, 0);
 
-    renderer.setClearColor( 0x000000, 0 );
+  renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
 
-    renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
+  // renderer will set this eventually
+  matLine.resolution.set(window.innerWidth, window.innerHeight); // resolution of the viewport
 
-    // renderer will set this eventually
-    matLine.resolution.set( window.innerWidth, window.innerHeight ); // resolution of the viewport
+  gpuPanel.startQuery();
+  renderer.render(scene, camera);
+  gpuPanel.endQuery();
 
-    gpuPanel.startQuery();
-    renderer.render( scene, camera );
-    gpuPanel.endQuery();
+  // inset scene
 
-    // inset scene
+  renderer.setClearColor(0x222222, 1);
 
-    renderer.setClearColor( 0x222222, 1 );
+  renderer.clearDepth(); // important!
 
-    renderer.clearDepth(); // important!
+  renderer.setScissorTest(true);
 
-    renderer.setScissorTest( true );
+  renderer.setScissor(20, 20, insetWidth, insetHeight);
 
-    renderer.setScissor( 20, 20, insetWidth, insetHeight );
+  renderer.setViewport(20, 20, insetWidth, insetHeight);
 
-    renderer.setViewport( 20, 20, insetWidth, insetHeight );
+  camera2.position.copy(camera.position);
+  camera2.quaternion.copy(camera.quaternion);
 
-    camera2.position.copy( camera.position );
-    camera2.quaternion.copy( camera.quaternion );
+  // renderer will set this eventually
+  matLine.resolution.set(insetWidth, insetHeight); // resolution of the inset viewport
 
-    // renderer will set this eventually
-    matLine.resolution.set( insetWidth, insetHeight ); // resolution of the inset viewport
+  renderer.render(scene, camera2);
 
-    renderer.render( scene, camera2 );
-
-    renderer.setScissorTest( false );
-
+  renderer.setScissorTest(false);
 }
 
 //
 
 function initGui() {
+  gui = new GUI();
 
-    gui = new GUI();
+  const param = {
+    "line type": 0,
+    "world units": false,
+    width: 5,
+    alphaToCoverage: true,
+    dashed: false,
+    "dash scale": 1,
+    "dash / gap": 1,
+  };
 
-    const param = {
-        'line type': 0,
-        'world units': false,
-        'width': 5,
-        'alphaToCoverage': true,
-        'dashed': false,
-        'dash scale': 1,
-        'dash / gap': 1
-    };
+  gui
+    .add(param, "line type", { LineGeometry: 0, "gl.LINE": 1 })
+    .onChange(function (val) {
+      switch (val) {
+        case 0:
+          line.visible = true;
 
-    gui.add( param, 'line type', { 'LineGeometry': 0, 'gl.LINE': 1 } ).onChange( function ( val ) {
+          line1.visible = false;
 
-        switch ( val ) {
+          break;
 
-            case 0:
-                line.visible = true;
+        case 1:
+          line.visible = false;
 
-                line1.visible = false;
+          line1.visible = true;
 
-                break;
+          break;
+      }
+    });
 
-            case 1:
-                line.visible = false;
+  gui.add(param, "world units").onChange(function (val) {
+    matLine.worldUnits = val;
+    matLine.needsUpdate = true;
+  });
 
-                line1.visible = true;
+  gui.add(param, "width", 1, 10).onChange(function (val) {
+    matLine.linewidth = val;
+  });
 
-                break;
+  gui.add(param, "alphaToCoverage").onChange(function (val) {
+    matLine.alphaToCoverage = val;
+  });
 
-        }
+  gui.add(param, "dashed").onChange(function (val) {
+    matLine.dashed = val;
+    line1.material = val ? matLineDashed : matLineBasic;
+  });
 
-    } );
+  gui.add(param, "dash scale", 0.5, 2, 0.1).onChange(function (val) {
+    matLine.dashScale = val;
+    matLineDashed.scale = val;
+  });
 
-    gui.add( param, 'world units' ).onChange( function ( val ) {
+  gui
+    .add(param, "dash / gap", { "2 : 1": 0, "1 : 1": 1, "1 : 2": 2 })
+    .onChange(function (val) {
+      switch (val) {
+        case 0:
+          matLine.dashSize = 2;
+          matLine.gapSize = 1;
 
-        matLine.worldUnits = val;
-        matLine.needsUpdate = true;
+          matLineDashed.dashSize = 2;
+          matLineDashed.gapSize = 1;
 
-    } );
+          break;
 
-    gui.add( param, 'width', 1, 10 ).onChange( function ( val ) {
+        case 1:
+          matLine.dashSize = 1;
+          matLine.gapSize = 1;
 
-        matLine.linewidth = val;
+          matLineDashed.dashSize = 1;
+          matLineDashed.gapSize = 1;
 
-    } );
+          break;
 
-    gui.add( param, 'alphaToCoverage' ).onChange( function ( val ) {
+        case 2:
+          matLine.dashSize = 1;
+          matLine.gapSize = 2;
 
-        matLine.alphaToCoverage = val;
+          matLineDashed.dashSize = 1;
+          matLineDashed.gapSize = 2;
 
-    } );
-
-    gui.add( param, 'dashed' ).onChange( function ( val ) {
-
-        matLine.dashed = val;
-        line1.material = val ? matLineDashed : matLineBasic;
-
-    } );
-
-    gui.add( param, 'dash scale', 0.5, 2, 0.1 ).onChange( function ( val ) {
-
-        matLine.dashScale = val;
-        matLineDashed.scale = val;
-
-    } );
-
-    gui.add( param, 'dash / gap', { '2 : 1': 0, '1 : 1': 1, '1 : 2': 2 } ).onChange( function ( val ) {
-
-        switch ( val ) {
-
-            case 0:
-                matLine.dashSize = 2;
-                matLine.gapSize = 1;
-
-                matLineDashed.dashSize = 2;
-                matLineDashed.gapSize = 1;
-
-                break;
-
-            case 1:
-                matLine.dashSize = 1;
-                matLine.gapSize = 1;
-
-                matLineDashed.dashSize = 1;
-                matLineDashed.gapSize = 1;
-
-                break;
-
-            case 2:
-                matLine.dashSize = 1;
-                matLine.gapSize = 2;
-
-                matLineDashed.dashSize = 1;
-                matLineDashed.gapSize = 2;
-
-                break;
-
-        }
-
-    } );
-
+          break;
+      }
+    });
 }
