@@ -12,7 +12,7 @@ import * as GeometryUtils from "three/addons/utils/GeometryUtils.js";
 import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
 
 let line, renderer, scene, camera, camera2, controls;
-let line1;
+let lineGl;
 let matLine, matLineBasic, matLineDashed;
 let stats, gpuPanel;
 let gui;
@@ -133,10 +133,10 @@ function init() {
     gapSize: 1,
   });
 
-  line1 = new THREE.Line(geo, matLineBasic);
-  line1.computeLineDistances();
-  line1.visible = false;
-  scene.add(line1);
+  lineGl = new THREE.Line(geo, matLineBasic);
+  lineGl.computeLineDistances();
+  lineGl.visible = false;
+  scene.add(lineGl);
 
   //
 
@@ -228,16 +228,12 @@ function initGui() {
       switch (val) {
         case 0:
           line.visible = true;
-
-          line1.visible = false;
-
+          lineGl.visible = false;
           break;
 
         case 1:
           line.visible = false;
-
-          line1.visible = true;
-
+          lineGl.visible = true;
           break;
       }
     });
@@ -257,7 +253,7 @@ function initGui() {
 
   gui.add(param, "dashed").onChange(function (val) {
     matLine.dashed = val;
-    line1.material = val ? matLineDashed : matLineBasic;
+    lineGl.material = val ? matLineDashed : matLineBasic;
   });
 
   gui.add(param, "dash scale", 0.5, 2, 0.1).onChange(function (val) {
