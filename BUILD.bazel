@@ -52,12 +52,14 @@ cc_library(
     name = "rrt_star",
     srcs = [
         "src/assert.cpp",
+        "src/problem/r3_problem.cpp",
         "src/space/dubins/dubins.cpp",
         "src/space/r3.cpp",
         "src/space/se2.cpp",
     ],
     hdrs = [
         "src/assert.hpp",
+        "src/problem/r3_problem.hpp",
         "src/search.hpp",
         "src/space/dubins/dubins.hpp",
         "src/space/n_ball.hpp",
