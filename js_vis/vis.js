@@ -98,13 +98,6 @@ let cxx_shim_module = await wasmModule({
 let r3_problem = new cxx_shim_module.R3Problem.SomeProblem();
 console.log("Created r3 problem");
 console.log(r3_problem);
-let step_count = 0;
-while (step_count < 5000) {
-  if (r3_problem.Step()) {
-    step_count += 1;
-  }
-}
-console.log("Done with steps");
 //   const instance = await instance_promise;
 //   console.log("calling C++ function...");
 //   console.log(instance.sayHello2());
@@ -163,16 +156,20 @@ function onWindowResize() {
 }
 
 function animate() {
+  // Iterate a few steps
+  let target_num_edges = Math.min(10000, r3_problem.NumEdges() + 100);
+  while (r3_problem.NumEdges() < target_num_edges) {
+    r3_problem.Step();
+  }
+
+  // update opengl lines
+  const bridge_lines = r3_problem.GetBridgeLines();
+  lines_buffer.set_lines(bridge_lines);
+  bridge_lines.delete();
+
   requestAnimationFrame(animate);
 
   stats.update();
-
-  const bridge_lines = r3_problem.GetBridgeLines();
-  // console.log(bridge_lines);
-
-  // lines_buffer.set_lines(num_points);
-  lines_buffer.set_lines(bridge_lines);
-  bridge_lines.delete();
 
   // main scene
   renderer.setClearColor(0x000000, 0);
