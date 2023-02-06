@@ -7,24 +7,60 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
 import { LinesBuffer } from "./lines_buffer.js";
 
+class R3ProblemScene {
+  constructor() {
+    this.lines_buffer = new LinesBuffer();
+    this.goal_lines_buffer = new LinesBuffer();
+    this.goal_region_sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(),
+      // new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 })
+      new THREE.MeshBasicMaterial({
+        color: 0xffff00,
+        transparent: true,
+        opacity: 0.5,
+      })
+    );
+
+    this.parent_node = new THREE.Object3D();
+    this.parent_node.add(this.lines_buffer.get_segments());
+    this.parent_node.add(this.goal_lines_buffer.get_segments());
+    this.parent_node.add(this.goal_region_sphere);
+
+    this.scene = new THREE.Scene();
+    this.scene.add(this.parent_node);
+  }
+
+  update(r3_problem) {
+    // set the goal region
+    const problem_goal_region = r3_problem.GetGoalRegion();
+    this.goal_region_sphere.scale.set(
+      problem_goal_region.radius,
+      problem_goal_region.radius,
+      problem_goal_region.radius
+    );
+    this.goal_region_sphere.position.set(
+      problem_goal_region.center.x,
+      problem_goal_region.center.y,
+      problem_goal_region.center.z
+    );
+
+    // set the pathfinding lines
+    const bridge_lines = r3_problem.GetBridgeLines();
+    this.lines_buffer.set_lines(bridge_lines);
+    bridge_lines.delete();
+
+    // set the optimal path lines
+    const goal_lines = r3_problem.GetGoalLine();
+    this.goal_lines_buffer.set_lines(goal_lines);
+    goal_lines.delete();
+  }
+}
+
 let renderer, scene, camera, controls;
 let stats, gpuPanel;
 let gui;
-let lines_buffer = new LinesBuffer();
-let goal_lines_buffer = new LinesBuffer();
-let goal_region_sphere = new THREE.Mesh(
-  new THREE.SphereGeometry(),
-  // new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 })
-  new THREE.MeshBasicMaterial({
-    color: 0xffff00,
-    transparent: true,
-    opacity: 0.5,
-  })
-);
-console.log("goal_region_sphere: ");
-console.log(goal_region_sphere);
+let r3_problem_scene = new R3ProblemScene();
 
-let parent_node;
 let last_rotation_time = Date.now();
 let last_solve_time = null;
 
@@ -59,8 +95,6 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  scene = new THREE.Scene();
-
   camera = new THREE.PerspectiveCamera(
     40,
     window.innerWidth / window.innerHeight,
@@ -72,12 +106,6 @@ function init() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.minDistance = 0.01;
   controls.maxDistance = 50;
-
-  parent_node = new THREE.Object3D();
-  parent_node.add(lines_buffer.get_segments());
-  parent_node.add(goal_lines_buffer.get_segments());
-  parent_node.add(goal_region_sphere);
-  scene.add(parent_node);
 
   //
 
@@ -107,9 +135,8 @@ function render() {
   const delta_time = now - last_rotation_time;
   last_rotation_time = now;
   if (gui_params.rotate) {
-    parent_node.rotation.y += delta_time * 0.001 * gui_params.rotation_rate;
-  } else {
-    // parent_node.rotation.z = 0;
+    r3_problem_scene.parent_node.rotation.y +=
+      delta_time * 0.001 * gui_params.rotation_rate;
   }
 
   // Iterate a few steps
@@ -136,29 +163,10 @@ function render() {
   ) {
     r3_problem.delete();
     r3_problem = problem_factory.RandomProblem();
-
-    // set the goal region
-    const problem_goal_region = r3_problem.GetGoalRegion();
-    console.log(problem_goal_region);
-    goal_region_sphere.scale.set(
-      problem_goal_region.radius,
-      problem_goal_region.radius,
-      problem_goal_region.radius
-    );
-    goal_region_sphere.position.set(
-      problem_goal_region.center.x,
-      problem_goal_region.center.y,
-      problem_goal_region.center.z
-    );
   }
 
   // update opengl lines
-  const bridge_lines = r3_problem.GetBridgeLines();
-  lines_buffer.set_lines(bridge_lines);
-  bridge_lines.delete();
-  const goal_lines = r3_problem.GetGoalLine();
-  goal_lines_buffer.set_lines(goal_lines);
-  goal_lines.delete();
+  r3_problem_scene.update(r3_problem);
 
   // main scene
   renderer.setClearColor(0x000000, 0);
@@ -166,7 +174,7 @@ function render() {
   renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
 
   gpuPanel.startQuery();
-  renderer.render(scene, camera);
+  renderer.render(r3_problem_scene.scene, camera);
   gpuPanel.endQuery();
 }
 
