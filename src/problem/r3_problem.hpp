@@ -45,6 +45,7 @@ struct R3Problem {
   rrts::Search<Point, Line, 3, Tree, Space> search_;
 
   Sphere GetGoalRegion() const { return goal_region_; }
+  std::vector<Sphere> GetObstacles() const { return obstacles_; }
 
   void Describe() {
     fprintf(stderr, "lb: % 7.2f % 7.2f % 7.2f\n", lb_.x, lb_.y, lb_.z);

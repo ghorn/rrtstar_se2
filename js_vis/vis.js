@@ -21,6 +21,8 @@ class R3ProblemScene {
       })
     );
 
+    this.obstacle_meshes = [];
+
     this.parent_node = new THREE.Object3D();
     this.parent_node.add(this.lines_buffer.get_segments());
     this.parent_node.add(this.goal_lines_buffer.get_segments());
@@ -30,7 +32,78 @@ class R3ProblemScene {
     this.scene.add(this.parent_node);
   }
 
-  update(r3_problem) {
+  update_obstacles(r3_problem, show_obstacles, obstacle_opacity) {
+    const problem_obstacles = r3_problem.GetObstacles();
+    const num_problem_obstacles = problem_obstacles.size();
+
+    // if there are too few obstacles, add new ones
+    if (num_problem_obstacles > this.obstacle_meshes.length) {
+      for (
+        let i = this.obstacle_meshes.length;
+        i < num_problem_obstacles;
+        i++
+      ) {
+        const new_obstacle_mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(),
+          new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.5,
+          })
+        );
+        this.parent_node.add(new_obstacle_mesh);
+        this.obstacle_meshes.push(new_obstacle_mesh);
+      }
+    }
+
+    // if there are too many obstacles, remove extras from the scene and delete the meshes
+    if (num_problem_obstacles < this.obstacle_meshes.length) {
+      const extranious_obstacle_meshes = this.obstacle_meshes.slice(
+        num_problem_obstacles - this.obstacle_meshes.length
+      );
+      for (let i = 0; i < extranious_obstacle_meshes.length; i++) {
+        const obstacle_mesh = extranious_obstacle_meshes[i];
+        obstacle_mesh.geometry.dispose();
+        obstacle_mesh.material.dispose();
+        this.parent_node.remove(obstacle_mesh);
+      }
+
+      this.obstacle_meshes = this.obstacle_meshes.slice(
+        0,
+        num_problem_obstacles
+      );
+    }
+
+    // now update all the obstacles
+    for (let i = 0; i < num_problem_obstacles; i++) {
+      const obstacle = problem_obstacles.get(i);
+      this.obstacle_meshes[i].scale.set(
+        obstacle.radius,
+        obstacle.radius,
+        obstacle.radius
+      );
+      this.obstacle_meshes[i].position.set(
+        obstacle.center.x,
+        obstacle.center.y,
+        obstacle.center.z
+      );
+
+      // visibility
+      if (show_obstacles) {
+        this.obstacle_meshes[i].visible = true;
+      } else {
+        this.obstacle_meshes[i].visible = false;
+      }
+
+      // opacity
+      const material = this.obstacle_meshes[i].material;
+      if (material.opacity != obstacle_opacity) {
+        material.opacity = obstacle_opacity;
+      }
+    }
+  }
+
+  update(r3_problem, gui_params) {
     // set the goal region
     const problem_goal_region = r3_problem.GetGoalRegion();
     this.goal_region_sphere.scale.set(
@@ -42,6 +115,13 @@ class R3ProblemScene {
       problem_goal_region.center.x,
       problem_goal_region.center.y,
       problem_goal_region.center.z
+    );
+
+    // update obstacles
+    this.update_obstacles(
+      r3_problem,
+      gui_params.show_obstacles,
+      gui_params.obstacle_opacity
     );
 
     // set the pathfinding lines
@@ -82,6 +162,10 @@ const gui_params = {
   max_iterations: 5000,
   iterations_per_frame: 200,
   delay_before_restart: 1,
+  scene: {
+    show_obstacles: true,
+    obstacle_opacity: 0.2,
+  },
 };
 
 // initialize and run the animation loop
@@ -166,7 +250,7 @@ function render() {
   }
 
   // update opengl lines
-  r3_problem_scene.update(r3_problem);
+  r3_problem_scene.update(r3_problem, gui_params.scene);
 
   // main scene
   renderer.setClearColor(0x000000, 0);
@@ -195,6 +279,10 @@ function initGui() {
   gui.add(gui_params, "max_iterations", 0, 10000);
   gui.add(gui_params, "iterations_per_frame", 1, 1000, 20);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
+
+  const scene_folder = gui.addFolder("scene");
+  scene_folder.add(gui_params.scene, "show_obstacles");
+  scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
 
   //   .add(param, "line type", { LineGeometry: 0, "gl.LINE": 1 })
   //   .onChange(function (val) {
