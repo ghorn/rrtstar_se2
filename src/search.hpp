@@ -76,7 +76,7 @@ class Search {
 
   // Compute costs to go of all nodes in one pass.
   // O[n].
-  std::vector<double> ComputeCostsToGo() {
+  std::vector<double> ComputeCostsToGo() const {
     std::vector<double> costs_to_go(edges_.size() + 1, 0.0);
 
     std::function<void(size_t, double)> compute_child_costs =

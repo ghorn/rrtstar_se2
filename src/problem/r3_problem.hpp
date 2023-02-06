@@ -11,6 +11,12 @@ struct XyzRgb {
   float r;
   float g;
   float b;
+  float a;
+  XyzRgb() = default;  //: x(0), y(0), z(0), r(0), g(0), b(0) {};
+  XyzRgb(float x_, float y_, float z_, float r_, float g_, float b_, float a_)
+      : x(x_), y(y_), z(z_), r(r_), g(g_), b(b_), a(a_){};
+  XyzRgb(glm::vec3 xyz, float r_, float g_, float b_, float a_)
+      : x(xyz.x), y(xyz.y), z(xyz.z), r(r_), g(g_), b(b_), a(a_){};
 };
 
 struct R3Problem {
@@ -129,18 +135,20 @@ struct R3Problem {
       float r0 = 1 - ctg0;
       float g0 = 0;
       float b0 = ctg0;
-      // float a0 = 0.6;
+      float a0 = 0.6f;
       float r1 = 1 - ctg1;
       float g1 = 0;
       float b1 = ctg1;
-      // float a1 = 0.6;
+      float a1 = 0.6f;
       cv0.r = r0;
       cv0.g = g0;
       cv0.b = b0;
+      cv0.a = a0;
 
       cv1.r = r1;
       cv1.g = g1;
       cv1.b = b1;
+      cv1.a = a1;
 
       bridges.push_back({cv0, cv1});
       node_index++;
@@ -193,10 +201,56 @@ struct R3Problem {
   //     lines.Update(bridges);
   //   }
 
-  //   [[nodiscard]] bool InGoalRegion(const Point &p) const {
-  //     double dist = glm::distance(glm::dvec3(p), goal_region_.center);
-  //     return dist <= goal_region_.radius;
-  //   }
+  [[nodiscard]] bool InGoalRegion(const Point &p) const {
+    double dist = glm::distance(glm::dvec3(p), goal_region_.center);
+    return dist <= goal_region_.radius;
+  }
+
+  std::vector<std::vector<XyzRgb> > GetGoalLine() const {
+    const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
+    const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
+    std::vector<XyzRgb> goal_line;
+
+    double min_cost_to_go = 0;
+    size_t winner_index = 0;
+    bool got_winner = false;
+    size_t index = 1;
+    // best cost to go in a goal region
+    for (const rrts::Edge<Point, Line> &edge : edges) {
+      if (InGoalRegion(edge.bridge_.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
+        winner_index = index;
+        got_winner = true;
+        min_cost_to_go = cost_to_go.at(index);
+      }
+      index++;
+    }
+
+    // trace back route from winner
+    std::vector<std::vector<XyzRgb> > segments;
+    if (got_winner) {
+      std::vector<XyzRgb> winning_route;
+      size_t head = winner_index;
+
+      while (head != 0) {
+        rrts::Edge<Point, Line> edge = edges.at(head - 1);
+        glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
+        p.z -= 0.05F;
+        // std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z
+        // << " " << std::endl;
+        winning_route.push_back(XyzRgb(p, 1, 1, 1, 1));
+        head = edge.parent_index_;
+
+        if (head == 0) {
+          glm::vec3 pf = static_cast<glm::dvec3>(edge.bridge_.p0);
+          pf.z -= 0.02F;
+          winning_route.push_back(XyzRgb(pf, 1, 1, 1, 1));
+        }
+      }
+      segments.push_back(winning_route);
+    }
+
+    return segments;
+  }
 
   //   double UpdateGoalLine(bb3d::Lines &goal_line, const std::vector<double> &cost_to_go) const {
   //     const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
