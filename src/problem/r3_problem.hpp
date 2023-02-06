@@ -56,6 +56,8 @@ struct R3Problem {
     return false;
   }
 
+  size_t NumEdges() const { return search_.Edges().size(); }
+
   //   void UpdateSphereLines(bb3d::ColorLines &sphere_lines) const {
   //     const glm::vec4 obstacle_color = {1, 1, 0, 1};
   //     const glm::vec4 goal_color = {0, 1, 1, 1};

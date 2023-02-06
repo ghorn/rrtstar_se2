@@ -31,7 +31,8 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .class_function("SomeProblem", &R3Problem::SomeProblem)
       .class_function("RandomProblem", &R3Problem::RandomProblem)
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)
-      .function("Step", &R3Problem::Step);
+      .function("Step", &R3Problem::Step)
+      .function("NumEdges", &R3Problem::NumEdges);
 
   emscripten::register_vector<XyzRgb>("vector<XyzRgb>");
   emscripten::register_vector<std::vector<XyzRgb> >("vector<vector<XyzRgb> >");
