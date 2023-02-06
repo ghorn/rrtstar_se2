@@ -27,6 +27,17 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("b", &XyzRgb::b)
       .field("a", &XyzRgb::a);
 
+  emscripten::value_object<glm::dvec3>("DVec3")
+      .field("x", &glm::dvec3::x)
+      .field("y", &glm::dvec3::y)
+      .field("z", &glm::dvec3::z);
+
+  // R3Sphere
+  using R3Sphere = rrts::space::r3::Sphere;
+  emscripten::value_object<R3Sphere>("R3Sphere")
+      .field("center", &R3Sphere::center)
+      .field("radius", &R3Sphere::radius);
+
   emscripten::class_<R3ProblemFactory>("R3ProblemFactory")
       .constructor<>()
       .function("RandomProblem", &R3ProblemFactory::RandomProblem);
@@ -36,6 +47,7 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)
       .function("GetGoalLine", &R3Problem::GetGoalLine)
       .function("Step", &R3Problem::Step)
+      .function("GetGoalRegion", &R3Problem::GetGoalRegion)
       .function("NumEdges", &R3Problem::NumEdges);
 
   emscripten::register_vector<XyzRgb>("vector<XyzRgb>");

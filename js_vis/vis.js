@@ -12,6 +12,18 @@ let stats, gpuPanel;
 let gui;
 let lines_buffer = new LinesBuffer();
 let goal_lines_buffer = new LinesBuffer();
+let goal_region_sphere = new THREE.Mesh(
+  new THREE.SphereGeometry(),
+  // new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 })
+  new THREE.MeshBasicMaterial({
+    color: 0xffff00,
+    transparent: true,
+    opacity: 0.5,
+  })
+);
+console.log("goal_region_sphere: ");
+console.log(goal_region_sphere);
+
 let parent_node;
 let last_rotation_time = Date.now();
 let last_solve_time = null;
@@ -64,6 +76,7 @@ function init() {
   parent_node = new THREE.Object3D();
   parent_node.add(lines_buffer.get_segments());
   parent_node.add(goal_lines_buffer.get_segments());
+  parent_node.add(goal_region_sphere);
   scene.add(parent_node);
 
   //
@@ -123,6 +136,20 @@ function render() {
   ) {
     r3_problem.delete();
     r3_problem = problem_factory.RandomProblem();
+
+    // set the goal region
+    const problem_goal_region = r3_problem.GetGoalRegion();
+    console.log(problem_goal_region);
+    goal_region_sphere.scale.set(
+      problem_goal_region.radius,
+      problem_goal_region.radius,
+      problem_goal_region.radius
+    );
+    goal_region_sphere.position.set(
+      problem_goal_region.center.x,
+      problem_goal_region.center.y,
+      problem_goal_region.center.z
+    );
   }
 
   // update opengl lines
