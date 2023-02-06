@@ -27,10 +27,12 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("b", &XyzRgb::b)
       .field("a", &XyzRgb::a);
 
+  emscripten::class_<R3ProblemFactory>("R3ProblemFactory")
+      .constructor<>()
+      .function("RandomProblem", &R3ProblemFactory::RandomProblem);
+
   emscripten::class_<R3Problem>("R3Problem")
       // .constructor<const>()
-      .class_function("SomeProblem", &R3Problem::SomeProblem)
-      .class_function("RandomProblem", &R3Problem::RandomProblem)
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)
       .function("GetGoalLine", &R3Problem::GetGoalLine)
       .function("Step", &R3Problem::Step)

@@ -14,6 +14,7 @@ let lines_buffer = new LinesBuffer();
 let goal_lines_buffer = new LinesBuffer();
 let parent_node;
 let last_rotation_time = Date.now();
+let last_solve_time = null;
 
 // load webassembly module
 console.log("Initializing wasmModule...");
@@ -24,16 +25,15 @@ let cxx_shim_module = await wasmModule({
 });
 
 // create pathfinding problem
-let r3_problem = new cxx_shim_module.R3Problem.SomeProblem();
+var problem_factory = new cxx_shim_module.R3ProblemFactory();
+let r3_problem = problem_factory.RandomProblem();
 
 const gui_params = {
   rotate: true,
   rotation_rate: 0.5,
   max_iterations: 5000,
-  iterations_per_frame: 100,
-  // restart_solver: function () {
-  //   console.log("yolo");
-  // },
+  iterations_per_frame: 200,
+  delay_before_restart: 1,
 };
 
 // initialize and run the animation loop
@@ -94,7 +94,7 @@ function render() {
   const delta_time = now - last_rotation_time;
   last_rotation_time = now;
   if (gui_params.rotate) {
-    parent_node.rotation.z += delta_time * 0.001 * gui_params.rotation_rate;
+    parent_node.rotation.y += delta_time * 0.001 * gui_params.rotation_rate;
   } else {
     // parent_node.rotation.z = 0;
   }
@@ -104,8 +104,25 @@ function render() {
     gui_params.max_iterations,
     r3_problem.NumEdges() + gui_params.iterations_per_frame
   );
+  const was_solved = r3_problem.NumEdges() == gui_params.max_iterations;
+
   while (r3_problem.NumEdges() < target_num_edges) {
     r3_problem.Step();
+  }
+  const is_solved = r3_problem.NumEdges() == gui_params.max_iterations;
+
+  // if problem was just solved, set the time
+  if (!was_solved && is_solved) {
+    last_solve_time = now;
+  }
+
+  // optionally reset problem
+  if (
+    is_solved &&
+    now - last_solve_time > 1000 * gui_params.delay_before_restart
+  ) {
+    r3_problem.delete();
+    r3_problem = problem_factory.RandomProblem();
   }
 
   // update opengl lines
@@ -120,13 +137,6 @@ function render() {
   renderer.setClearColor(0x000000, 0);
 
   renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
-
-  // renderer will set this eventually
-  // goal_lines_buffer.matLine.resolution.set(
-  //   window.innerWidth,
-  //   window.innerHeight
-  // ); // resolution of the viewport
-  // goal_lines_buffer.matLine.needsUpdate = true;
 
   gpuPanel.startQuery();
   renderer.render(scene, camera);
@@ -148,10 +158,8 @@ function initGui() {
   gui.add(gui_params, "rotate");
   gui.add(gui_params, "rotation_rate", 0, 1.5);
   gui.add(gui_params, "max_iterations", 0, 10000);
-  gui.add(gui_params, "iterations_per_frame", 0, 100);
-  gui.add(gui_params, "restart_solver").onChange(function (val) {
-    console.log("restart!");
-  });
+  gui.add(gui_params, "iterations_per_frame", 1, 1000, 20);
+  gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
   //   .add(param, "line type", { LineGeometry: 0, "gl.LINE": 1 })
   //   .onChange(function (val) {

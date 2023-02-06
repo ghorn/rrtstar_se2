@@ -305,11 +305,6 @@ struct R3Problem {
   //   }
   // };
 
-  static R3Problem SomeProblem() {
-    std::mt19937_64 rng_engine;
-    return RandomProblem(rng_engine);
-  }
-
   static R3Problem RandomProblem(std::mt19937_64 &rng_engine) {
     std::uniform_real_distribution<double> uniform_distribution;
     std::function<double(void)> uniform = [&uniform_distribution, &rng_engine]() {
@@ -353,4 +348,13 @@ struct R3Problem {
 
     return R3Problem(lb, ub, goal_region, obstacles);
   }
+};
+
+class R3ProblemFactory {
+ public:
+  R3ProblemFactory() = default;
+  R3Problem RandomProblem() { return R3Problem::RandomProblem(rng_engine); };
+
+ private:
+  std::mt19937_64 rng_engine;
 };
