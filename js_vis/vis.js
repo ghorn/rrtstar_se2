@@ -32,7 +32,6 @@ class LinesBuffer {
     });
 
     this.lines = new THREE.LineSegments(geometry, material);
-    // this.lines = new THREE.Line(geometry, material);
     this.lines.visible = true;
   }
 
@@ -40,26 +39,24 @@ class LinesBuffer {
     const positions = this.lines.geometry.attributes.position.array;
     const colors = this.lines.geometry.attributes.color.array;
 
-    this.lines.geometry.clearGroups();
-
-    let segment_indices = [];
-    // let segment_index = 0; // designate where each segment begins
+    const indices = [];
     let count = 0; // one for each point in the geometry position buffer
+    // console.log("set lines!");
 
-    // console.log(line_list);
-    // let goal_line_length = 0;
+    // for (let i = 0; i < line_list.length; i++) {
     for (let i = 0; i < line_list.size(); i++) {
+      // const line = line_list[i];
       const line = line_list.get(i);
-      // segment_index += line.size();
-      this.lines.geometry.addGroup({ start: count, count: line.size() });
+      const line_size = line.size();
+      // TODO(greg): check for overflow wrt MAX_POINTS here
 
-      // goal_line_length = line.size();
-      // append segment index to the segment_indices array
-      // segment_indices.push(segment_index, segment_index + 1);
-
-      for (let k = 0; k < line.size(); k++) {
-        // segment_indices.push(count, count + 1);
-        segment_indices.push(count);
+      // for (let k = 0; k < line.length; k++) {
+      for (let k = 0; k < line_size; k++) {
+        // if (k < line.length - 1) {
+        if (k < line_size - 1) {
+          indices.push(count, count + 1);
+        }
+        // const xyz_rgb = line[k];
         const xyz_rgb = line.get(k);
 
         positions[3 * count] = xyz_rgb.x;
@@ -68,7 +65,7 @@ class LinesBuffer {
         colors[4 * count] = xyz_rgb.r;
         colors[4 * count + 1] = xyz_rgb.g;
         colors[4 * count + 2] = xyz_rgb.b;
-        colors[4 * count + 3] = 1; //xyz_rgb.a;
+        colors[4 * count + 3] = xyz_rgb.a;
 
         // console.log("x: " + xyz_rgb.x);
         // console.log("y: " + xyz_rgb.y);
@@ -80,18 +77,15 @@ class LinesBuffer {
       }
       line.delete();
     }
-    // console.log(segment_indices);
+    // print indices
+    // console.log("count: " + count);
+    // console.log("indices: " + indices);
     this.lines.geometry.attributes.position.needsUpdate = true; // required after updates
     this.lines.geometry.attributes.color.needsUpdate = true; // required after updates
-
-    // this.geometry.setFromPoints(pos_col);
+    this.lines.geometry.setIndex(indices);
+    this.lines.geometry.setDrawRange(0, indices.length);
     this.lines.geometry.computeBoundingBox();
     this.lines.geometry.computeBoundingSphere();
-    this.lines.geometry.setDrawRange(0, count);
-    // segment_indices = [0, 1, 1, 2, 2, 3];
-    // this.lines.geometry.setDrawRange(0, 6);
-    // this.lines.geometry.setIndex(segment_indices);
-    // console.log("goal line length: " + goal_line_length);
   }
 
   get_segments() {
@@ -104,26 +98,19 @@ let stats, gpuPanel;
 let gui;
 let lines_buffer = new LinesBuffer();
 let goal_lines_buffer = new LinesBuffer();
-// let num_points = 600;
 
+// load webassembly module
 console.log("Initializing wasmModule...");
 let cxx_shim_module = await wasmModule({
   onRuntimeInitialized() {
     console.log("Runtime initialized!");
   },
 });
-let r3_problem = new cxx_shim_module.R3Problem.SomeProblem();
-console.log("Created r3 problem");
-console.log(r3_problem);
-//   const instance = await instance_promise;
-//   console.log("calling C++ function...");
-//   console.log(instance.sayHello2());
-//   console.log("Hello was said!");
-// } catch (e) {
-//   console.log("Got an error");
-//   console.log(e);
-// }
 
+// create pathfinding problem
+let r3_problem = new cxx_shim_module.R3Problem.SomeProblem();
+
+// initialize and run the animation loop
 init();
 animate();
 
