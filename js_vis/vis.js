@@ -2,7 +2,6 @@ import * as THREE from "three";
 
 import Stats from "three/addons/libs/stats.module.js";
 import { GPUStatsPanel } from "three/addons/utils/GPUStatsPanel.js";
-
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
@@ -41,7 +40,6 @@ class LinesBuffer {
 
     const indices = [];
     let count = 0; // one for each point in the geometry position buffer
-    // console.log("set lines!");
 
     // for (let i = 0; i < line_list.length; i++) {
     for (let i = 0; i < line_list.size(); i++) {
@@ -185,7 +183,11 @@ function animate() {
   renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
 
   // renderer will set this eventually
-  // matLine.resolution.set(window.innerWidth, window.innerHeight); // resolution of the viewport
+  // goal_lines_buffer.matLine.resolution.set(
+  //   window.innerWidth,
+  //   window.innerHeight
+  // ); // resolution of the viewport
+  // goal_lines_buffer.matLine.needsUpdate = true;
 
   gpuPanel.startQuery();
   renderer.render(scene, camera);
