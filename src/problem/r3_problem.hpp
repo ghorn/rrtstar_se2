@@ -44,6 +44,8 @@ struct R3Problem {
   Space r3_space_;
   rrts::Search<Point, Line, 3, Tree, Space> search_;
 
+  Sphere GetGoalRegion() const { return goal_region_; }
+
   void Describe() {
     fprintf(stderr, "lb: % 7.2f % 7.2f % 7.2f\n", lb_.x, lb_.y, lb_.z);
     fprintf(stderr, "ub: % 7.2f % 7.2f % 7.2f\n", ub_.x, ub_.y, ub_.z);
