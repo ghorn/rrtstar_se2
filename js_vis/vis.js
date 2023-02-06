@@ -15,8 +15,14 @@ class LinesBuffer {
     const colors = new Float32Array(this.MAX_POINTS * 4); // RGB for each point
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 4));
+    geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage) // TODO(greg): try StreamDrawUsage
+    );
+    geometry.setAttribute(
+      "color",
+      new THREE.BufferAttribute(colors, 4).setUsage(THREE.DynamicDrawUsage) // TODO(greg): try StreamDrawUsage
+    );
     geometry.setDrawRange(0, 0); // initially draw nothing
 
     const material = new THREE.LineBasicMaterial({
