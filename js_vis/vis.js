@@ -12,6 +12,7 @@ let stats, gpuPanel;
 let gui;
 let lines_buffer = new LinesBuffer();
 let goal_lines_buffer = new LinesBuffer();
+let parent_node;
 
 // load webassembly module
 console.log("Initializing wasmModule...");
@@ -49,8 +50,10 @@ function init() {
   controls.minDistance = 0.01;
   controls.maxDistance = 50;
 
-  scene.add(lines_buffer.get_segments());
-  scene.add(goal_lines_buffer.get_segments());
+  parent_node = new THREE.Object3D();
+  parent_node.add(lines_buffer.get_segments());
+  parent_node.add(goal_lines_buffer.get_segments());
+  scene.add(parent_node);
 
   //
 
@@ -74,7 +77,11 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function animate() {
+function render() {
+  const time = Date.now() * 0.001;
+
+  parent_node.rotation.z = time * 0.5;
+
   // Iterate a few steps
   let target_num_edges = Math.min(5000, r3_problem.NumEdges() + 100);
   while (r3_problem.NumEdges() < target_num_edges) {
@@ -88,10 +95,6 @@ function animate() {
   const goal_lines = r3_problem.GetGoalLine();
   goal_lines_buffer.set_lines(goal_lines);
   goal_lines.delete();
-
-  requestAnimationFrame(animate);
-
-  stats.update();
 
   // main scene
   renderer.setClearColor(0x000000, 0);
@@ -108,6 +111,13 @@ function animate() {
   gpuPanel.startQuery();
   renderer.render(scene, camera);
   gpuPanel.endQuery();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  stats.update();
+
+  render(scene, camera);
 }
 
 //
