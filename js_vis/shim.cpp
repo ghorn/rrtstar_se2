@@ -48,8 +48,10 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("GetGoalLine", &R3Problem::GetGoalLine)
       .function("Step", &R3Problem::Step)
       .function("GetGoalRegion", &R3Problem::GetGoalRegion)
+      .function("GetObstacles", &R3Problem::GetObstacles)
       .function("NumEdges", &R3Problem::NumEdges);
 
   emscripten::register_vector<XyzRgb>("vector<XyzRgb>");
+  emscripten::register_vector<R3Sphere>("vector<R3Sphere>");
   emscripten::register_vector<std::vector<XyzRgb> >("vector<vector<XyzRgb> >");
 }
