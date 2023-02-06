@@ -8,15 +8,15 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
 
 class LinesBuffer {
-  MAX_POINTS = 10000;
+  MAX_POINTS = 20000;
 
   constructor() {
     const positions = new Float32Array(this.MAX_POINTS * 3); // 3 vertices per point
-    const colors = new Float32Array(this.MAX_POINTS * 3); // RGB for each point
+    const colors = new Float32Array(this.MAX_POINTS * 4); // RGB for each point
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 4));
     geometry.setDrawRange(0, 0); // initially draw nothing
 
     const material = new THREE.LineBasicMaterial({
@@ -26,6 +26,7 @@ class LinesBuffer {
     });
 
     this.lines = new THREE.LineSegments(geometry, material);
+    // this.lines = new THREE.Line(geometry, material);
     this.lines.visible = true;
   }
 
@@ -33,29 +34,35 @@ class LinesBuffer {
     const positions = this.lines.geometry.attributes.position.array;
     const colors = this.lines.geometry.attributes.color.array;
 
-    const segment_indices = [0];
-    let segment_index = 0; // designate where each segment begins
+    this.lines.geometry.clearGroups();
+
+    let segment_indices = [];
+    // let segment_index = 0; // designate where each segment begins
     let count = 0; // one for each point in the geometry position buffer
 
     // console.log(line_list);
+    // let goal_line_length = 0;
     for (let i = 0; i < line_list.size(); i++) {
       const line = line_list.get(i);
-      segment_index += line.size();
+      // segment_index += line.size();
+      this.lines.geometry.addGroup({ start: count, count: line.size() });
+
+      // goal_line_length = line.size();
       // append segment index to the segment_indices array
-      segment_indices.push(segment_index);
+      // segment_indices.push(segment_index, segment_index + 1);
 
       for (let k = 0; k < line.size(); k++) {
+        // segment_indices.push(count, count + 1);
+        segment_indices.push(count);
         const xyz_rgb = line.get(k);
 
         positions[3 * count] = xyz_rgb.x;
         positions[3 * count + 1] = xyz_rgb.y;
         positions[3 * count + 2] = xyz_rgb.z;
-        colors[3 * count] = xyz_rgb.r;
-        colors[3 * count + 1] = xyz_rgb.g;
-        colors[3 * count + 2] = xyz_rgb.b;
-        // colors[3 * count] = 1;
-        // colors[3 * count + 1] = 1;
-        // colors[3 * count + 2] = 1;
+        colors[4 * count] = xyz_rgb.r;
+        colors[4 * count + 1] = xyz_rgb.g;
+        colors[4 * count + 2] = xyz_rgb.b;
+        colors[4 * count + 3] = 1; //xyz_rgb.a;
 
         // console.log("x: " + xyz_rgb.x);
         // console.log("y: " + xyz_rgb.y);
@@ -67,7 +74,7 @@ class LinesBuffer {
       }
       line.delete();
     }
-
+    // console.log(segment_indices);
     this.lines.geometry.attributes.position.needsUpdate = true; // required after updates
     this.lines.geometry.attributes.color.needsUpdate = true; // required after updates
 
@@ -75,7 +82,10 @@ class LinesBuffer {
     this.lines.geometry.computeBoundingBox();
     this.lines.geometry.computeBoundingSphere();
     this.lines.geometry.setDrawRange(0, count);
+    // segment_indices = [0, 1, 1, 2, 2, 3];
+    // this.lines.geometry.setDrawRange(0, 6);
     // this.lines.geometry.setIndex(segment_indices);
+    // console.log("goal line length: " + goal_line_length);
   }
 
   get_segments() {
@@ -87,7 +97,8 @@ let renderer, scene, camera, controls;
 let stats, gpuPanel;
 let gui;
 let lines_buffer = new LinesBuffer();
-let num_points = 600;
+let goal_lines_buffer = new LinesBuffer();
+// let num_points = 600;
 
 console.log("Initializing wasmModule...");
 let cxx_shim_module = await wasmModule({
@@ -132,6 +143,7 @@ function init() {
   controls.maxDistance = 50;
 
   scene.add(lines_buffer.get_segments());
+  scene.add(goal_lines_buffer.get_segments());
 
   //
 
@@ -157,7 +169,7 @@ function onWindowResize() {
 
 function animate() {
   // Iterate a few steps
-  let target_num_edges = Math.min(10000, r3_problem.NumEdges() + 100);
+  let target_num_edges = Math.min(5000, r3_problem.NumEdges() + 100);
   while (r3_problem.NumEdges() < target_num_edges) {
     r3_problem.Step();
   }
@@ -166,6 +178,9 @@ function animate() {
   const bridge_lines = r3_problem.GetBridgeLines();
   lines_buffer.set_lines(bridge_lines);
   bridge_lines.delete();
+  const goal_lines = r3_problem.GetGoalLine();
+  goal_lines_buffer.set_lines(goal_lines);
+  goal_lines.delete();
 
   requestAnimationFrame(animate);
 

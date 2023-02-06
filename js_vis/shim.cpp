@@ -24,13 +24,15 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("z", &XyzRgb::z)
       .field("r", &XyzRgb::r)
       .field("g", &XyzRgb::g)
-      .field("b", &XyzRgb::b);
+      .field("b", &XyzRgb::b)
+      .field("a", &XyzRgb::a);
 
   emscripten::class_<R3Problem>("R3Problem")
       // .constructor<const>()
       .class_function("SomeProblem", &R3Problem::SomeProblem)
       .class_function("RandomProblem", &R3Problem::RandomProblem)
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)
+      .function("GetGoalLine", &R3Problem::GetGoalLine)
       .function("Step", &R3Problem::Step)
       .function("NumEdges", &R3Problem::NumEdges);
 
