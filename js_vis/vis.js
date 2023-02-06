@@ -13,6 +13,7 @@ let gui;
 let lines_buffer = new LinesBuffer();
 let goal_lines_buffer = new LinesBuffer();
 let parent_node;
+let last_rotation_time = Date.now();
 
 // load webassembly module
 console.log("Initializing wasmModule...");
@@ -24,6 +25,16 @@ let cxx_shim_module = await wasmModule({
 
 // create pathfinding problem
 let r3_problem = new cxx_shim_module.R3Problem.SomeProblem();
+
+const gui_params = {
+  rotate: true,
+  rotation_rate: 0.5,
+  max_iterations: 5000,
+  iterations_per_frame: 100,
+  // restart_solver: function () {
+  //   console.log("yolo");
+  // },
+};
 
 // initialize and run the animation loop
 init();
@@ -78,12 +89,21 @@ function onWindowResize() {
 }
 
 function render() {
-  const time = Date.now() * 0.001;
-
-  parent_node.rotation.z = time * 0.5;
+  // optionally rotate
+  const now = Date.now();
+  const delta_time = now - last_rotation_time;
+  last_rotation_time = now;
+  if (gui_params.rotate) {
+    parent_node.rotation.z += delta_time * 0.001 * gui_params.rotation_rate;
+  } else {
+    // parent_node.rotation.z = 0;
+  }
 
   // Iterate a few steps
-  let target_num_edges = Math.min(5000, r3_problem.NumEdges() + 100);
+  let target_num_edges = Math.min(
+    gui_params.max_iterations,
+    r3_problem.NumEdges() + gui_params.iterations_per_frame
+  );
   while (r3_problem.NumEdges() < target_num_edges) {
     r3_problem.Step();
   }
@@ -125,18 +145,14 @@ function animate() {
 function initGui() {
   gui = new GUI();
 
-  const param = {
-    "line type": 0,
-    "world units": false,
-    num_points: 500,
-    width: 5,
-    alphaToCoverage: true,
-    dashed: false,
-    "dash scale": 1,
-    "dash / gap": 1,
-  };
+  gui.add(gui_params, "rotate");
+  gui.add(gui_params, "rotation_rate", 0, 1.5);
+  gui.add(gui_params, "max_iterations", 0, 10000);
+  gui.add(gui_params, "iterations_per_frame", 0, 100);
+  gui.add(gui_params, "restart_solver").onChange(function (val) {
+    console.log("restart!");
+  });
 
-  // gui
   //   .add(param, "line type", { LineGeometry: 0, "gl.LINE": 1 })
   //   .onChange(function (val) {
   //     switch (val) {
@@ -157,9 +173,9 @@ function initGui() {
   //   matLine.needsUpdate = true;
   // });
 
-  gui.add(param, "num_points", 1, 1000).onChange(function (val) {
-    num_points = Math.round(val);
-  });
+  // gui.add(gui_params, "num_points", 1, 1000).onChange(function (val) {
+  //   num_points = Math.round(val);
+  // });
 
   // gui.add(param, "alphaToCoverage").onChange(function (val) {
   //   matLine.alphaToCoverage = val;
