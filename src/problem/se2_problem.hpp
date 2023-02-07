@@ -18,6 +18,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
+#include "src/problem/parameters.hpp"
 #include "src/problem/xyz_rgb.hpp"
 #include "src/search.hpp"               // for Edge, Search, StepResult, StepResult::kSuccess
 #include "src/space/dubins/dubins.hpp"  // for DubinsPath, DubinsStatus, Se2Coord
@@ -122,7 +123,15 @@ struct Se2Problem {
 
   std::vector<std::vector<XyzRgb> > GetGoalLine() const;
 
-  static Se2Problem RandomProblem(std::mt19937_64 &rng_engine);
+  GoalRegion GetGoalRegion() const { return goal_region_; }
+  std::vector<Sphere> GetObstacles() const { return obstacles_; }
+
+  bool Step() { return search_.Step() == rrts::StepResult::kSuccess; }
+
+  size_t NumEdges() const { return search_.Edges().size(); }
+
+  static Se2Problem RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params,
+                                  double rho);
 };  // class Se2Problem
 
 // int Run(char *argv0) {

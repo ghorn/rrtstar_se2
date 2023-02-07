@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/problem/parameters.hpp"
 #include "src/problem/xyz_rgb.hpp"
 #include "src/search.hpp"     // for Edge, Search, StepResult, StepResult::kSuccess
 #include "src/space/r3.hpp"   // for Sphere, Point, Line, R3
@@ -13,14 +14,6 @@ struct R3Problem {
   // using Tree = rrts::tree::Naive<Point, Bridge, 3>;  // comment in for testing Fast tree
   using Tree = rrts::tree::Fast<Point, Bridge, 3>;
   using Space = rrts::space::r3::R3;
-
-  struct Parameters {
-    double eta;
-    int32_t max_num_obstacles;
-    double obstacle_fraction;
-    double min_length;
-    double max_length;
-  };
 
   R3Problem(const Point &x_init, const Point &lb, const Point &ub, const Sphere &goal_region,
             const std::vector<Sphere> &obstacles, double eta)
@@ -40,12 +33,7 @@ struct R3Problem {
   Sphere GetGoalRegion() const { return goal_region_; }
   std::vector<Sphere> GetObstacles() const { return obstacles_; }
 
-  bool Step() {
-    if (search_.Step() == rrts::StepResult::kSuccess) {
-      return true;
-    }
-    return false;
-  }
+  bool Step() { return search_.Step() == rrts::StepResult::kSuccess; }
 
   size_t NumEdges() const { return search_.Edges().size(); }
 
@@ -58,5 +46,5 @@ struct R3Problem {
 
   std::vector<std::vector<XyzRgb> > GetGoalLine() const;
 
-  static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const Parameters &params);
+  static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params);
 };
