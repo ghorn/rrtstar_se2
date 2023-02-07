@@ -326,7 +326,7 @@ function init() {
     1,
     1000
   );
-  camera.position.set(-6, 0, 8);
+  camera.position.set(-4, 4, 5);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.minDistance = 0.01;
