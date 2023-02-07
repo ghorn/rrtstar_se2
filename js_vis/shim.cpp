@@ -2,22 +2,19 @@
 
 #include "src/problem/r3_problem.hpp"
 
-// class HelloClass {
-//  public:
-//   static std::string SayHello(const std::string &name) { return "Yo! " + name; };
-// };
+// shim class that owns an RNG state and can create random problems
+class ProblemFactory {
+ public:
+  ProblemFactory() = default;
+  R3Problem RandomR3Problem(const R3Problem::Parameters &params) {
+    return R3Problem::RandomProblem(rng_engine, params);
+  };
 
-// int say_hello() {
-//   printf("Hello from your wasm module\n");
-//   return 0;
-// }
+ private:
+  std::mt19937_64 rng_engine;
+};  // class ProblemFactory
 
 EMSCRIPTEN_BINDINGS(RrtStar) {
-  // emscripten::class_<HelloClass>("HelloClass")
-  //     .constructor<>()
-  //     .class_function("SayHello", &HelloClass::SayHello);
-  // emscripten::function("sayHello2", &say_hello);
-
   emscripten::value_object<XyzRgb>("XyzRgb")
       .field("x", &XyzRgb::x)
       .field("y", &XyzRgb::y)
@@ -45,9 +42,9 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("center", &R3Sphere::center)
       .field("radius", &R3Sphere::radius);
 
-  emscripten::class_<R3ProblemFactory>("R3ProblemFactory")
+  emscripten::class_<ProblemFactory>("ProblemFactory")
       .constructor<>()
-      .function("RandomProblem", &R3ProblemFactory::RandomProblem);
+      .function("RandomR3Problem", &ProblemFactory::RandomR3Problem);
 
   emscripten::class_<R3Problem>("R3Problem")
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)

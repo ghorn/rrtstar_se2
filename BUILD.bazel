@@ -53,6 +53,7 @@ cc_library(
     srcs = [
         "src/assert.cpp",
         "src/problem/r3_problem.cpp",
+        "src/problem/se2_problem.cpp",
         "src/space/dubins/dubins.cpp",
         "src/space/r3.cpp",
         "src/space/se2.cpp",
@@ -60,6 +61,8 @@ cc_library(
     hdrs = [
         "src/assert.hpp",
         "src/problem/r3_problem.hpp",
+        "src/problem/se2_problem.hpp",
+        "src/problem/xyz_rgb.hpp",
         "src/search.hpp",
         "src/space/dubins/dubins.hpp",
         "src/space/n_ball.hpp",

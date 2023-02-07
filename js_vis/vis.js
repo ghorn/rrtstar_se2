@@ -171,7 +171,7 @@ let cxx_shim_module = await wasmModule({
 });
 
 // create pathfinding problem
-var problem_factory = new cxx_shim_module.R3ProblemFactory();
+var problem_factory = new cxx_shim_module.ProblemFactory();
 
 const gui_params = {
   max_iterations: 5000,
@@ -194,7 +194,7 @@ const gui_params = {
   },
 };
 
-let r3_problem = problem_factory.RandomProblem(gui_params.problem);
+let r3_problem = problem_factory.RandomR3Problem(gui_params.problem);
 
 // initialize and run the animation loop
 init();
