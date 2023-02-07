@@ -146,37 +146,26 @@ class ProblemScene {
     }
   }
 
-  update_r3(r3_problem, gui_params) {
+  update_common(goal_region, obstacles, bridge_lines, goal_lines, gui_params) {
     // set the goal region
-    const problem_goal_region = r3_problem.GetGoalRegion();
     this.update_goal_region(
-      problem_goal_region,
+      goal_region,
       gui_params.show_goal_region,
       gui_params.goal_region_opacity
     );
 
     // update obstacles
-    const problem_obstacles_vec = r3_problem.GetObstacles();
-    const problem_obstacles = [];
-    for (let i = 0; i < problem_obstacles_vec.size(); i++) {
-      problem_obstacles.push(problem_obstacles_vec.get(i));
-    }
-    problem_obstacles_vec.delete();
     this.update_obstacles(
-      problem_obstacles,
+      obstacles,
       gui_params.show_obstacles,
       gui_params.obstacle_opacity
     );
 
     // set the pathfinding lines
-    const bridge_lines = r3_problem.GetBridgeLines();
     this.lines_buffer.set_lines(bridge_lines);
-    bridge_lines.delete();
 
     // set the optimal path lines
-    const goal_lines = r3_problem.GetGoalLine();
     this.goal_lines_buffer.set_lines(goal_lines);
-    goal_lines.delete();
 
     // update the axes
     if (gui_params.show_axes) {
@@ -186,51 +175,71 @@ class ProblemScene {
     }
   }
 
-  update_se2(se2_problem, gui_params) {
-    // set the goal region
-    // it's in the form of {position: {center: {x, y}, radius}, min_angle, max_angle}
-    // Convert to {center: {x, y, z}, radius}
-    const problem_goal_region = se2_problem.GetGoalRegion().position;
-    problem_goal_region.center.z = 0;
-    this.update_goal_region(
-      problem_goal_region,
-      gui_params.show_goal_region,
-      gui_params.goal_region_opacity
-    );
+  update_r3(r3_problem, gui_params) {
+    // get the goal region
+    const goal_region = r3_problem.GetGoalRegion();
 
-    // update obstacles
-    const problem_obstacles_vec = se2_problem.GetObstacles();
-    const problem_obstacles = [];
-    for (let i = 0; i < problem_obstacles_vec.size(); i++) {
-      const obstacle = problem_obstacles_vec.get(i);
-      problem_obstacles.push({
-        center: { x: obstacle.center.x, y: obstacle.center.y, z: 0 },
-        radius: obstacle.radius,
-      });
+    // get obstacles and convert to a list
+    const obstacles_vec = r3_problem.GetObstacles();
+    const obstacles = [];
+    for (let i = 0; i < obstacles_vec.size(); i++) {
+      obstacles.push(obstacles_vec.get(i));
     }
-    problem_obstacles_vec.delete();
-    this.update_obstacles(
-      problem_obstacles,
-      gui_params.show_obstacles,
-      gui_params.obstacle_opacity
+    obstacles_vec.delete();
+
+    // get the lines
+    const bridge_lines = r3_problem.GetBridgeLines();
+    const goal_lines = r3_problem.GetGoalLine();
+
+    // update the scene
+    this.update_common(
+      goal_region,
+      obstacles,
+      bridge_lines,
+      goal_lines,
+      gui_params
     );
 
-    // set the pathfinding lines
-    const bridge_lines = se2_problem.GetBridgeLines();
-    this.lines_buffer.set_lines(bridge_lines);
-    bridge_lines.delete();
-
-    // set the optimal path lines
-    const goal_lines = se2_problem.GetGoalLine();
-    this.goal_lines_buffer.set_lines(goal_lines);
+    // delete C++ objects
     goal_lines.delete();
+    bridge_lines.delete();
+  }
 
-    // update the axes
-    if (gui_params.show_axes) {
-      this.axes_lines_buffer.lines.visible = true;
-    } else {
-      this.axes_lines_buffer.lines.visible = false;
+  update_se2(se2_problem, gui_params) {
+    // Get the goal region.
+    // It's in the form of {position: {center: {x, y}, radius}, min_angle, max_angle}.
+    // Convert to {center: {x, y, z}, radius}.
+    const goal_region = se2_problem.GetGoalRegion().position;
+    goal_region.center.z = 0;
+
+    // get obstacles and set z to 0
+    const obstacles_vec = se2_problem.GetObstacles();
+    const obstacles = [];
+    for (let i = 0; i < obstacles_vec.size(); i++) {
+      const obstacle = obstacles_vec.get(i);
+      obstacle.center.z = 0;
+      obstacles.push(obstacle);
     }
+    obstacles_vec.delete();
+
+    // get the pathfinding lines
+    const bridge_lines = se2_problem.GetBridgeLines();
+
+    // get the optimal path lines
+    const goal_lines = se2_problem.GetGoalLine();
+
+    // update the scene
+    this.update_common(
+      goal_region,
+      obstacles,
+      bridge_lines,
+      goal_lines,
+      gui_params
+    );
+
+    // delete C++ objects
+    bridge_lines.delete();
+    goal_lines.delete();
   }
 }
 
