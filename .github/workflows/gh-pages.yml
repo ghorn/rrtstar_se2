@@ -40,8 +40,20 @@ jobs:
       - name: Bazel build
         run: ./bazel build -c opt //js_vis:shim_wasm
 
-      - name: Package tarball
-        run: tar -czvf github-pages.tar bazel-bin/js_vis/shim_wasm/* js_vis/*.js js_vis/*.css
+      # - name: Package tarball
+      #   run: tar -czvf github-pages.tar bazel-bin/js_vis/shim_wasm/* js_vis/*.js js_vis/*.css
+
+      - name: Assemble artifacts
+        run: |
+          mkdir _site
+          mkdir _site/bazel-bin
+          mkdir _site/bazel-bin/js_vis
+          mkdir _site/bazel-bin/js_vis/shim_wasm
+          mkdir _site/js_vis
+
+          cp bazel-bin/js_vis/shim_wasm/* _site/bazel-bin/js_vis/shim_wasm/
+          cp js_vis/*.js _site/js_vis/
+          cp js_vis/*.css _site/js_vis/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
