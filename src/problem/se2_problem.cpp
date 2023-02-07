@@ -1,7 +1,5 @@
 #include "se2_problem.hpp"
 
-// inline glm::vec3 ToVec3(const glm::vec2 &v2, float z) { return glm::vec3(v2.x, v2.y, z); }
-
 // std::vector<std::vector<bb3d::ColoredVec3> > DrawBridge(const DubinsPath &path, double ctg0,
 // double ctg1, double z __attribute__((unused))) {
 //
