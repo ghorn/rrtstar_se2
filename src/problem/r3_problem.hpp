@@ -1,23 +1,9 @@
 #pragma once
 
+#include "src/problem/xyz_rgb.hpp"
 #include "src/search.hpp"     // for Edge, Search, StepResult, StepResult::kSuccess
 #include "src/space/r3.hpp"   // for Sphere, Point, Line, R3
 #include "src/tree/fast.hpp"  // for Fast
-
-struct XyzRgb {
-  float x;
-  float y;
-  float z;
-  float r;
-  float g;
-  float b;
-  float a;
-  XyzRgb() = default;
-  XyzRgb(float x_, float y_, float z_, float r_, float g_, float b_, float a_)
-      : x(x_), y(y_), z(z_), r(r_), g(g_), b(b_), a(a_){};
-  XyzRgb(glm::vec3 xyz, float r_, float g_, float b_, float a_)
-      : x(xyz.x), y(xyz.y), z(xyz.z), r(r_), g(g_), b(b_), a(a_){};
-};
 
 struct R3Problem {
   using Line = rrts::space::r3::Line;
@@ -73,15 +59,4 @@ struct R3Problem {
   std::vector<std::vector<XyzRgb> > GetGoalLine() const;
 
   static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const Parameters &params);
-};
-
-class R3ProblemFactory {
- public:
-  R3ProblemFactory() = default;
-  R3Problem RandomProblem(const R3Problem::Parameters &params) {
-    return R3Problem::RandomProblem(rng_engine, params);
-  };
-
- private:
-  std::mt19937_64 rng_engine;
 };
