@@ -2,28 +2,28 @@ name: Presubmit
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
+    name: Bazel test //...
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install emscripten
-      run: |
-        # sudo apt-get update
-        sudo apt-get install -y emscripten
+      - uses: actions/checkout@v3
 
-    - name: Install bazel
-      run: |
-        wget https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -O bazel
-        chmod +x bazel
+      - name: Install emscripten
+        run: |
+          # sudo apt-get update
+          sudo apt-get install -y emscripten
 
-    - name: Bazel test
-      run: ./bazel test //...
+      - name: Install bazel
+        run: |
+          wget https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -O bazel
+          chmod +x bazel
 
+      - name: Bazel test
+        run: ./bazel test //...
