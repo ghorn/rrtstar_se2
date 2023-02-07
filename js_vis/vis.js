@@ -11,6 +11,7 @@ class ProblemScene {
   constructor() {
     this.lines_buffer = new LinesBuffer();
     this.goal_lines_buffer = new LinesBuffer();
+    this.bounding_box_lines_buffer = new LinesBuffer();
     this.axes_lines_buffer = new LinesBuffer();
     this.axes_lines_buffer.set_lines_from_lists([
       [
@@ -42,6 +43,7 @@ class ProblemScene {
     this.parent_node.rotateX(Math.PI / 2);
     this.parent_node.add(this.lines_buffer.get_segments());
     this.parent_node.add(this.goal_lines_buffer.get_segments());
+    this.parent_node.add(this.bounding_box_lines_buffer.get_segments());
     this.parent_node.add(this.goal_region_sphere);
     this.parent_node.add(this.axes_lines_buffer.get_segments());
 
@@ -146,7 +148,14 @@ class ProblemScene {
     }
   }
 
-  update_common(goal_region, obstacles, bridge_lines, goal_lines, gui_params) {
+  update_common(
+    goal_region,
+    obstacles,
+    bridge_lines,
+    goal_lines,
+    bounding_box_lines,
+    gui_params
+  ) {
     // set the goal region
     this.update_goal_region(
       goal_region,
@@ -166,6 +175,14 @@ class ProblemScene {
 
     // set the optimal path lines
     this.goal_lines_buffer.set_lines(goal_lines);
+
+    // set the bounding box lines
+    this.bounding_box_lines_buffer.set_lines(bounding_box_lines);
+    if (gui_params.show_bounding_box) {
+      this.bounding_box_lines_buffer.lines.visible = true;
+    } else {
+      this.bounding_box_lines_buffer.lines.visible = false;
+    }
 
     // update the axes
     if (gui_params.show_axes) {
@@ -190,6 +207,9 @@ class ProblemScene {
     // get the lines
     const bridge_lines = r3_problem.GetBridgeLines();
     const goal_lines = r3_problem.GetGoalLine();
+    const bounding_box_lines = r3_problem.GetBoundingBoxLines(
+      gui_params.bounding_box_opacity
+    );
 
     // update the scene
     this.update_common(
@@ -197,12 +217,14 @@ class ProblemScene {
       obstacles,
       bridge_lines,
       goal_lines,
+      bounding_box_lines,
       gui_params
     );
 
     // delete C++ objects
     goal_lines.delete();
     bridge_lines.delete();
+    bounding_box_lines.delete();
   }
 
   update_se2(se2_problem, gui_params) {
@@ -222,11 +244,12 @@ class ProblemScene {
     }
     obstacles_vec.delete();
 
-    // get the pathfinding lines
+    // get the lines
     const bridge_lines = se2_problem.GetBridgeLines();
-
-    // get the optimal path lines
     const goal_lines = se2_problem.GetGoalLine();
+    const bounding_box_lines = se2_problem.GetBoundingBoxLines(
+      gui_params.bounding_box_opacity
+    );
 
     // update the scene
     this.update_common(
@@ -234,12 +257,14 @@ class ProblemScene {
       obstacles,
       bridge_lines,
       goal_lines,
+      bounding_box_lines,
       gui_params
     );
 
     // delete C++ objects
     bridge_lines.delete();
     goal_lines.delete();
+    bounding_box_lines.delete();
   }
 }
 
@@ -272,6 +297,8 @@ const gui_params = {
     goal_region_opacity: 0.5,
     show_obstacles: true,
     obstacle_opacity: 0.2,
+    show_bounding_box: true,
+    bounding_box_opacity: 0.75,
     show_axes: false,
   },
   r3_problem: {
@@ -504,5 +531,7 @@ function initGui() {
   scene_folder.add(gui_params.scene, "show_obstacles");
   scene_folder.add(gui_params.scene, "goal_region_opacity", 0, 1, 0.01);
   scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
+  scene_folder.add(gui_params.scene, "show_bounding_box");
+  scene_folder.add(gui_params.scene, "bounding_box_opacity", 0, 1, 0.01);
   scene_folder.add(gui_params.scene, "show_axes");
 }

@@ -44,6 +44,8 @@ struct R3Problem {
     return dist <= goal_region_.radius;
   }
 
+  std::vector<std::vector<XyzRgb> > GetBoundingBoxLines(float bounding_box_opacity) const;
+
   std::vector<std::vector<XyzRgb> > GetGoalLine() const;
 
   static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params);

@@ -155,21 +155,36 @@ R3Problem R3Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemPar
   return R3Problem(x_init, lb, ub, goal_region, obstacles, params.eta);
 }
 
-//   void UpdateBoundingBoxLines(bb3d::Lines &bounding_box_lines) const {
-//     std::vector<std::vector<glm::vec3> > bb_lines;
-//     bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {ub_.x, lb_.y, lb_.z}});
-//     bb_lines.push_back({{lb_.x, lb_.y, ub_.z}, {ub_.x, lb_.y, ub_.z}});
-//     bb_lines.push_back({{lb_.x, ub_.y, lb_.z}, {ub_.x, ub_.y, lb_.z}});
-//     bb_lines.push_back({{lb_.x, ub_.y, ub_.z}, {ub_.x, ub_.y, ub_.z}});
+std::vector<std::vector<XyzRgb> > R3Problem::GetBoundingBoxLines(float bounding_box_opacity) const {
+  // aliases for readability
+  const glm::vec3 &lb = lb_;
+  const glm::vec3 &ub = ub_;
 
-//     bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {lb_.x, ub_.y, lb_.z}});
-//     bb_lines.push_back({{lb_.x, lb_.y, ub_.z}, {lb_.x, ub_.y, ub_.z}});
-//     bb_lines.push_back({{ub_.x, lb_.y, lb_.z}, {ub_.x, ub_.y, lb_.z}});
-//     bb_lines.push_back({{ub_.x, lb_.y, ub_.z}, {ub_.x, ub_.y, ub_.z}});
+  std::vector<std::vector<glm::vec3> > bb_lines;
+  bb_lines.push_back({{lb.x, lb.y, lb.z}, {ub.x, lb.y, lb.z}});
+  bb_lines.push_back({{lb.x, lb.y, ub.z}, {ub.x, lb.y, ub.z}});
+  bb_lines.push_back({{lb.x, ub.y, lb.z}, {ub.x, ub.y, lb.z}});
+  bb_lines.push_back({{lb.x, ub.y, ub.z}, {ub.x, ub.y, ub.z}});
 
-//     bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {lb_.x, lb_.y, ub_.z}});
-//     bb_lines.push_back({{lb_.x, ub_.y, lb_.z}, {lb_.x, ub_.y, ub_.z}});
-//     bb_lines.push_back({{ub_.x, lb_.y, lb_.z}, {ub_.x, lb_.y, ub_.z}});
-//     bb_lines.push_back({{ub_.x, ub_.y, lb_.z}, {ub_.x, ub_.y, ub_.z}});
-//     bounding_box_lines.Update(bb_lines);
-//   }
+  bb_lines.push_back({{lb.x, lb.y, lb.z}, {lb.x, ub.y, lb.z}});
+  bb_lines.push_back({{lb.x, lb.y, ub.z}, {lb.x, ub.y, ub.z}});
+  bb_lines.push_back({{ub.x, lb.y, lb.z}, {ub.x, ub.y, lb.z}});
+  bb_lines.push_back({{ub.x, lb.y, ub.z}, {ub.x, ub.y, ub.z}});
+
+  bb_lines.push_back({{lb.x, lb.y, lb.z}, {lb.x, lb.y, ub.z}});
+  bb_lines.push_back({{lb.x, ub.y, lb.z}, {lb.x, ub.y, ub.z}});
+  bb_lines.push_back({{ub.x, lb.y, lb.z}, {ub.x, lb.y, ub.z}});
+  bb_lines.push_back({{ub.x, ub.y, lb.z}, {ub.x, ub.y, ub.z}});
+
+  // add a color to each one
+  const glm::vec4 color = {1, 1, 1, bounding_box_opacity};
+  std::vector<std::vector<XyzRgb> > ret;
+  for (const std::vector<glm::vec3> &segment : bb_lines) {
+    std::vector<XyzRgb> colored_segment;
+    for (const glm::vec3 &point : segment) {
+      colored_segment.push_back(XyzRgb(point, color));
+    }
+    ret.push_back(colored_segment);
+  }
+  return ret;
+}

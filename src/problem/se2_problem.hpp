@@ -44,32 +44,7 @@ struct Se2Problem {
   [[nodiscard]] const Point &Ub() const { return se2_space_.Ub(); };
 
  public:
-  // void UpdateBoundingBoxLines(bb3d::Lines &bounding_box_lines) const {
-  //   std::vector<std::vector<glm::vec3> > bb_lines;
-  //   bb_lines.push_back(
-  //       {{Lb().position.x, Lb().position.y, 0}, {Lb().position.x, Ub().position.y, 0}});
-  //   bb_lines.push_back(
-  //       {{Lb().position.x, Ub().position.y, 0}, {Ub().position.x, Ub().position.y, 0}});
-  //   bb_lines.push_back(
-  //       {{Ub().position.x, Ub().position.y, 0}, {Ub().position.x, Lb().position.y, 0}});
-  //   bb_lines.push_back(
-  //       {{Ub().position.x, Lb().position.y, 0}, {Lb().position.x, Lb().position.y, 0}});
-  //   // bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {ub_.x, lb_.y, lb_.z}});
-  //   // bb_lines.push_back({{lb_.x, lb_.y, ub_.z}, {ub_.x, lb_.y, ub_.z}});
-  //   // bb_lines.push_back({{lb_.x, ub_.y, lb_.z}, {ub_.x, ub_.y, lb_.z}});
-  //   // bb_lines.push_back({{lb_.x, ub_.y, ub_.z}, {ub_.x, ub_.y, ub_.z}});
-  //   //
-  //   // bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {lb_.x, ub_.y, lb_.z}});
-  //   // bb_lines.push_back({{lb_.x, lb_.y, ub_.z}, {lb_.x, ub_.y, ub_.z}});
-  //   // bb_lines.push_back({{ub_.x, lb_.y, lb_.z}, {ub_.x, ub_.y, lb_.z}});
-  //   // bb_lines.push_back({{ub_.x, lb_.y, ub_.z}, {ub_.x, ub_.y, ub_.z}});
-  //   //
-  //   // bb_lines.push_back({{lb_.x, lb_.y, lb_.z}, {lb_.x, lb_.y, ub_.z}});
-  //   // bb_lines.push_back({{lb_.x, ub_.y, lb_.z}, {lb_.x, ub_.y, ub_.z}});
-  //   // bb_lines.push_back({{ub_.x, lb_.y, lb_.z}, {ub_.x, lb_.y, ub_.z}});
-  //   // bb_lines.push_back({{ub_.x, ub_.y, lb_.z}, {ub_.x, ub_.y, ub_.z}});
-  //   bounding_box_lines.Update(bb_lines);
-  // }
+  std::vector<std::vector<XyzRgb> > GetBoundingBoxLines(float bounding_box_opacity) const;
 
   std::vector<std::vector<XyzRgb> > GetBridgeLines() const;
 

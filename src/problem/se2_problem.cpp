@@ -153,6 +153,29 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine() const {
   return segments;
 }
 
+std::vector<std::vector<XyzRgb> > Se2Problem::GetBoundingBoxLines(
+    float bounding_box_opacity) const {
+  const glm::vec2 lb = Lb().position;
+  const glm::vec2 ub = Ub().position;
+  std::vector<std::vector<glm::vec3> > bb_lines;
+  bb_lines.push_back({{lb.x, lb.y, 0}, {lb.x, ub.y, 0}});
+  bb_lines.push_back({{lb.x, ub.y, 0}, {ub.x, ub.y, 0}});
+  bb_lines.push_back({{ub.x, ub.y, 0}, {ub.x, lb.y, 0}});
+  bb_lines.push_back({{ub.x, lb.y, 0}, {lb.x, lb.y, 0}});
+
+  // add a color to each one
+  const glm::vec4 color = {1, 1, 1, bounding_box_opacity};
+  std::vector<std::vector<XyzRgb> > ret;
+  for (const std::vector<glm::vec3> &segment : bb_lines) {
+    std::vector<XyzRgb> colored_segment;
+    for (const glm::vec3 &point : segment) {
+      colored_segment.push_back(XyzRgb(point, color));
+    }
+    ret.push_back(colored_segment);
+  }
+  return ret;
+}
+
 Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params,
                                      double rho) {
   std::uniform_real_distribution<double> uniform_distribution;
