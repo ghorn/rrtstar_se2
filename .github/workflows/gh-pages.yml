@@ -40,9 +40,6 @@ jobs:
       - name: Bazel build
         run: ./bazel build -c opt //js_vis:shim_wasm
 
-      # - name: Package tarball
-      #   run: tar -czvf github-pages.tar bazel-bin/js_vis/shim_wasm/* js_vis/*.js js_vis/*.css
-
       - name: Assemble artifacts
         run: |
           mkdir _site
