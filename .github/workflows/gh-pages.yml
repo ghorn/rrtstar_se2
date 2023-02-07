@@ -1,0 +1,59 @@
+name: Deploy GitHub Pages after a custom build
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install emscripten
+        run: |
+          # sudo apt-get update
+          sudo apt-get install -y emscripten
+
+      - name: Install bazel
+        run: |
+          wget https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -O bazel
+          chmod +x bazel
+
+      - name: Bazel build
+        run: ./bazel build -c opt //js_vis:shim_wasm
+
+      - name: Package tarball
+        run: tar -zvf github-pages.tar bazel-bin/js_vis/shim_wasm.js bazel-bin/js_vis/shim_wasm.wasm js_vis/*.js js_vis/*.css
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
