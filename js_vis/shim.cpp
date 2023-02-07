@@ -32,6 +32,12 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("y", &glm::dvec3::y)
       .field("z", &glm::dvec3::z);
 
+  emscripten::value_object<R3Problem::Parameters>("R3Params")
+      .field("max_num_obstacles", &R3Problem::Parameters::max_num_obstacles)
+      .field("obstacle_fraction", &R3Problem::Parameters::obstacle_fraction)
+      .field("min_length", &R3Problem::Parameters::min_length)
+      .field("max_length", &R3Problem::Parameters::max_length);
+
   // R3Sphere
   using R3Sphere = rrts::space::r3::Sphere;
   emscripten::value_object<R3Sphere>("R3Sphere")
@@ -43,7 +49,6 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("RandomProblem", &R3ProblemFactory::RandomProblem);
 
   emscripten::class_<R3Problem>("R3Problem")
-      // .constructor<const>()
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)
       .function("GetGoalLine", &R3Problem::GetGoalLine)
       .function("Step", &R3Problem::Step)
