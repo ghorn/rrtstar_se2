@@ -342,6 +342,8 @@ struct R3Problem {
         total_volume * params.obstacle_fraction / static_cast<double>(n);
     const double radius_per_obstacle = pow(3 * volume_per_obstacle / (4 * M_PI), 1.0 / 3.0);
     std::vector<Sphere> obstacles;
+
+    int32_t num_failed_insertions = 0;
     while (obstacles.size() < n) {
       const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
       const Point p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
@@ -351,6 +353,13 @@ struct R3Problem {
       if (avoids_goal && avoids_start) {
         Sphere obstacle = {p, obstacle_radius};
         obstacles.push_back(obstacle);
+      } else {
+        num_failed_insertions++;
+        if (num_failed_insertions > 1000) {
+          std::cerr << "Failed to create " << n << " obstacles after " << num_failed_insertions
+                    << " attempts. Giving up." << std::endl;
+          break;
+        }
       }
     }
 
