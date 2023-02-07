@@ -430,6 +430,10 @@ function render() {
   }
   const is_finished = problem.NumEdges() >= problem_params.max_iterations;
 
+  // update the info
+  document.getElementById("info").innerHTML =
+    "number of edges: " + problem.NumEdges();
+
   // if problem was just finished, set the time
   if (!was_finished && is_finished) {
     last_solve_time = now;

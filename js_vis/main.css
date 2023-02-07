@@ -22,7 +22,7 @@ button {
 	text-transform: uppercase;
 }
 
-#info {
+#title {
 	position: absolute;
 	top: 0px;
 	width: 100%;
@@ -37,6 +37,13 @@ button {
 	z-index: 1; /* TODO Solve this in HTML */
 }
 
+#info {
+	position: absolute;
+	bottom: 8px;
+	left: 16px;
+	width: 100%;
+}
+
 a, button, input, select {
 	pointer-events: auto;
 }
@@ -46,7 +53,7 @@ a, button, input, select {
 }
 
 @media all and ( max-width: 640px ) {
-	.lil-gui.root { 
+	.lil-gui.root {
 		right: auto;
 		top: auto;
 		max-height: 50%;
