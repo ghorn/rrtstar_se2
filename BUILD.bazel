@@ -30,9 +30,9 @@ common_opts = [
 ] + select({
     "@bazel_tools//src/conditions:darwin": [],
     "//conditions:default": [
-        "-Wduplicated-branches",
-        "-Wduplicated-cond",
-        "-Wlogical-op",
+        # "-Wduplicated-branches",
+        # "-Wduplicated-cond",
+        # "-Wlogical-op",
     ],
 })
 
@@ -44,7 +44,7 @@ cxx_opts = [
 ] + common_opts + select({
     "@bazel_tools//src/conditions:darwin": [],
     "//conditions:default": [
-        "-Wuseless-cast",
+        # "-Wuseless-cast",
     ],
 })
 
