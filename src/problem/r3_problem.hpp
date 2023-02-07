@@ -54,17 +54,6 @@ struct R3Problem {
   Sphere GetGoalRegion() const { return goal_region_; }
   std::vector<Sphere> GetObstacles() const { return obstacles_; }
 
-  void Describe() {
-    fprintf(stderr, "lb: % 7.2f % 7.2f % 7.2f\n", lb_.x, lb_.y, lb_.z);
-    fprintf(stderr, "ub: % 7.2f % 7.2f % 7.2f\n", ub_.x, ub_.y, ub_.z);
-    int k = 0;
-    for (const Sphere &s : obstacles_) {
-      fprintf(stderr, "obstacle %d: radius %7.2f, center % 7.2f % 7.2f % 7.2f\n", k, s.radius,
-              s.center.x, s.center.y, s.center.z);
-      k++;
-    }
-  }
-
   bool Step() {
     if (search_.Step() == rrts::StepResult::kSuccess) {
       return true;
