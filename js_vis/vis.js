@@ -11,21 +11,21 @@ class ProblemScene {
   constructor() {
     this.lines_buffer = new LinesBuffer();
     this.goal_lines_buffer = new LinesBuffer();
-    // this.axes_lines_buffer = new LinesBuffer();
-    // this.axes_lines_buffer.set_lines_from_lists([
-    //   [
-    //     { x: 0, y: 0, z: 0, r: 1, g: 0, b: 0, a: 1 },
-    //     { x: 1, y: 0, z: 0, r: 1, g: 0, b: 0, a: 1 },
-    //   ],
-    //   [
-    //     { x: 0, y: 0, z: 0, r: 0, g: 1, b: 0, a: 1 },
-    //     { x: 0, y: 1, z: 0, r: 0, g: 1, b: 0, a: 1 },
-    //   ],
-    //   [
-    //     { x: 0, y: 0, z: 0, r: 0, g: 0, b: 1, a: 1 },
-    //     { x: 0, y: 0, z: 1, r: 0, g: 0, b: 1, a: 1 },
-    //   ],
-    // ]);
+    this.axes_lines_buffer = new LinesBuffer();
+    this.axes_lines_buffer.set_lines_from_lists([
+      [
+        { x: 0, y: 0, z: 0, r: 1, g: 0, b: 0, a: 1 },
+        { x: 1, y: 0, z: 0, r: 1, g: 0, b: 0, a: 1 },
+      ],
+      [
+        { x: 0, y: 0, z: 0, r: 0, g: 1, b: 0, a: 1 },
+        { x: 0, y: 1, z: 0, r: 0, g: 1, b: 0, a: 1 },
+      ],
+      [
+        { x: 0, y: 0, z: 0, r: 0, g: 0, b: 1, a: 1 },
+        { x: 0, y: 0, z: 1, r: 0, g: 0, b: 1, a: 1 },
+      ],
+    ]);
     this.goal_region_sphere = new THREE.Mesh(
       new THREE.SphereGeometry(),
       // new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 })
@@ -39,10 +39,11 @@ class ProblemScene {
     this.obstacle_meshes = [];
 
     this.parent_node = new THREE.Object3D();
+    this.parent_node.rotateX(Math.PI / 2);
     this.parent_node.add(this.lines_buffer.get_segments());
     this.parent_node.add(this.goal_lines_buffer.get_segments());
     this.parent_node.add(this.goal_region_sphere);
-    // this.parent_node.add(this.axes_lines_buffer.get_segments());
+    this.parent_node.add(this.axes_lines_buffer.get_segments());
 
     this.scene = new THREE.Scene();
     this.scene.add(this.parent_node);
@@ -176,6 +177,13 @@ class ProblemScene {
     const goal_lines = r3_problem.GetGoalLine();
     this.goal_lines_buffer.set_lines(goal_lines);
     goal_lines.delete();
+
+    // update the axes
+    if (gui_params.show_axes) {
+      this.axes_lines_buffer.lines.visible = true;
+    } else {
+      this.axes_lines_buffer.lines.visible = false;
+    }
   }
 
   update_se2(se2_problem, gui_params) {
@@ -216,6 +224,13 @@ class ProblemScene {
     const goal_lines = se2_problem.GetGoalLine();
     this.goal_lines_buffer.set_lines(goal_lines);
     goal_lines.delete();
+
+    // update the axes
+    if (gui_params.show_axes) {
+      this.axes_lines_buffer.lines.visible = true;
+    } else {
+      this.axes_lines_buffer.lines.visible = false;
+    }
   }
 }
 
@@ -248,6 +263,7 @@ const gui_params = {
     goal_region_opacity: 0.5,
     show_obstacles: true,
     obstacle_opacity: 0.2,
+    show_axes: false,
   },
   r3_problem: {
     max_iterations: 5000,
@@ -335,7 +351,7 @@ function render() {
   const delta_time = now - last_rotation_time;
   last_rotation_time = now;
   if (gui_params.scene.rotate) {
-    problem_scene.parent_node.rotation.y +=
+    problem_scene.parent_node.rotation.z +=
       delta_time * 0.001 * gui_params.scene.rotation_rate;
   }
 
@@ -479,4 +495,5 @@ function initGui() {
   scene_folder.add(gui_params.scene, "show_obstacles");
   scene_folder.add(gui_params.scene, "goal_region_opacity", 0, 1, 0.01);
   scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
+  scene_folder.add(gui_params.scene, "show_axes");
 }
