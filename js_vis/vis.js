@@ -154,7 +154,6 @@ let cxx_shim_module = await wasmModule({
 
 // create pathfinding problem
 var problem_factory = new cxx_shim_module.R3ProblemFactory();
-let r3_problem = problem_factory.RandomProblem();
 
 const gui_params = {
   rotate: true,
@@ -166,7 +165,15 @@ const gui_params = {
     show_obstacles: true,
     obstacle_opacity: 0.2,
   },
+  problem: {
+    max_num_obstacles: 10,
+    obstacle_fraction: 0.6,
+    min_length: 3,
+    max_length: 4,
+  },
 };
+
+let r3_problem = problem_factory.RandomProblem(gui_params.problem);
 
 // initialize and run the animation loop
 init();
@@ -279,6 +286,40 @@ function initGui() {
   gui.add(gui_params, "max_iterations", 0, 10000);
   gui.add(gui_params, "iterations_per_frame", 1, 1000, 20);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
+
+  const problem_folder = gui.addFolder("problem");
+  problem_folder.add(gui_params.problem, "max_num_obstacles", 0, 20, 1);
+  problem_folder.add(gui_params.problem, "obstacle_fraction", 0, 1, 0.01);
+  const min_length = problem_folder.add(
+    gui_params.problem,
+    "min_length",
+    0.05,
+    4.95,
+    0.05
+  );
+  const max_length = problem_folder.add(
+    gui_params.problem,
+    "max_length",
+    0.1,
+    5,
+    0.05
+  );
+  // make sure max_length is bigger than min_length
+  min_length.onChange(function (min_length_val) {
+    const max_length_val = max_length.getValue();
+    if (min_length_val > max_length_val) {
+      max_length.setValue(min_length_val + 0.05);
+      max_length.updateDisplay();
+    }
+  });
+  // make sure min length is smaller than max length
+  max_length.onChange(function (max_length_val) {
+    const min_length_val = min_length.getValue();
+    if (max_length_val < min_length_val) {
+      min_length.setValue(max_length_val - 0.05);
+      min_length.updateDisplay();
+    }
+  });
 
   const scene_folder = gui.addFolder("scene");
   scene_folder.add(gui_params.scene, "show_obstacles");

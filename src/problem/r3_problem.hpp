@@ -28,7 +28,14 @@ struct R3Problem {
   using Tree = rrts::tree::Fast<Point, Bridge, 3>;
   using Space = rrts::space::r3::R3;
 
-  R3Problem(const Point &lb, const Point &ub, const Sphere &goal_region,
+  struct Parameters {
+    int32_t max_num_obstacles;
+    double obstacle_fraction;
+    double min_length;
+    double max_length;
+  };
+
+  R3Problem(const Point &x_init, const Point &lb, const Point &ub, const Sphere &goal_region,
             const std::vector<Sphere> &obstacles)
       : lb_(lb),
         ub_(ub),
@@ -36,7 +43,6 @@ struct R3Problem {
         obstacles_(obstacles),
         r3_space_(lb, ub, obstacles),
         search_(x_init, r3_space_, 0.55){};
-  Point x_init = {0, 0, 0};
   Point lb_;
   Point ub_;
   Sphere goal_region_;
@@ -308,7 +314,7 @@ struct R3Problem {
   //   }
   // };
 
-  static R3Problem RandomProblem(std::mt19937_64 &rng_engine) {
+  static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const Parameters &params) {
     std::uniform_real_distribution<double> uniform_distribution;
     std::function<double(void)> uniform = [&uniform_distribution, &rng_engine]() {
       return uniform_distribution(rng_engine);
@@ -317,46 +323,47 @@ struct R3Problem {
       return Point{uniform(), uniform(), uniform()};
     };
 
-    const double dx = 3 + 2 * uniform();
-    const double dy = 3 + 2 * uniform();
-    const double dz = 3 + 2 * uniform();
-    const Point lb = {0, -dy / 2, -dz / 2};
-    const Point ub = {dx, dy / 2, dz / 2};
-
+    const double dx = params.min_length + (params.max_length - params.min_length) * uniform();
+    const double dy = params.min_length + (params.max_length - params.min_length) * uniform();
+    const double dz = params.min_length + (params.max_length - params.min_length) * uniform();
+    const Point lb = {-dx / 2, -dy / 2, -dz / 2};
+    const Point ub = {dx / 2, dy / 2, dz / 2};
+    const Point x_init = {lb[0], 0, 0};
     const Point goal = {ub[0], dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
     const double goal_radius = 0.5;
     Sphere goal_region = {goal, goal_radius};
 
     // obstacles
-    const int max_num_obstacles = 10;
-    const size_t n =
-        static_cast<size_t>(std::uniform_int_distribution<>(1, max_num_obstacles + 1)(rng_engine));
+    const size_t n = static_cast<size_t>(
+        std::uniform_int_distribution<>(1, params.max_num_obstacles + 1)(rng_engine));
     const double total_volume = dx * dy * dz;
-    const double obstacle_fraction = 0.6;
     // upper bound (no overlap)
-    const double volume_per_obstacle = total_volume * obstacle_fraction / static_cast<double>(n);
+    const double volume_per_obstacle =
+        total_volume * params.obstacle_fraction / static_cast<double>(n);
     const double radius_per_obstacle = pow(3 * volume_per_obstacle / (4 * M_PI), 1.0 / 3.0);
     std::vector<Sphere> obstacles;
     while (obstacles.size() < n) {
       const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
-      const Point p = {dx * uniform(), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
+      const Point p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
       const bool avoids_goal =
           glm::distance(glm::dvec3(p), glm::dvec3(goal)) > obstacle_radius + goal_radius;
-      const bool avoids_start = glm::length(glm::dvec3(p)) > obstacle_radius + 0.5;
+      const bool avoids_start = glm::distance(x_init, glm::dvec3(p)) > obstacle_radius + 0.5;
       if (avoids_goal && avoids_start) {
         Sphere obstacle = {p, obstacle_radius};
         obstacles.push_back(obstacle);
       }
     }
 
-    return R3Problem(lb, ub, goal_region, obstacles);
+    return R3Problem(x_init, lb, ub, goal_region, obstacles);
   }
 };
 
 class R3ProblemFactory {
  public:
   R3ProblemFactory() = default;
-  R3Problem RandomProblem() { return R3Problem::RandomProblem(rng_engine); };
+  R3Problem RandomProblem(const R3Problem::Parameters &params) {
+    return R3Problem::RandomProblem(rng_engine, params);
+  };
 
  private:
   std::mt19937_64 rng_engine;
