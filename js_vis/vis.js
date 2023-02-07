@@ -235,25 +235,23 @@ function render() {
     gui_params.max_iterations,
     r3_problem.NumEdges() + gui_params.iterations_per_frame
   );
-  const was_solved = r3_problem.NumEdges() == gui_params.max_iterations;
+  const was_finished = r3_problem.NumEdges() == gui_params.max_iterations;
 
   while (r3_problem.NumEdges() < target_num_edges) {
-    r3_problem.Step();
-  }
-  const is_solved = r3_problem.NumEdges() == gui_params.max_iterations;
+  const is_finished = r3_problem.NumEdges() == gui_params.max_iterations;
 
-  // if problem was just solved, set the time
-  if (!was_solved && is_solved) {
+  // if problem was just finished, set the time
+  if (!was_finished && is_finished) {
     last_solve_time = now;
   }
 
   // optionally reset problem
   if (
-    is_solved &&
+    is_finished &&
     now - last_solve_time > 1000 * gui_params.delay_before_restart
   ) {
     r3_problem.delete();
-    r3_problem = problem_factory.RandomProblem();
+    r3_problem = problem_factory.RandomProblem(gui_params.problem);
   }
 
   // update opengl lines
