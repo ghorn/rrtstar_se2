@@ -60,6 +60,7 @@ cc_library(
     ],
     hdrs = [
         "src/assert.hpp",
+        "src/problem/parameters.hpp",
         "src/problem/r3_problem.hpp",
         "src/problem/se2_problem.hpp",
         "src/problem/xyz_rgb.hpp",
