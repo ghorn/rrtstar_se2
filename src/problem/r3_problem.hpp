@@ -29,6 +29,7 @@ struct R3Problem {
   using Space = rrts::space::r3::R3;
 
   struct Parameters {
+    double eta;
     int32_t max_num_obstacles;
     double obstacle_fraction;
     double min_length;
@@ -36,13 +37,13 @@ struct R3Problem {
   };
 
   R3Problem(const Point &x_init, const Point &lb, const Point &ub, const Sphere &goal_region,
-            const std::vector<Sphere> &obstacles)
+            const std::vector<Sphere> &obstacles, double eta)
       : lb_(lb),
         ub_(ub),
         goal_region_(goal_region),
         obstacles_(obstacles),
         r3_space_(lb, ub, obstacles),
-        search_(x_init, r3_space_, 0.55){};
+        search_(x_init, r3_space_, eta){};
   Point lb_;
   Point ub_;
   Sphere goal_region_;
@@ -363,7 +364,7 @@ struct R3Problem {
       }
     }
 
-    return R3Problem(x_init, lb, ub, goal_region, obstacles);
+    return R3Problem(x_init, lb, ub, goal_region, obstacles, params.eta);
   }
 };
 
