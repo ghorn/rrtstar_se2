@@ -237,7 +237,16 @@ function render() {
   );
   const was_finished = r3_problem.NumEdges() == gui_params.max_iterations;
 
+  let num_failed_iterations = 0;
   while (r3_problem.NumEdges() < target_num_edges) {
+    if (!r3_problem.Step()) {
+      num_failed_iterations++;
+      if (num_failed_iterations > 5000) {
+        console.warn("Too many failed iterations. Giving up.");
+        break;
+      }
+    }
+  }
   const is_finished = r3_problem.NumEdges() == gui_params.max_iterations;
 
   // if problem was just finished, set the time
