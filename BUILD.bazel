@@ -82,32 +82,6 @@ cc_library(
 )
 
 cc_binary(
-    name = "r3_vis",
-    srcs = [
-        "apps/r3_vis.cpp",
-    ],
-    copts = cxx_opts,
-    visibility = ["//visibility:public"],
-    deps = [
-        ":rrt_star",
-        "@bb3d",
-    ],
-)
-
-cc_binary(
-    name = "se2_vis",
-    srcs = [
-        "apps/se2_vis.cpp",
-    ],
-    copts = cxx_opts,
-    visibility = ["//visibility:public"],
-    deps = [
-        ":rrt_star",
-        "@bb3d",
-    ],
-)
-
-cc_binary(
     name = "plot_dubins",
     srcs = [
         "apps/plot_dubins.cpp",
