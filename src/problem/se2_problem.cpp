@@ -155,7 +155,8 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine() const {
   return segments;
 }
 
-Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine) {
+Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params,
+                                     double rho) {
   std::uniform_real_distribution<double> uniform_distribution;
   std::function<double(void)> uniform = [&uniform_distribution, &rng_engine]() {
     return uniform_distribution(rng_engine);
@@ -164,38 +165,42 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine) {
     return Point{{uniform(), uniform()}, uniform()};
   };
 
-  const double dx = 3 + 2 * uniform();
-  const double dy = 3 + 2 * uniform();
+  const double dx = params.min_length + (params.max_length - params.min_length) * uniform();
+  const double dy = params.min_length + (params.max_length - params.min_length) * uniform();
   const glm::dvec2 lb = {0, -dy / 2};
   const glm::dvec2 ub = {dx, dy / 2};
 
   const glm::dvec2 goal = {ub[0], dy * (uniform() - 0.5)};
-  const double goal_radius = 0.5;
-  Sphere goal_region = {goal, goal_radius};
+  Sphere goal_region = {goal, params.goal_radius};
 
   // obstacles
-  const int max_num_obstacles = 20;
   const size_t n =
-      static_cast<size_t>(std::uniform_int_distribution<>(1, max_num_obstacles)(rng_engine));
+      static_cast<size_t>(std::uniform_int_distribution<>(1, params.max_num_obstacles)(rng_engine));
   const double total_volume = dx * dy;
-  const double obstacle_fraction = 0.5;
   // upper bound (no overlap)
-  const double volume_per_obstacle = total_volume * obstacle_fraction / static_cast<double>(n);
+  const double volume_per_obstacle =
+      total_volume * params.obstacle_fraction / static_cast<double>(n);
   const double radius_per_obstacle = sqrt(volume_per_obstacle / M_PI);
 
+  int32_t num_failed_insertions = 0;
   std::vector<Sphere> obstacles;
   while (obstacles.size() < n) {
     const double obstacle_radius = radius_per_obstacle * (0.5 + 0.5 * uniform());
     const glm::dvec2 p = {dx * uniform(), dy * (uniform() - 0.5)};
-    const bool avoids_goal = glm::distance(p, goal) > obstacle_radius + goal_radius;
+    const bool avoids_goal = glm::distance(p, goal) > obstacle_radius + params.goal_radius;
     const bool avoids_start = glm::length(p) > obstacle_radius + 1.3;  // careful of turning radius
     if (avoids_goal && avoids_start) {
       Sphere obstacle = {p, obstacle_radius};
       obstacles.push_back(obstacle);
+    } else {
+      num_failed_insertions++;
+      if (num_failed_insertions >= 1000) {
+        std::cerr << "Failed to create " << n << " obstacles after " << num_failed_insertions
+                  << " attempts. Giving up." << std::endl;
+        break;
+      }
     }
   }
 
-  double rho = 0.6;
-  double eta = 4.5;
-  return Se2Problem(rho, eta, lb, ub, goal_region, obstacles);
+  return Se2Problem(rho, params.eta, lb, ub, goal_region, obstacles);
 }

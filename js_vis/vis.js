@@ -7,10 +7,25 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
 import { LinesBuffer } from "./lines_buffer.js";
 
-class R3ProblemScene {
+class ProblemScene {
   constructor() {
     this.lines_buffer = new LinesBuffer();
     this.goal_lines_buffer = new LinesBuffer();
+    // this.axes_lines_buffer = new LinesBuffer();
+    // this.axes_lines_buffer.set_lines_from_lists([
+    //   [
+    //     { x: 0, y: 0, z: 0, r: 1, g: 0, b: 0, a: 1 },
+    //     { x: 1, y: 0, z: 0, r: 1, g: 0, b: 0, a: 1 },
+    //   ],
+    //   [
+    //     { x: 0, y: 0, z: 0, r: 0, g: 1, b: 0, a: 1 },
+    //     { x: 0, y: 1, z: 0, r: 0, g: 1, b: 0, a: 1 },
+    //   ],
+    //   [
+    //     { x: 0, y: 0, z: 0, r: 0, g: 0, b: 1, a: 1 },
+    //     { x: 0, y: 0, z: 1, r: 0, g: 0, b: 1, a: 1 },
+    //   ],
+    // ]);
     this.goal_region_sphere = new THREE.Mesh(
       new THREE.SphereGeometry(),
       // new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 })
@@ -27,14 +42,14 @@ class R3ProblemScene {
     this.parent_node.add(this.lines_buffer.get_segments());
     this.parent_node.add(this.goal_lines_buffer.get_segments());
     this.parent_node.add(this.goal_region_sphere);
+    // this.parent_node.add(this.axes_lines_buffer.get_segments());
 
     this.scene = new THREE.Scene();
     this.scene.add(this.parent_node);
   }
 
-  update_obstacles(r3_problem, show_obstacles, obstacle_opacity) {
-    const problem_obstacles = r3_problem.GetObstacles();
-    const num_problem_obstacles = problem_obstacles.size();
+  update_obstacles(problem_obstacles, show_obstacles, obstacle_opacity) {
+    const num_problem_obstacles = problem_obstacles.length;
 
     // if there are too few obstacles, add new ones
     if (num_problem_obstacles > this.obstacle_meshes.length) {
@@ -76,7 +91,7 @@ class R3ProblemScene {
 
     // now update all the obstacles
     for (let i = 0; i < num_problem_obstacles; i++) {
-      const obstacle = problem_obstacles.get(i);
+      const obstacle = problem_obstacles[i];
       this.obstacle_meshes[i].scale.set(
         obstacle.radius,
         obstacle.radius,
@@ -103,8 +118,11 @@ class R3ProblemScene {
     }
   }
 
-  update_goal_region(r3_problem, show_goal_region, goal_region_opacity) {
-    const problem_goal_region = r3_problem.GetGoalRegion();
+  update_goal_region(
+    problem_goal_region,
+    show_goal_region,
+    goal_region_opacity
+  ) {
     this.goal_region_sphere.scale.set(
       problem_goal_region.radius,
       problem_goal_region.radius,
@@ -127,17 +145,24 @@ class R3ProblemScene {
     }
   }
 
-  update(r3_problem, gui_params) {
+  update_r3(r3_problem, gui_params) {
     // set the goal region
+    const problem_goal_region = r3_problem.GetGoalRegion();
     this.update_goal_region(
-      r3_problem,
+      problem_goal_region,
       gui_params.show_goal_region,
       gui_params.goal_region_opacity
     );
 
     // update obstacles
+    const problem_obstacles_vec = r3_problem.GetObstacles();
+    const problem_obstacles = [];
+    for (let i = 0; i < problem_obstacles_vec.size(); i++) {
+      problem_obstacles.push(problem_obstacles_vec.get(i));
+    }
+    problem_obstacles_vec.delete();
     this.update_obstacles(
-      r3_problem,
+      problem_obstacles,
       gui_params.show_obstacles,
       gui_params.obstacle_opacity
     );
@@ -152,12 +177,52 @@ class R3ProblemScene {
     this.goal_lines_buffer.set_lines(goal_lines);
     goal_lines.delete();
   }
+
+  update_se2(se2_problem, gui_params) {
+    // set the goal region
+    // it's in the form of {position: {center: {x, y}, radius}, min_angle, max_angle}
+    // Convert to {center: {x, y, z}, radius}
+    const problem_goal_region = se2_problem.GetGoalRegion().position;
+    problem_goal_region.center.z = 0;
+    this.update_goal_region(
+      problem_goal_region,
+      gui_params.show_goal_region,
+      gui_params.goal_region_opacity
+    );
+
+    // update obstacles
+    const problem_obstacles_vec = se2_problem.GetObstacles();
+    const problem_obstacles = [];
+    for (let i = 0; i < problem_obstacles_vec.size(); i++) {
+      const obstacle = problem_obstacles_vec.get(i);
+      problem_obstacles.push({
+        center: { x: obstacle.center.x, y: obstacle.center.y, z: 0 },
+        radius: obstacle.radius,
+      });
+    }
+    problem_obstacles_vec.delete();
+    this.update_obstacles(
+      problem_obstacles,
+      gui_params.show_obstacles,
+      gui_params.obstacle_opacity
+    );
+
+    // set the pathfinding lines
+    const bridge_lines = se2_problem.GetBridgeLines();
+    this.lines_buffer.set_lines(bridge_lines);
+    bridge_lines.delete();
+
+    // set the optimal path lines
+    const goal_lines = se2_problem.GetGoalLine();
+    this.goal_lines_buffer.set_lines(goal_lines);
+    goal_lines.delete();
+  }
 }
 
 let renderer, scene, camera, controls;
 let stats, gpuPanel;
 let gui;
-let r3_problem_scene = new R3ProblemScene();
+let problem_scene = new ProblemScene();
 
 let last_rotation_time = Date.now();
 let last_solve_time = null;
@@ -174,9 +239,8 @@ let cxx_shim_module = await wasmModule({
 var problem_factory = new cxx_shim_module.ProblemFactory();
 
 const gui_params = {
-  max_iterations: 5000,
-  iterations_per_frame: 200,
   delay_before_restart: 1,
+  space: "r3",
   scene: {
     rotate: true,
     rotation_rate: 0.5,
@@ -185,16 +249,40 @@ const gui_params = {
     show_obstacles: true,
     obstacle_opacity: 0.2,
   },
-  problem: {
+  r3_problem: {
+    max_iterations: 5000,
+    iterations_per_frame: 200,
     eta: 0.55,
     max_num_obstacles: 10,
     obstacle_fraction: 0.6,
     min_length: 3,
     max_length: 4,
+    goal_radius: 0.5,
+  },
+  se2_problem: {
+    max_iterations: 2000,
+    iterations_per_frame: 20,
+    rho: 0.6, // radius of curvature
+    eta: 4.5,
+    max_num_obstacles: 20,
+    obstacle_fraction: 0.5,
+    min_length: 3,
+    max_length: 5,
+    goal_radius: 0.5,
   },
 };
 
-let r3_problem = problem_factory.RandomR3Problem(gui_params.problem);
+let problem;
+if (gui_params.space == "r3") {
+  problem = problem_factory.RandomR3Problem(gui_params.r3_problem);
+} else if (gui_params.space == "se2") {
+  problem = problem_factory.RandomSe2Problem(
+    gui_params.se2_problem,
+    gui_params.se2_problem.rho
+  );
+} else {
+  throw "Unknown space: " + gui_params.space;
+}
 
 // initialize and run the animation loop
 init();
@@ -247,20 +335,30 @@ function render() {
   const delta_time = now - last_rotation_time;
   last_rotation_time = now;
   if (gui_params.scene.rotate) {
-    r3_problem_scene.parent_node.rotation.y +=
+    problem_scene.parent_node.rotation.y +=
       delta_time * 0.001 * gui_params.scene.rotation_rate;
+  }
+
+  // get the appropriate problem params
+  let problem_params;
+  if (problem.constructor.name == "R3Problem") {
+    problem_params = gui_params.r3_problem;
+  } else if (problem.constructor.name == "Se2Problem") {
+    problem_params = gui_params.se2_problem;
+  } else {
+    throw "Unknown class: " + problem.constructor.name;
   }
 
   // Iterate a few steps
   let target_num_edges = Math.min(
-    gui_params.max_iterations,
-    r3_problem.NumEdges() + gui_params.iterations_per_frame
+    problem_params.max_iterations,
+    problem.NumEdges() + problem_params.iterations_per_frame
   );
-  const was_finished = r3_problem.NumEdges() >= gui_params.max_iterations;
+  const was_finished = problem.NumEdges() >= problem_params.max_iterations;
 
   let num_failed_iterations = 0;
-  while (r3_problem.NumEdges() < target_num_edges) {
-    if (!r3_problem.Step()) {
+  while (problem.NumEdges() < target_num_edges) {
+    if (!problem.Step()) {
       num_failed_iterations++;
       if (num_failed_iterations > 5000) {
         console.warn("Too many failed iterations. Giving up.");
@@ -268,7 +366,7 @@ function render() {
       }
     }
   }
-  const is_finished = r3_problem.NumEdges() >= gui_params.max_iterations;
+  const is_finished = problem.NumEdges() >= problem_params.max_iterations;
 
   // if problem was just finished, set the time
   if (!was_finished && is_finished) {
@@ -280,12 +378,29 @@ function render() {
     is_finished &&
     now - last_solve_time > 1000 * gui_params.delay_before_restart
   ) {
-    r3_problem.delete();
-    r3_problem = problem_factory.RandomR3Problem(gui_params.problem);
+    problem.delete();
+
+    // create a new problem in the proper space
+    if (gui_params.space == "r3") {
+      problem = problem_factory.RandomR3Problem(gui_params.r3_problem);
+    } else if (gui_params.space == "se2") {
+      problem = problem_factory.RandomSe2Problem(
+        gui_params.se2_problem,
+        gui_params.se2_problem.rho
+      );
+    } else {
+      throw "Unknown space: " + gui_params.space;
+    }
   }
 
-  // update opengl lines
-  r3_problem_scene.update(r3_problem, gui_params.scene);
+  // update opengl scene
+  if (problem.constructor.name == "R3Problem") {
+    problem_scene.update_r3(problem, gui_params.scene);
+  } else if (problem.constructor.name == "Se2Problem") {
+    problem_scene.update_se2(problem, gui_params.scene);
+  } else {
+    throw "Unknown class: " + problem.constructor.name;
+  }
 
   // main scene
   renderer.setClearColor(0x000000, 0);
@@ -293,7 +408,7 @@ function render() {
   renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
 
   gpuPanel.startQuery();
-  renderer.render(r3_problem_scene.scene, camera);
+  renderer.render(problem_scene.scene, camera);
   gpuPanel.endQuery();
 }
 
@@ -309,44 +424,53 @@ function animate() {
 function initGui() {
   gui = new GUI();
 
-  gui.add(gui_params, "max_iterations", 0, 10000);
-  gui.add(gui_params, "iterations_per_frame", 1, 500, 1);
+  gui.add(gui_params, "space", ["r3", "se2"]);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
-  const problem_folder = gui.addFolder("problem");
-  problem_folder.add(gui_params.problem, "eta", 0, 1, 0.01);
-  problem_folder.add(gui_params.problem, "max_num_obstacles", 0, 20, 1);
-  problem_folder.add(gui_params.problem, "obstacle_fraction", 0, 1, 0.01);
-  const min_length = problem_folder.add(
-    gui_params.problem,
-    "min_length",
-    0.05,
-    9.95,
-    0.05
-  );
-  const max_length = problem_folder.add(
-    gui_params.problem,
-    "max_length",
-    0.1,
-    10,
-    0.05
-  );
-  // make sure max_length is bigger than min_length
-  min_length.onChange(function (min_length_val) {
-    const max_length_val = max_length.getValue();
-    if (min_length_val > max_length_val) {
-      max_length.setValue(min_length_val + 0.05);
-      max_length.updateDisplay();
+  for (const problem_type of ["r3_problem", "se2_problem"]) {
+    const problem_folder = gui.addFolder(problem_type);
+    const problem_params = gui_params[problem_type];
+    if (problem_type == "se2_problem") {
+      problem_folder.add(problem_params, "rho", 0.01, 1.5, 0.01);
     }
-  });
-  // make sure min length is smaller than max length
-  max_length.onChange(function (max_length_val) {
-    const min_length_val = min_length.getValue();
-    if (max_length_val < min_length_val) {
-      min_length.setValue(max_length_val - 0.05);
-      min_length.updateDisplay();
-    }
-  });
+    const max_eta = { r3_problem: 1, se2_problem: 10 }[problem_type];
+    problem_folder.add(problem_params, "eta", 0, max_eta, 0.01);
+    problem_folder.add(problem_params, "max_num_obstacles", 0, 30, 1);
+    problem_folder.add(problem_params, "obstacle_fraction", 0, 1, 0.01);
+    const min_length = problem_folder.add(
+      problem_params,
+      "min_length",
+      0.05,
+      9.95,
+      0.05
+    );
+    const max_length = problem_folder.add(
+      problem_params,
+      "max_length",
+      0.1,
+      10,
+      0.05
+    );
+    // make sure max_length is bigger than min_length
+    min_length.onChange(function (min_length_val) {
+      const max_length_val = max_length.getValue();
+      if (min_length_val > max_length_val) {
+        max_length.setValue(min_length_val + 0.05);
+        max_length.updateDisplay();
+      }
+    });
+    // make sure min length is smaller than max length
+    max_length.onChange(function (max_length_val) {
+      const min_length_val = min_length.getValue();
+      if (max_length_val < min_length_val) {
+        min_length.setValue(max_length_val - 0.05);
+        min_length.updateDisplay();
+      }
+    });
+    problem_folder.add(problem_params, "goal_radius", 0.01, 2, 0.01);
+    problem_folder.add(problem_params, "max_iterations", 0, 10000);
+    problem_folder.add(problem_params, "iterations_per_frame", 1, 500, 1);
+  }
 
   const scene_folder = gui.addFolder("scene");
   scene_folder.add(gui_params.scene, "rotate");
@@ -355,75 +479,4 @@ function initGui() {
   scene_folder.add(gui_params.scene, "show_obstacles");
   scene_folder.add(gui_params.scene, "goal_region_opacity", 0, 1, 0.01);
   scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
-
-  //   .add(param, "line type", { LineGeometry: 0, "gl.LINE": 1 })
-  //   .onChange(function (val) {
-  //     switch (val) {
-  //       case 0:
-  //         line.visible = true;
-  //         lineGl.visible = false;
-  //         break;
-
-  //       case 1:
-  //         line.visible = false;
-  //         lineGl.visible = true;
-  //         break;
-  //     }
-  //   });
-
-  // gui.add(param, "world units").onChange(function (val) {
-  //   matLine.worldUnits = val;
-  //   matLine.needsUpdate = true;
-  // });
-
-  // gui.add(gui_params, "num_points", 1, 1000).onChange(function (val) {
-  //   num_points = Math.round(val);
-  // });
-
-  // gui.add(param, "alphaToCoverage").onChange(function (val) {
-  //   matLine.alphaToCoverage = val;
-  // });
-
-  // gui.add(param, "dashed").onChange(function (val) {
-  //   matLine.dashed = val;
-  //   lineGl.material = val ? matLineDashed : matLineBasic;
-  // });
-
-  // gui.add(param, "dash scale", 0.5, 2, 0.1).onChange(function (val) {
-  //   matLine.dashScale = val;
-  //   matLineDashed.scale = val;
-  // });
-
-  // gui
-  //   .add(param, "dash / gap", { "2 : 1": 0, "1 : 1": 1, "1 : 2": 2 })
-  //   .onChange(function (val) {
-  //     switch (val) {
-  //       case 0:
-  //         matLine.dashSize = 2;
-  //         matLine.gapSize = 1;
-
-  //         matLineDashed.dashSize = 2;
-  //         matLineDashed.gapSize = 1;
-
-  //         break;
-
-  //       case 1:
-  //         matLine.dashSize = 1;
-  //         matLine.gapSize = 1;
-
-  //         matLineDashed.dashSize = 1;
-  //         matLineDashed.gapSize = 1;
-
-  //         break;
-
-  //       case 2:
-  //         matLine.dashSize = 1;
-  //         matLine.gapSize = 2;
-
-  //         matLineDashed.dashSize = 1;
-  //         matLineDashed.gapSize = 2;
-
-  //         break;
-  //     }
-  //   });
 }

@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "BUILD.*": "starlark",
+    "*.cps": "javascript",
+    "vector": "cpp"
+  }
+}
