@@ -41,7 +41,7 @@ jobs:
         run: ./bazel build -c opt //js_vis:shim_wasm
 
       - name: Package tarball
-        run: tar -zvf github-pages.tar bazel-bin/js_vis/shim_wasm.js bazel-bin/js_vis/shim_wasm.wasm js_vis/*.js js_vis/*.css
+        run: tar -czvf github-pages.tar bazel-bin/js_vis/shim_wasm/* js_vis/*.js js_vis/*.css
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
