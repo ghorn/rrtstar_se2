@@ -13,7 +13,7 @@
 #include "src/space/dubins/dubins.hpp"  // for DubinsPath, Se2Coord
 #include "src/space/space_base.hpp"     // for SpaceBase
 #include "src/tree/tree_base.hpp"       // for BoundingBoxInterval, BoundingBoxIntervals
-//#include "src/tree/node.hpp"  // BoundingBox
+// #include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::se2 {
 

@@ -9,7 +9,7 @@
 
 #include "src/space/space_base.hpp"  // for BoundingBoxIntervals, SpaceBase, Trajectory
 #include "src/tree/tree_base.hpp"    // for BoundingBoxInterval
-//#include "src/tree/node.hpp"  // BoundingBox
+// #include "src/tree/node.hpp"  // BoundingBox
 
 namespace rrts::space::r3 {
 
