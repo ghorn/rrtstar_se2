@@ -281,7 +281,7 @@ function render() {
     now - last_solve_time > 1000 * gui_params.delay_before_restart
   ) {
     r3_problem.delete();
-    r3_problem = problem_factory.RandomProblem(gui_params.problem);
+    r3_problem = problem_factory.RandomR3Problem(gui_params.problem);
   }
 
   // update opengl lines
