@@ -174,12 +174,12 @@ let cxx_shim_module = await wasmModule({
 var problem_factory = new cxx_shim_module.R3ProblemFactory();
 
 const gui_params = {
-  rotate: true,
-  rotation_rate: 0.5,
   max_iterations: 5000,
   iterations_per_frame: 200,
   delay_before_restart: 1,
   scene: {
+    rotate: true,
+    rotation_rate: 0.5,
     show_goal_region: true,
     goal_region_opacity: 0.5,
     show_obstacles: true,
@@ -246,9 +246,9 @@ function render() {
   const now = Date.now();
   const delta_time = now - last_rotation_time;
   last_rotation_time = now;
-  if (gui_params.rotate) {
+  if (gui_params.scene.rotate) {
     r3_problem_scene.parent_node.rotation.y +=
-      delta_time * 0.001 * gui_params.rotation_rate;
+      delta_time * 0.001 * gui_params.scene.rotation_rate;
   }
 
   // Iterate a few steps
@@ -309,8 +309,6 @@ function animate() {
 function initGui() {
   gui = new GUI();
 
-  gui.add(gui_params, "rotate");
-  gui.add(gui_params, "rotation_rate", 0, 1.5);
   gui.add(gui_params, "max_iterations", 0, 10000);
   gui.add(gui_params, "iterations_per_frame", 1, 500, 1);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
@@ -351,6 +349,8 @@ function initGui() {
   });
 
   const scene_folder = gui.addFolder("scene");
+  scene_folder.add(gui_params.scene, "rotate");
+  scene_folder.add(gui_params.scene, "rotation_rate", 0, 1.5);
   scene_folder.add(gui_params.scene, "show_goal_region");
   scene_folder.add(gui_params.scene, "show_obstacles");
   scene_folder.add(gui_params.scene, "goal_region_opacity", 0, 1, 0.01);
