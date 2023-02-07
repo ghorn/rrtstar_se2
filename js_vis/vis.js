@@ -311,7 +311,7 @@ function initGui() {
   gui.add(gui_params, "rotate");
   gui.add(gui_params, "rotation_rate", 0, 1.5);
   gui.add(gui_params, "max_iterations", 0, 10000);
-  gui.add(gui_params, "iterations_per_frame", 1, 1000, 20);
+  gui.add(gui_params, "iterations_per_frame", 1, 500, 1);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
   const problem_folder = gui.addFolder("problem");
@@ -321,14 +321,14 @@ function initGui() {
     gui_params.problem,
     "min_length",
     0.05,
-    4.95,
+    9.95,
     0.05
   );
   const max_length = problem_folder.add(
     gui_params.problem,
     "max_length",
     0.1,
-    5,
+    10,
     0.05
   );
   // make sure max_length is bigger than min_length
