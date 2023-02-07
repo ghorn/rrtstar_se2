@@ -186,6 +186,7 @@ const gui_params = {
     obstacle_opacity: 0.2,
   },
   problem: {
+    eta: 0.55,
     max_num_obstacles: 10,
     obstacle_fraction: 0.6,
     min_length: 3,
@@ -315,6 +316,7 @@ function initGui() {
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
   const problem_folder = gui.addFolder("problem");
+  problem_folder.add(gui_params.problem, "eta", 0, 1, 0.01);
   problem_folder.add(gui_params.problem, "max_num_obstacles", 0, 20, 1);
   problem_folder.add(gui_params.problem, "obstacle_fraction", 0, 1, 0.01);
   const min_length = problem_folder.add(

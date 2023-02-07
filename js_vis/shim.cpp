@@ -33,6 +33,7 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("z", &glm::dvec3::z);
 
   emscripten::value_object<R3Problem::Parameters>("R3Params")
+      .field("eta", &R3Problem::Parameters::eta)
       .field("max_num_obstacles", &R3Problem::Parameters::max_num_obstacles)
       .field("obstacle_fraction", &R3Problem::Parameters::obstacle_fraction)
       .field("min_length", &R3Problem::Parameters::min_length)
