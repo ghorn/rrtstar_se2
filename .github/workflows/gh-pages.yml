@@ -1,4 +1,4 @@
-name: Deploy GitHub Pages after a custom build
+name: Deploy GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch
