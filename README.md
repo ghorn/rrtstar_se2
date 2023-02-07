@@ -1,11 +1,25 @@
-There are some system dependencies needed. Here is an incomplete list:
+# Path Finding with RRT\* in R^3 and SE^2
 
-> sudo apt install libglfw3-dev libboost-stacktrace-dev libglm-dev libglew-dev libfreetype-dev libeigen3-dev libsoil-dev
+[Live demo](https://ghorn.github.io/rrtstar_se2/)
 
-You need bazel to build the project. You can install it by downloading bazelisk from https://github.com/bazelbuild/bazelisk/releases
-and moving it to /usr/local/bin/bazel. Don't forget to `chmod +x /path/to/bazelisk`.
+The primary way to run this is to compile the C++ to WebAssembly with emscripten, and then load index.html.
+A github action deploys a github page which is hosted at https://ghorn.github.io/rrtstar_se2/ (live demo above).
 
-To solve random path finding problems and see them in 3d, try running:
+## Running locally for development
 
-> bazel run -c opt //:r3_vis
-> bazel run -c opt //:se2_vis
+```
+# install emscripten
+sudo apt install emscripten
+
+# install bazel to ./bazel
+wget https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -O bazel
+chmod +x bazel
+
+# build the webassembly
+./bazel build -c opt //js_vis:shim_wasm
+
+# launch a webserver
+python3 -m http.server
+```
+
+Then go to http://localhost:8000/index.html in your browser.
