@@ -54,6 +54,7 @@ jobs:
           cp bazel-bin/js_vis/shim_wasm/* _site/bazel-bin/js_vis/shim_wasm/
           cp js_vis/*.js _site/js_vis/
           cp js_vis/*.css _site/js_vis/
+          cp index.html _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
