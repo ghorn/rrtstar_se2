@@ -167,8 +167,9 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemP
 
   const double dx = params.min_length + (params.max_length - params.min_length) * uniform();
   const double dy = params.min_length + (params.max_length - params.min_length) * uniform();
-  const glm::dvec2 lb = {0, -dy / 2};
-  const glm::dvec2 ub = {dx, dy / 2};
+  const glm::dvec2 lb = {-dx / 2, -dy / 2};
+  const glm::dvec2 ub = {dx / 2, dy / 2};
+  Se2Coord x_init = {{lb[0], 0}, 0};
 
   const glm::dvec2 goal = {ub[0], dy * (uniform() - 0.5)};
   Sphere goal_region = {goal, params.goal_radius};
@@ -186,9 +187,10 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemP
   std::vector<Sphere> obstacles;
   while (obstacles.size() < n) {
     const double obstacle_radius = radius_per_obstacle * (0.5 + 0.5 * uniform());
-    const glm::dvec2 p = {dx * uniform(), dy * (uniform() - 0.5)};
+    const glm::dvec2 p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5)};
     const bool avoids_goal = glm::distance(p, goal) > obstacle_radius + params.goal_radius;
-    const bool avoids_start = glm::length(p) > obstacle_radius + 1.3;  // careful of turning radius
+    const bool avoids_start =
+        glm::distance(p, x_init.position) > obstacle_radius + 1.3;  // careful of turning radius
     if (avoids_goal && avoids_start) {
       Sphere obstacle = {p, obstacle_radius};
       obstacles.push_back(obstacle);
@@ -202,5 +204,5 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemP
     }
   }
 
-  return Se2Problem(rho, params.eta, lb, ub, goal_region, obstacles);
+  return Se2Problem(x_init, rho, params.eta, lb, ub, goal_region, obstacles);
 }
