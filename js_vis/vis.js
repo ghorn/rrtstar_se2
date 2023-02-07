@@ -256,7 +256,7 @@ function render() {
     gui_params.max_iterations,
     r3_problem.NumEdges() + gui_params.iterations_per_frame
   );
-  const was_finished = r3_problem.NumEdges() == gui_params.max_iterations;
+  const was_finished = r3_problem.NumEdges() >= gui_params.max_iterations;
 
   let num_failed_iterations = 0;
   while (r3_problem.NumEdges() < target_num_edges) {
@@ -268,7 +268,7 @@ function render() {
       }
     }
   }
-  const is_finished = r3_problem.NumEdges() == gui_params.max_iterations;
+  const is_finished = r3_problem.NumEdges() >= gui_params.max_iterations;
 
   // if problem was just finished, set the time
   if (!was_finished && is_finished) {
