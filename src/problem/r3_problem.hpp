@@ -12,7 +12,7 @@ struct XyzRgb {
   float g;
   float b;
   float a;
-  XyzRgb() = default;  //: x(0), y(0), z(0), r(0), g(0), b(0) {};
+  XyzRgb() = default;
   XyzRgb(float x_, float y_, float z_, float r_, float g_, float b_, float a_)
       : x(x_), y(y_), z(z_), r(r_), g(g_), b(b_), a(a_){};
   XyzRgb(glm::vec3 xyz, float r_, float g_, float b_, float a_)
@@ -73,29 +73,6 @@ struct R3Problem {
   }
 
   size_t NumEdges() const { return search_.Edges().size(); }
-
-  //   void UpdateSphereLines(bb3d::ColorLines &sphere_lines) const {
-  //     const glm::vec4 obstacle_color = {1, 1, 0, 1};
-  //     const glm::vec4 goal_color = {0, 1, 1, 1};
-  //     std::vector<std::vector<bb3d::ColoredVec3> > sphere_axes;
-
-  //     std::function<void(const Sphere &, const glm::vec4 &)> push_sphere =
-  //         [&sphere_axes](const Sphere &sphere, glm::vec4 color) {
-  //           glm::vec3 dx = {sphere.radius, 0, 0};
-  //           glm::vec3 dy = {0, sphere.radius, 0};
-  //           glm::vec3 dz = {0, 0, sphere.radius};
-  //           const glm::vec3 &center = sphere.center;
-  //           sphere_axes.push_back({{{center + dx, color}, {center - dx, color}}});
-  //           sphere_axes.push_back({{{center + dy, color}, {center - dy, color}}});
-  //           sphere_axes.push_back({{{center + dz, color}, {center - dz, color}}});
-  //         };
-
-  //     for (const Sphere &sphere : obstacles_) {
-  //       push_sphere(sphere, obstacle_color);
-  //     }
-  //     push_sphere(goal_region_, goal_color);
-  //     sphere_lines.Update(sphere_axes);
-  //   }
 
   //   void UpdateBoundingBoxLines(bb3d::Lines &bounding_box_lines) const {
   //     std::vector<std::vector<glm::vec3> > bb_lines;
@@ -163,6 +140,8 @@ struct R3Problem {
       bridges.push_back({cv0, cv1});
       node_index++;
     }
+
+    // // I don't remember why I used to sort this...
     // std::sort(
     //     bridges.begin(), bridges.end(),
     //     [](const std::vector<bb3d::ColoredVec3> &b0, const std::vector<bb3d::ColoredVec3> &b1) {
@@ -170,46 +149,7 @@ struct R3Problem {
     //     });
 
     return bridges;
-
-    //     lines.Update(bridges);
-
-    // std::vector<std::vector<float> > lines;
   }
-
-  //   void UpdateBridgeLines(bb3d::ColorLines &lines, const std::vector<double> &cost_to_go) const
-  //   {
-  //     const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
-
-  //     // Find max cost to go in order to scale lines
-  //     double max_cost_to_go = 0;
-  //     for (double c : cost_to_go) {
-  //       max_cost_to_go = std::max(max_cost_to_go, c);
-  //     }
-
-  //     // Draw all bridges
-  //     std::vector<std::vector<bb3d::ColoredVec3> > bridges;
-  //     size_t node_index = 1;
-  //     for (const rrts::Edge<Point, Line> &edge : edges) {
-  //       bb3d::ColoredVec3 cv0{};
-  //       bb3d::ColoredVec3 cv1{};
-  //       cv0.position = static_cast<glm::dvec3>(edge.bridge_.p0);
-  //       cv1.position = static_cast<glm::dvec3>(edge.bridge_.p1);
-  //       const double ctg0 = cost_to_go.at(edge.parent_index_) / max_cost_to_go;
-  //       const double ctg1 = cost_to_go.at(node_index) / max_cost_to_go;
-  //       cv0.color = {1 - ctg0, 0, ctg0, 0.6};
-  //       cv1.color = {1 - ctg1, 0, ctg1, 0.6};
-  //       bridges.push_back({cv0, cv1});
-  //       node_index++;
-  //     }
-  //     std::sort(
-  //         bridges.begin(), bridges.end(),
-  //         [](const std::vector<bb3d::ColoredVec3> &b0, const std::vector<bb3d::ColoredVec3> &b1)
-  //         {
-  //           return b0.at(b0.size() - 1).color[0] > b1.at(b1.size() - 1).color[0];
-  //         });
-
-  //     lines.Update(bridges);
-  //   }
 
   [[nodiscard]] bool InGoalRegion(const Point &p) const {
     double dist = glm::distance(glm::dvec3(p), goal_region_.center);
@@ -244,9 +184,8 @@ struct R3Problem {
       while (head != 0) {
         rrts::Edge<Point, Line> edge = edges.at(head - 1);
         glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
+        // HACK - offset z to make sure we can see the line
         p.z -= 0.05F;
-        // std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z
-        // << " " << std::endl;
         winning_route.push_back(XyzRgb(p, 1, 1, 1, 1));
         head = edge.parent_index_;
 
@@ -261,59 +200,6 @@ struct R3Problem {
 
     return segments;
   }
-
-  //   double UpdateGoalLine(bb3d::Lines &goal_line, const std::vector<double> &cost_to_go) const {
-  //     const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
-
-  //     double min_cost_to_go = 0;
-  //     size_t winner_index = 0;
-  //     bool got_winner = false;
-  //     size_t index = 1;
-  //     // best cost to go in a goal region
-  //     for (const rrts::Edge<Point, Line> &edge : edges) {
-  //       if (InGoalRegion(edge.bridge_.p1) && (cost_to_go.at(index) < min_cost_to_go ||
-  //       !got_winner)) {
-  //         winner_index = index;
-  //         got_winner = true;
-  //         min_cost_to_go = cost_to_go.at(index);
-  //       }
-  //       index++;
-  //     }
-
-  //     // trace back route from winner
-  //     if (got_winner) {
-  //       std::vector<glm::vec3> winning_route;
-  //       size_t head = winner_index;
-
-  //       int num_links = 0;
-  //       while (head != 0) {
-  //         num_links++;
-  //         rrts::Edge<Point, Line> edge = edges.at(head - 1);
-  //         glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
-  //         p.z -= 0.05F;
-  //         // std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z
-  //         << "
-  //         // " << std::endl;
-  //         winning_route.push_back(p);
-  //         head = edge.parent_index_;
-
-  //         if (head == 0) {
-  //           glm::vec3 pf = static_cast<glm::dvec3>(edge.bridge_.p0);
-  //           pf.z -= 0.02F;
-  //           winning_route.push_back(pf);
-  //         }
-  //       }
-  //       std::vector<std::vector<glm::vec3> > segments;
-  //       segments.push_back(winning_route);
-
-  //       goal_line.Update(segments);
-
-  //       return min_cost_to_go;
-  //     }
-
-  //     return -1;
-  //   }
-  // };
 
   static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const Parameters &params) {
     std::uniform_real_distribution<double> uniform_distribution;
