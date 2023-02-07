@@ -103,8 +103,7 @@ class R3ProblemScene {
     }
   }
 
-  update(r3_problem, gui_params) {
-    // set the goal region
+  update_goal_region(r3_problem, show_goal_region, goal_region_opacity) {
     const problem_goal_region = r3_problem.GetGoalRegion();
     this.goal_region_sphere.scale.set(
       problem_goal_region.radius,
@@ -115,6 +114,25 @@ class R3ProblemScene {
       problem_goal_region.center.x,
       problem_goal_region.center.y,
       problem_goal_region.center.z
+    );
+    if (show_goal_region) {
+      this.goal_region_sphere.visible = true;
+    } else {
+      this.goal_region_sphere.visible = false;
+    }
+    // update goal material
+    const material = this.goal_region_sphere.material;
+    if (material.opacity != goal_region_opacity) {
+      material.opacity = goal_region_opacity;
+    }
+  }
+
+  update(r3_problem, gui_params) {
+    // set the goal region
+    this.update_goal_region(
+      r3_problem,
+      gui_params.show_goal_region,
+      gui_params.goal_region_opacity
     );
 
     // update obstacles
@@ -162,6 +180,8 @@ const gui_params = {
   iterations_per_frame: 200,
   delay_before_restart: 1,
   scene: {
+    show_goal_region: true,
+    goal_region_opacity: 0.5,
     show_obstacles: true,
     obstacle_opacity: 0.2,
   },
@@ -329,7 +349,9 @@ function initGui() {
   });
 
   const scene_folder = gui.addFolder("scene");
+  scene_folder.add(gui_params.scene, "show_goal_region");
   scene_folder.add(gui_params.scene, "show_obstacles");
+  scene_folder.add(gui_params.scene, "goal_region_opacity", 0, 1, 0.01);
   scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
 
   //   .add(param, "line type", { LineGeometry: 0, "gl.LINE": 1 })
