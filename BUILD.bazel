@@ -88,6 +88,7 @@ cc_binary(
         "apps/plot_dubins.cpp",
     ],
     copts = cxx_opts,
+    tags = ["manual"],  # relies on bb3d, needs porting to three.js
     visibility = ["//visibility:public"],
     deps = [
         ":rrt_star",
