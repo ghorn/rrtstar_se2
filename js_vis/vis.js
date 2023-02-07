@@ -206,7 +206,11 @@ class ProblemScene {
 
     // get the lines
     const bridge_lines = r3_problem.GetBridgeLines();
-    const goal_lines = r3_problem.GetGoalLine();
+    const goal_lines = r3_problem.GetGoalLine({
+      x: gui_params.optimal_line_color.r,
+      y: gui_params.optimal_line_color.g,
+      z: gui_params.optimal_line_color.b,
+    });
     const bounding_box_lines = r3_problem.GetBoundingBoxLines(
       gui_params.bounding_box_opacity
     );
@@ -246,7 +250,12 @@ class ProblemScene {
 
     // get the lines
     const bridge_lines = se2_problem.GetBridgeLines();
-    const goal_lines = se2_problem.GetGoalLine();
+    const goal_lines = se2_problem.GetGoalLine({
+      x: gui_params.optimal_line_color.r,
+      y: gui_params.optimal_line_color.g,
+      z: gui_params.optimal_line_color.b,
+    });
+
     const bounding_box_lines = se2_problem.GetBoundingBoxLines(
       gui_params.bounding_box_opacity
     );
@@ -299,6 +308,7 @@ const gui_params = {
     obstacle_opacity: 0.2,
     show_bounding_box: true,
     bounding_box_opacity: 0.75,
+    optimal_line_color: { r: 1.0, g: 1.0, b: 0.0 },
     show_axes: false,
   },
   r3_problem: {
@@ -533,5 +543,6 @@ function initGui() {
   scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
   scene_folder.add(gui_params.scene, "show_bounding_box");
   scene_folder.add(gui_params.scene, "bounding_box_opacity", 0, 1, 0.01);
+  scene_folder.addColor(gui_params.scene, "optimal_line_color");
   scene_folder.add(gui_params.scene, "show_axes");
 }

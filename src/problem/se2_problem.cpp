@@ -57,18 +57,13 @@ std::vector<XyzRgb> DrawBridge(const Se2Problem::DubinsPath &path, double ctg0, 
   return line;
 }
 
-void DrawBridgeReverse(std::vector<XyzRgb> &line, const Se2Problem::DubinsPath &path,
-                       double z __attribute__((unused))) {
+void DrawBridgeReverse(std::vector<XyzRgb> &line, const glm::vec4 &color,
+                       const Se2Problem::DubinsPath &path, double z) {
   constexpr int kN = 20;
   for (int j = 0; j < kN; j++) {
-    double t =
-        0.999 * path.TotalLength() * static_cast<double>(kN - 1 - j) / (kN - 1);  // static_cast)
+    double t = 0.999 * path.TotalLength() * static_cast<double>(kN - 1 - j) / (kN - 1);
     Se2Problem::Se2Coord q = path.Sample(t);
-    // if (first) {
-    //  std::cout << "t " << t << ": " << q[0] << ", " << q[1] << std::endl;
-    //}
     glm::vec3 v = {q[0], q[1], z};
-    glm::vec4 color = {1, 1, 1, 1};
     // glm::vec3 v = {q[0], q[1], q[2] + 0.05};
     line.push_back(XyzRgb(v, color));
   }
@@ -107,7 +102,7 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetBridgeLines() const {
   return bridges;
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine() const {
+std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color) const {
   const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
   const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
   std::vector<XyzRgb> goal_line;
@@ -132,10 +127,11 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine() const {
   if (got_winner) {
     std::vector<XyzRgb> winning_route;
     size_t head = winner_index;
+    const glm::vec4 color_with_alpha = {color.x, color.y, color.z, 1};
 
     while (head != 0) {
       rrts::Edge<Point, Line> edge = edges.at(head - 1);
-      DrawBridgeReverse(winning_route, edge.bridge_, -0.05);
+      DrawBridgeReverse(winning_route, color_with_alpha, edge.bridge_, -0.05);
       //        glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
       //        p.z -= 0.05F;
       // std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z <<

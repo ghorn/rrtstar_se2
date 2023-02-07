@@ -28,6 +28,11 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("b", &XyzRgb::b)
       .field("a", &XyzRgb::a);
 
+  emscripten::value_object<glm::vec3>("Vec3")
+      .field("x", &glm::vec3::x)
+      .field("y", &glm::vec3::y)
+      .field("z", &glm::vec3::z);
+
   emscripten::value_object<glm::dvec3>("DVec3")
       .field("x", &glm::dvec3::x)
       .field("y", &glm::dvec3::y)

@@ -58,7 +58,7 @@ struct Se2Problem {
     return in_goal;
   }
 
-  std::vector<std::vector<XyzRgb> > GetGoalLine() const;
+  std::vector<std::vector<XyzRgb> > GetGoalLine(const glm::vec3 &color) const;
 
   GoalRegion GetGoalRegion() const { return goal_region_; }
   std::vector<Sphere> GetObstacles() const { return obstacles_; }

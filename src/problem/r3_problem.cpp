@@ -59,7 +59,7 @@ std::vector<std::vector<XyzRgb> > R3Problem::GetBridgeLines() const {
   return bridges;
 }
 
-std::vector<std::vector<XyzRgb> > R3Problem::GetGoalLine() const {
+std::vector<std::vector<XyzRgb> > R3Problem::GetGoalLine(const glm::vec3 &color) const {
   const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
   const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
   std::vector<XyzRgb> goal_line;
@@ -83,19 +83,20 @@ std::vector<std::vector<XyzRgb> > R3Problem::GetGoalLine() const {
   if (got_winner) {
     std::vector<XyzRgb> winning_route;
     size_t head = winner_index;
+    const glm::vec4 color_with_alpha = {color.x, color.y, color.z, 1.0F};
 
     while (head != 0) {
       rrts::Edge<Point, Line> edge = edges.at(head - 1);
       glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
       // HACK - offset z to make sure we can see the line
       p.z -= 0.05F;
-      winning_route.push_back(XyzRgb(p, 1, 1, 1, 1));
+      winning_route.push_back(XyzRgb(p, color_with_alpha));
       head = edge.parent_index_;
 
       if (head == 0) {
         glm::vec3 pf = static_cast<glm::dvec3>(edge.bridge_.p0);
         pf.z -= 0.02F;
-        winning_route.push_back(XyzRgb(pf, 1, 1, 1, 1));
+        winning_route.push_back(XyzRgb(pf, color_with_alpha));
       }
     }
     segments.push_back(winning_route);

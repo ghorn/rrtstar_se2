@@ -46,7 +46,7 @@ struct R3Problem {
 
   std::vector<std::vector<XyzRgb> > GetBoundingBoxLines(float bounding_box_opacity) const;
 
-  std::vector<std::vector<XyzRgb> > GetGoalLine() const;
+  std::vector<std::vector<XyzRgb> > GetGoalLine(const glm::vec3 &color) const;
 
   static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params);
 };
