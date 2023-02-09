@@ -194,7 +194,7 @@ void TestSpace(Space space) {
 
 TEST(TestTreeInSpace, R3) {
   using R3Line = rrts::space::r3::Line;
-  using R3Point = rrts::space::r3::Point;
+  using R3Point = rrts::space::r3::R3Point;
   using R3 = rrts::space::r3::R3;
 
   const R3Point lb = {-2, -3, -0.3};
