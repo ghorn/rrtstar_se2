@@ -33,19 +33,19 @@ jobs:
           chmod +x bazel
 
       - name: Bazel build
-        run: ./bazel build -c opt //js_vis:shim_wasm
+        run: ./bazel build -c opt //vis:shim_wasm
 
       - name: Assemble artifacts
         run: |
           mkdir _site
           mkdir _site/bazel-bin
-          mkdir _site/bazel-bin/js_vis
-          mkdir _site/bazel-bin/js_vis/shim_wasm
-          mkdir _site/js_vis
+          mkdir _site/bazel-bin/vis
+          mkdir _site/bazel-bin/vis/shim_wasm
+          mkdir _site/vis
 
-          cp bazel-bin/js_vis/shim_wasm/* _site/bazel-bin/js_vis/shim_wasm/
-          cp js_vis/*.js _site/js_vis/
-          cp js_vis/*.css _site/js_vis/
+          cp bazel-bin/vis/shim_wasm/* _site/bazel-bin/vis/shim_wasm/
+          cp vis/*.js _site/vis/
+          cp vis/*.css _site/vis/
           cp index.html _site/
 
       - name: Upload artifact

@@ -16,7 +16,7 @@ wget https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-l
 chmod +x bazel
 
 # build the webassembly
-./bazel build -c opt //js_vis:shim_wasm
+./bazel build -c opt //vis:shim_wasm
 
 # launch a webserver
 python3 -m http.server

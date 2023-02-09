@@ -4,7 +4,7 @@ import Stats from "three/addons/libs/stats.module.js";
 import { GPUStatsPanel } from "three/addons/utils/GPUStatsPanel.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import wasmModule from "bazel-bin/js_vis/shim_wasm/shim.js";
+import wasmModule from "bazel-bin/vis/shim_wasm/shim.js";
 import { LinesBuffer } from "./lines_buffer.js";
 
 class ProblemScene {
