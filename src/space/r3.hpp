@@ -16,9 +16,9 @@ namespace rrts::space::r3 {
 using BoundingBoxInterval = rrts::tree::BoundingBoxInterval;
 
 using glm::dvec3;
-struct Point : public dvec3 {
+struct R3Point : public dvec3 {
   using dvec3::dvec3;
-  explicit Point(const glm::dvec3 &v) : dvec3(v){};
+  explicit R3Point(const glm::dvec3 &v) : dvec3(v){};
 };
 
 // simple obstacle
@@ -27,44 +27,44 @@ struct Sphere {
   double radius;
 };
 
-class Line : public Trajectory<Point> {
+class Line : public Trajectory<R3Point> {
  public:
   ~Line() override = default;
   [[nodiscard]] double TrajectoryCost() const override { return dist; }
 
-  Point p0{};
-  Point p1{};
+  R3Point p0{};
+  R3Point p1{};
   double dist{0};
 };
 
-class R3 : public SpaceBase<Point, Line, 3> {
+class R3 : public SpaceBase<R3Point, Line, 3> {
  public:
-  R3(Point lb, Point ub, std::vector<Sphere> sphere_obstacles)
+  R3(R3Point lb, R3Point ub, std::vector<Sphere> sphere_obstacles)
       : lb_(lb), ub_(ub), sphere_obstacles_(std::move(sphere_obstacles)){};
   ~R3() override = default;
 
   [[nodiscard]] double MuXfree() const override;
-  Point SampleFree() override;
-  [[nodiscard]] std::tuple<Point, Line> Steer(const Point &v0, const Point &v1,
-                                              double eta) const override;
+  R3Point SampleFree() override;
+  [[nodiscard]] std::tuple<R3Point, Line> Steer(const R3Point &v0, const R3Point &v1,
+                                                double eta) const override;
 
   // bridges
   [[nodiscard]] bool CollisionFree(const Line &line) const override;
-  [[nodiscard]] Line FormBridge(const Point &v0, const Point &v1) const override;
+  [[nodiscard]] Line FormBridge(const R3Point &v0, const R3Point &v1) const override;
 
   // efficient search
-  [[nodiscard]] std::array<BoundingBoxIntervals, 3> BoundingBox(const Point &p,
+  [[nodiscard]] std::array<BoundingBoxIntervals, 3> BoundingBox(const R3Point &p,
                                                                 double max_distance) const override;
 
-  [[nodiscard]] const Point &Lb() const override { return lb_; };
-  [[nodiscard]] const Point &Ub() const override { return ub_; };
+  [[nodiscard]] const R3Point &Lb() const override { return lb_; };
+  [[nodiscard]] const R3Point &Ub() const override { return ub_; };
 
  private:
-  Point Sample();
-  [[nodiscard]] bool PointInSpheres(const Point &p) const;
+  R3Point Sample();
+  [[nodiscard]] bool PointInSpheres(const R3Point &p) const;
 
-  Point lb_;
-  Point ub_;
+  R3Point lb_;
+  R3Point ub_;
   std::vector<Sphere> sphere_obstacles_;
   std::mt19937_64 rng_engine_{};  // NOLINT(cert-msc32-c,cert-msc51-cpp)
   std::uniform_real_distribution<double> uniform_distribution_{};

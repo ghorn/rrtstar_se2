@@ -2,7 +2,7 @@
 
 std::vector<std::vector<XyzRgb> > R3Problem::GetBridgeLines() const {
   const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
-  const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
+  const std::vector<rrts::Edge<R3Point, Line> > &edges = search_.Edges();
 
   // Find max cost to go in order to scale lines
   double max_cost_to_go = 0;
@@ -13,7 +13,7 @@ std::vector<std::vector<XyzRgb> > R3Problem::GetBridgeLines() const {
   // Draw all bridges
   std::vector<std::vector<XyzRgb> > bridges;
   size_t node_index = 1;
-  for (const rrts::Edge<Point, Line> &edge : edges) {
+  for (const rrts::Edge<R3Point, Line> &edge : edges) {
     XyzRgb cv0{};
     XyzRgb cv1{};
     cv0.x = static_cast<float>(edge.bridge_.p0.x);
@@ -61,7 +61,7 @@ std::vector<std::vector<XyzRgb> > R3Problem::GetBridgeLines() const {
 
 std::vector<std::vector<XyzRgb> > R3Problem::GetGoalLine(const glm::vec3 &color) const {
   const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
-  const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
+  const std::vector<rrts::Edge<R3Point, Line> > &edges = search_.Edges();
   std::vector<XyzRgb> goal_line;
 
   double min_cost_to_go = 0;
@@ -69,7 +69,7 @@ std::vector<std::vector<XyzRgb> > R3Problem::GetGoalLine(const glm::vec3 &color)
   bool got_winner = false;
   size_t index = 1;
   // best cost to go in a goal region
-  for (const rrts::Edge<Point, Line> &edge : edges) {
+  for (const rrts::Edge<R3Point, Line> &edge : edges) {
     if (InGoalRegion(edge.bridge_.p1) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
       winner_index = index;
       got_winner = true;
@@ -86,7 +86,7 @@ std::vector<std::vector<XyzRgb> > R3Problem::GetGoalLine(const glm::vec3 &color)
     const glm::vec4 color_with_alpha = {color.x, color.y, color.z, 1.0F};
 
     while (head != 0) {
-      rrts::Edge<Point, Line> edge = edges.at(head - 1);
+      rrts::Edge<R3Point, Line> edge = edges.at(head - 1);
       glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
       // HACK - offset z to make sure we can see the line
       p.z -= 0.05F;
@@ -110,17 +110,17 @@ R3Problem R3Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemPar
   std::function<double(void)> uniform = [&uniform_distribution, &rng_engine]() {
     return uniform_distribution(rng_engine);
   };
-  std::function<Point(void)> uniform_p = [&uniform]() {
-    return Point{uniform(), uniform(), uniform()};
+  std::function<R3Point(void)> uniform_p = [&uniform]() {
+    return R3Point{uniform(), uniform(), uniform()};
   };
 
   const double dx = params.min_length + (params.max_length - params.min_length) * uniform();
   const double dy = params.min_length + (params.max_length - params.min_length) * uniform();
   const double dz = params.min_length + (params.max_length - params.min_length) * uniform();
-  const Point lb = {-dx / 2, -dy / 2, -dz / 2};
-  const Point ub = {dx / 2, dy / 2, dz / 2};
-  const Point x_init = {lb[0], 0, 0};
-  const Point goal = {ub[0], dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
+  const R3Point lb = {-dx / 2, -dy / 2, -dz / 2};
+  const R3Point ub = {dx / 2, dy / 2, dz / 2};
+  const R3Point x_init = {lb[0], 0, 0};
+  const R3Point goal = {ub[0], dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
   Sphere goal_region = {goal, params.goal_radius};
 
   // obstacles
@@ -136,7 +136,7 @@ R3Problem R3Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemPar
   int32_t num_failed_insertions = 0;
   while (obstacles.size() < n) {
     const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
-    const Point p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
+    const R3Point p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
     const bool avoids_goal =
         glm::distance(glm::dvec3(p), glm::dvec3(goal)) > obstacle_radius + params.goal_radius;
     const bool avoids_start = glm::distance(x_init, glm::dvec3(p)) > obstacle_radius + 0.5;
