@@ -299,6 +299,7 @@ var problem_factory = new cxx_shim_module.ProblemFactory();
 const gui_params = {
   delay_before_restart: 1,
   pause: false,
+  space: "r3",
   scene: {
     rotate: true,
     rotation_rate: 0.5,
@@ -326,7 +327,7 @@ const gui_params = {
     iterations_per_frame: 100,
     rho: 1.0, // radius of curvature
     eta: 4.5,
-    max_num_obstacles: 30,
+    max_num_obstacles: 60,
     obstacle_fraction: 0.75,
     min_length: 9.9,
     max_length: 10,
@@ -504,7 +505,7 @@ function initGui() {
     }
     const max_eta = { r3_problem: 1, se2_problem: 10 }[problem_type];
     problem_folder.add(problem_params, "eta", 0, max_eta, 0.01);
-    problem_folder.add(problem_params, "max_num_obstacles", 0, 50, 1);
+    problem_folder.add(problem_params, "max_num_obstacles", 0, 150, 1);
     problem_folder.add(problem_params, "obstacle_fraction", 0, 1, 0.01);
     const min_length = problem_folder.add(
       problem_params,
