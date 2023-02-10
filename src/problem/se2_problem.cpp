@@ -39,13 +39,13 @@
 //  return lines;
 //}
 std::vector<XyzRgb> DrawBridge(const Se2Problem::DubinsPath &path, double ctg0, double ctg1,
-                               double z __attribute__((unused))) {
+                               double z) {
   std::vector<XyzRgb> line;
 
   constexpr int kN = 20;
   for (int j = 0; j < kN; j++) {
-    double t = 0.999 * path.TotalLength() * static_cast<double>(j) / (kN - 1);  // static_cast)
-    Se2Problem::Se2Coord q = path.Sample(t);
+    double t = 0.999 * static_cast<double>(j) / (kN - 1);
+    Se2Problem::Se2Coord q = path.Sample(t * path.TotalLength());
     double ctg = ctg0 * (1 - t) + ctg1 * t;
     // std::cout << "t " << t << ": " << q[0] << ", " << q[1] << "   | " << ctg << std::endl;
     glm::vec4 color = {1 - ctg, 0, ctg, 0.6};
