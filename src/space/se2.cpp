@@ -69,11 +69,9 @@ std::tuple<Se2Coord, DubinsPath> Se2::Steer(const Se2Coord &v0, const Se2Coord &
 bool Se2::CollisionFree(const DubinsPath &path) const {
   // discard paths that turn too much too fast
   if (fabs(path.AngleDifference()) >= M_PI / 2) {
-    std::cout << "rejecting large angle change" << std::endl;
     return false;
   }
   if (path.MaxAngle() >= M_PI / 4) {
-    std::cout << "rejecting large angle change" << std::endl;
     return false;
   }
 
