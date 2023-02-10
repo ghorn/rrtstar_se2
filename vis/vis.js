@@ -324,12 +324,12 @@ const gui_params = {
   se2_problem: {
     max_iterations: 4000,
     iterations_per_frame: 100,
-    rho: 0.6, // radius of curvature
+    rho: 1.0, // radius of curvature
     eta: 4.5,
     max_num_obstacles: 30,
     obstacle_fraction: 0.75,
-    min_length: 3,
-    max_length: 5,
+    min_length: 9.9,
+    max_length: 10,
     goal_radius: 0.5,
   },
 };
