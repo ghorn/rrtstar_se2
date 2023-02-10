@@ -124,31 +124,33 @@ R3Problem R3Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemPar
   Sphere goal_region = {goal, params.goal_radius};
 
   // obstacles
-  const size_t n = static_cast<size_t>(
-      std::uniform_int_distribution<>(1, params.max_num_obstacles + 1)(rng_engine));
-  const double total_volume = dx * dy * dz;
-  // upper bound (no overlap)
-  const double volume_per_obstacle =
-      total_volume * params.obstacle_fraction / static_cast<double>(n);
-  const double radius_per_obstacle = pow(3 * volume_per_obstacle / (4 * M_PI), 1.0 / 3.0);
   std::vector<Sphere> obstacles;
+  if (params.max_num_obstacles > 0) {
+    const size_t n = static_cast<size_t>(
+        std::uniform_int_distribution<>(1, params.max_num_obstacles + 1)(rng_engine));
+    const double total_volume = dx * dy * dz;
+    // upper bound (no overlap)
+    const double volume_per_obstacle =
+        total_volume * params.obstacle_fraction / static_cast<double>(n);
+    const double radius_per_obstacle = pow(3 * volume_per_obstacle / (4 * M_PI), 1.0 / 3.0);
 
-  int32_t num_failed_insertions = 0;
-  while (obstacles.size() < n) {
-    const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
-    const R3Point p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
-    const bool avoids_goal =
-        glm::distance(glm::dvec3(p), glm::dvec3(goal)) > obstacle_radius + params.goal_radius;
-    const bool avoids_start = glm::distance(x_init, glm::dvec3(p)) > obstacle_radius + 0.5;
-    if (avoids_goal && avoids_start) {
-      Sphere obstacle = {p, obstacle_radius};
-      obstacles.push_back(obstacle);
-    } else {
-      num_failed_insertions++;
-      if (num_failed_insertions >= 1000) {
-        std::cerr << "Failed to create " << n << " obstacles after " << num_failed_insertions
-                  << " attempts. Giving up." << std::endl;
-        break;
+    int32_t num_failed_insertions = 0;
+    while (obstacles.size() < n) {
+      const double obstacle_radius = radius_per_obstacle * (0.7 + 0.7 * uniform());
+      const R3Point p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
+      const bool avoids_goal =
+          glm::distance(glm::dvec3(p), glm::dvec3(goal)) > obstacle_radius + params.goal_radius;
+      const bool avoids_start = glm::distance(x_init, glm::dvec3(p)) > obstacle_radius + 0.5;
+      if (avoids_goal && avoids_start) {
+        Sphere obstacle = {p, obstacle_radius};
+        obstacles.push_back(obstacle);
+      } else {
+        num_failed_insertions++;
+        if (num_failed_insertions >= 1000) {
+          std::cerr << "Failed to create " << n << " obstacles after " << num_failed_insertions
+                    << " attempts. Giving up." << std::endl;
+          break;
+        }
       }
     }
   }
