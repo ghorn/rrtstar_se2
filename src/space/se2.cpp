@@ -79,15 +79,16 @@ bool Se2::CollisionFree(const DubinsPath &path) const {
 
   constexpr int kN = 20;
   for (int j = 0; j < kN; j++) {
-    double t = 0.999999 * path.TotalLength() * static_cast<double>(j) / (kN - 1);  // static_cast)
+    double t = 0.999999 * path.TotalLength() * static_cast<double>(j) / (kN - 1);
     Se2Coord q = path.Sample(t);
 
-    if ((q[0] < lb_[0]) || (ub_[0] < q[0]) || q[1] < lb_[1] || ub_[1] < q[1]) {
+    if ((q.position.x < lb_.position.x) || (ub_.position.x < q.position.x) ||
+        q.position.y < lb_.position.y || ub_.position.y < q.position.y) {
       return false;
     }
 
     auto point_in_sphere = [&q](const Sphere &s) {
-      return glm::distance2({q[0], q[1]}, s.center) <= s.radius * s.radius;
+      return glm::distance2(q.position, s.center) <= s.radius * s.radius;
     };
     if (std::any_of(sphere_obstacles_.cbegin(), sphere_obstacles_.cend(), point_in_sphere)) {
       return false;
