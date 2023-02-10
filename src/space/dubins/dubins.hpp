@@ -117,6 +117,27 @@ class DubinsPath : public rrts::space::Trajectory<Se2Coord> {
   [[nodiscard]] double TotalLength() const { return total_length_; }
 
   [[nodiscard]] Se2Coord Sample(double t) const;
+  [[nodiscard]] double AngleDifference() const {
+    return rrts::dubins::AngleDifference(qf_.theta, qi_.theta);
+  }
+  [[nodiscard]] double MaxAngle() const {
+    const double max_02 = fmax(normalized_segment_lengths_[0], normalized_segment_lengths_[2]);
+    switch (type_) {
+      case DubinsPathType::kLsl:
+      case DubinsPathType::kLsr:
+      case DubinsPathType::kRsl:
+      case DubinsPathType::kRsr:
+        return max_02;
+        break;
+      case DubinsPathType::kRlr:
+      case DubinsPathType::kLrl:
+        return fmax(max_02, normalized_segment_lengths_[1]);
+        break;
+      default:
+        FAIL_MSG("Unknown Dubins path type " << type_);
+    }
+    FAIL_MSG("Unknown Dubins path type " << type_);
+  }
 
   std::string Describe() {
     std::stringstream message;
