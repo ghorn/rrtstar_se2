@@ -298,7 +298,7 @@ var problem_factory = new cxx_shim_module.ProblemFactory();
 
 const gui_params = {
   delay_before_restart: 1,
-  space: "r3",
+  pause: false,
   scene: {
     rotate: true,
     rotation_rate: 0.5,
@@ -418,13 +418,15 @@ function render() {
   );
   const was_finished = problem.NumEdges() >= problem_params.max_iterations;
 
-  let num_failed_iterations = 0;
-  while (problem.NumEdges() < target_num_edges) {
-    if (!problem.Step()) {
-      num_failed_iterations++;
-      if (num_failed_iterations > 5000) {
-        console.warn("Too many failed iterations. Giving up.");
-        break;
+  if (!gui_params.pause) {
+    let num_failed_iterations = 0;
+    while (problem.NumEdges() < target_num_edges) {
+      if (!problem.Step()) {
+        num_failed_iterations++;
+        if (num_failed_iterations > 5000) {
+          console.warn("Too many failed iterations. Giving up.");
+          break;
+        }
       }
     }
   }
@@ -490,6 +492,7 @@ function animate() {
 function initGui() {
   gui = new GUI();
 
+  gui.add(gui_params, "pause");
   gui.add(gui_params, "space", ["r3", "se2"]);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
