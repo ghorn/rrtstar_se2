@@ -48,7 +48,7 @@ std::vector<XyzRgb> DrawBridge(const Se2Problem::DubinsPath &path, double ctg0, 
     Se2Problem::Se2Coord q = path.Sample(t * path.TotalLength());
     double ctg = ctg0 * (1 - t) + ctg1 * t;
     // std::cout << "t " << t << ": " << q[0] << ", " << q[1] << "   | " << ctg << std::endl;
-    glm::vec4 color = {1 - ctg, 0, ctg, 0.6};
+    glm::vec4 color = {1 - ctg, 0, ctg, 1};
     XyzRgb v({q[0], q[1], z}, color);
     // XyzRgb v({q[0], q[1], q[2]}, color);
 
