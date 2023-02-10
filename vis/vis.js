@@ -322,12 +322,12 @@ const gui_params = {
     goal_radius: 0.5,
   },
   se2_problem: {
-    max_iterations: 2000,
-    iterations_per_frame: 20,
+    max_iterations: 4000,
+    iterations_per_frame: 100,
     rho: 0.6, // radius of curvature
     eta: 4.5,
-    max_num_obstacles: 20,
-    obstacle_fraction: 0.5,
+    max_num_obstacles: 30,
+    obstacle_fraction: 0.75,
     min_length: 3,
     max_length: 5,
     goal_radius: 0.5,

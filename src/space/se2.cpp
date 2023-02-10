@@ -61,6 +61,7 @@ std::tuple<Se2Coord, DubinsPath> Se2::Steer(const Se2Coord &v0, const Se2Coord &
     return std::make_tuple(v1, dubins_path);
   }
 
+  // if distance is longer than eta, then go eta distance along the path
   const Se2Coord vret = dubins_path.Sample(eta);
   return std::make_tuple(vret, FormBridge(v0, vret));
 }
