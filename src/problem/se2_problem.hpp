@@ -31,7 +31,7 @@ struct Se2Problem {
 
   Se2Problem(const Point &x_init, double rho, double eta, const glm::dvec2 &lb,
              const glm::dvec2 &ub, const Sphere &goal_region, const std::vector<Sphere> &obstacles)
-      : goal_region_{goal_region, -45.0 * M_PI / 180.0, 45.0 * M_PI / 180.0},
+      : goal_region_{goal_region, -90.0 * M_PI / 180.0, 90.0 * M_PI / 180.0},
         obstacles_(obstacles),
         se2_space_(rho, lb, ub, obstacles),
         search_(x_init, se2_space_, eta){};
