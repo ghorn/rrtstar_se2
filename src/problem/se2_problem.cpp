@@ -192,31 +192,33 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemP
   Sphere goal_region = {goal, params.goal_radius};
 
   // obstacles
-  const size_t n =
-      static_cast<size_t>(std::uniform_int_distribution<>(1, params.max_num_obstacles)(rng_engine));
-  const double total_volume = dx * dy;
-  // upper bound (no overlap)
-  const double volume_per_obstacle =
-      total_volume * params.obstacle_fraction / static_cast<double>(n);
-  const double radius_per_obstacle = sqrt(volume_per_obstacle / M_PI);
-
-  int32_t num_failed_insertions = 0;
   std::vector<Sphere> obstacles;
-  while (obstacles.size() < n) {
-    const double obstacle_radius = radius_per_obstacle * (0.5 + 0.5 * uniform());
-    const glm::dvec2 p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5)};
-    const bool avoids_goal = glm::distance(p, goal) > obstacle_radius + params.goal_radius;
-    const bool avoids_start =
-        glm::distance(p, x_init.position) > obstacle_radius + 1.3;  // careful of turning radius
-    if (avoids_goal && avoids_start) {
-      Sphere obstacle = {p, obstacle_radius};
-      obstacles.push_back(obstacle);
-    } else {
-      num_failed_insertions++;
-      if (num_failed_insertions >= 1000) {
-        std::cerr << "Failed to create " << n << " obstacles after " << num_failed_insertions
-                  << " attempts. Giving up." << std::endl;
-        break;
+  if (params.max_num_obstacles > 0) {
+    const size_t n = static_cast<size_t>(
+        std::uniform_int_distribution<>(1, params.max_num_obstacles)(rng_engine));
+    const double total_volume = dx * dy;
+    // upper bound (no overlap)
+    const double volume_per_obstacle =
+        total_volume * params.obstacle_fraction / static_cast<double>(n);
+    const double radius_per_obstacle = sqrt(volume_per_obstacle / M_PI);
+
+    int32_t num_failed_insertions = 0;
+    while (obstacles.size() < n) {
+      const double obstacle_radius = radius_per_obstacle * (0.5 + 0.5 * uniform());
+      const glm::dvec2 p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5)};
+      const bool avoids_goal = glm::distance(p, goal) > obstacle_radius + params.goal_radius;
+      const bool avoids_start =
+          glm::distance(p, x_init.position) > obstacle_radius + 1.3;  // careful of turning radius
+      if (avoids_goal && avoids_start) {
+        Sphere obstacle = {p, obstacle_radius};
+        obstacles.push_back(obstacle);
+      } else {
+        num_failed_insertions++;
+        if (num_failed_insertions >= 1000) {
+          std::cerr << "Failed to create " << n << " obstacles after " << num_failed_insertions
+                    << " attempts. Giving up." << std::endl;
+          break;
+        }
       }
     }
   }
