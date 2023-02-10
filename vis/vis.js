@@ -504,7 +504,7 @@ function initGui() {
     }
     const max_eta = { r3_problem: 1, se2_problem: 10 }[problem_type];
     problem_folder.add(problem_params, "eta", 0, max_eta, 0.01);
-    problem_folder.add(problem_params, "max_num_obstacles", 0, 30, 1);
+    problem_folder.add(problem_params, "max_num_obstacles", 0, 50, 1);
     problem_folder.add(problem_params, "obstacle_fraction", 0, 1, 0.01);
     const min_length = problem_folder.add(
       problem_params,
