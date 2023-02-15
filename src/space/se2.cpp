@@ -110,14 +110,7 @@ std::array<BoundingBoxIntervals, 3> Se2::BoundingBox(const Se2Coord &p, double m
 
   // theta (periodic)
   bbs[2].centroid = p.theta;
-
-  // TODO(greg): double-check this
-  // rho * theta = distance
-  // theta = distance / rho
-  double delta_theta = max_distance / rho_;
-  BoundingBoxInterval theta_interval{p.theta - delta_theta, p.theta + delta_theta};
-
-  // handle theta periodicity
+  BoundingBoxInterval theta_interval{p.theta - max_distance, p.theta + max_distance};
   const double ub = M_PI;
   const double lb = -M_PI;
   const double right_overlap = theta_interval.ub - ub;
