@@ -11,6 +11,7 @@
 #include <random>            // for mt19937_64, uniform_real_distribution
 #include <set>               // for set, operator!=, operator==, _Rb_tree_const_iterator
 #include <tuple>             // for get, tuple
+#include <unordered_map>     // for unordered_map
 #include <utility>           // for __tuple_element_t
 #include <vector>            // for vector
 
@@ -108,27 +109,40 @@ bool TestNear(const SpaceBase<Point, Bridge, D> &space, const Naive<Point, Bridg
   naive_time += t1 - t0;
   fast_time += t2 - t1;
 
-  std::set<size_t> naive_near_point_set;
-  std::set<size_t> fast_near_point_set;
-  for (const std::tuple<Tagged<Point>, Bridge> &naive_near_point : naive_near_points) {
-    naive_near_point_set.insert(std::get<0>(naive_near_point).Index());
+  std::unordered_map<size_t, Point> naive_near_point_map;
+  std::unordered_map<size_t, Point> fast_near_point_map;
+  for (const std::tuple<Tagged<Point>, Bridge> &naive_near_point_w_bridge : naive_near_points) {
+    const Tagged<Point> &naive_near_point = std::get<0>(naive_near_point_w_bridge);
+    naive_near_point_map.insert({naive_near_point.Index(), naive_near_point.Point()});
   }
-  for (const std::tuple<Tagged<Point>, Bridge> &fast_near_point : fast_near_points) {
-    fast_near_point_set.insert(std::get<0>(fast_near_point).Index());
+  for (const std::tuple<Tagged<Point>, Bridge> &fast_near_point_w_bridge : fast_near_points) {
+    const Tagged<Point> &fast_near_point = std::get<0>(fast_near_point_w_bridge);
+    fast_near_point_map.insert({fast_near_point.Index(), fast_near_point.Point()});
   }
 
   bool fail = false;
-  for (size_t index : naive_near_point_set) {
-    if (fast_near_point_set.find(index) == fast_near_point_set.end()) {
+  for (const auto it : naive_near_point_map) {
+    const size_t index = it.first;
+    const Point naive_near_point = it.second;
+    if (fast_near_point_map.find(index) == fast_near_point_map.end()) {
       fail = true;
       std::cerr << "node " << index << " is missing from fast tree" << std::endl;
+      std::cerr << naive_near_point.Render() << std::endl;
     }
   }
-  for (size_t index : fast_near_point_set) {
-    if (naive_near_point_set.find(index) == naive_near_point_set.end()) {
+
+  for (const auto it : fast_near_point_map) {
+    const size_t index = it.first;
+    const Point fast_near_point = it.second;
+    if (naive_near_point_map.find(index) == naive_near_point_map.end()) {
       fail = true;
       std::cerr << "node " << index << " was incorrectly found by fast tree" << std::endl;
+      std::cerr << fast_near_point.Render() << std::endl;
     }
+  }
+  if (fail) {
+    std::cerr << "test point: " << test_point.Render() << std::endl;
+    std::cerr << "radius:     " << radius << std::endl;
   }
   return fail;
 }
@@ -203,14 +217,28 @@ TEST(TestTreeInSpace, R3) {
   TestSpace<R3Point, R3Line, R3, 3>(space);
 }
 
-TEST(TestTreeInSpace, Se2) {
+TEST(TestTreeInSpace, Se2SmallRho) {
   using DubinsPath = rrts::dubins::DubinsPath;
   using Se2Coord = rrts::space::se2::Se2Coord;
   using Se2 = rrts::space::se2::Se2;
 
   const glm::dvec2 lb = {-2, -3};
   const glm::dvec2 ub = {1, 1.1};
-  const double rho = 0.6;
-  Se2 space(rho, lb, ub, {});
-  TestSpace<Se2Coord, DubinsPath, Se2, 3>(space);
+
+  const double small_rho = 0.6;
+  Se2 space_small_rho(small_rho, lb, ub, {});
+  TestSpace<Se2Coord, DubinsPath, Se2, 3>(space_small_rho);
+}
+
+TEST(TestTreeInSpace, Se2LargeRho) {
+  using DubinsPath = rrts::dubins::DubinsPath;
+  using Se2Coord = rrts::space::se2::Se2Coord;
+  using Se2 = rrts::space::se2::Se2;
+
+  const glm::dvec2 lb = {-2, -3};
+  const glm::dvec2 ub = {1, 1.1};
+
+  const double large_rho = 1.6;
+  Se2 space_large_rho(large_rho, lb, ub, {});
+  TestSpace<Se2Coord, DubinsPath, Se2, 3>(space_large_rho);
 }

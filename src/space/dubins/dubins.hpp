@@ -43,6 +43,11 @@ struct Se2Coord {
   glm::dvec2 position;
   double theta;
 
+  std::string Render() const {
+    return std::to_string(position.x) + " " + std::to_string(position.y) + " " +
+           std::to_string(theta);
+  }
+
   // NOLINTNEXTLINE(fuchsia-overloaded-operator)
   double &operator[](int32_t axis) {
     switch (axis) {
