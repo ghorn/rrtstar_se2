@@ -19,6 +19,9 @@ using glm::dvec3;
 struct R3Point : public dvec3 {
   using dvec3::dvec3;
   explicit R3Point(const glm::dvec3 &v) : dvec3(v){};
+  std::string Render() const {
+    return std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z);
+  }
 };
 
 // simple obstacle
