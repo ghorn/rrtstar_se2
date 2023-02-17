@@ -2,6 +2,7 @@
   "files.associations": {
     "BUILD.*": "starlark",
     "*.cps": "javascript",
-    "vector": "cpp"
+    "vector": "cpp",
+    "tuple": "cpp"
   }
 }

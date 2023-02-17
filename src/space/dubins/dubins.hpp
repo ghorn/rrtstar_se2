@@ -95,6 +95,18 @@ enum class DubinsStatus {
   kNoPath,      /* no connection between configurations with this word */
 };
 
+struct DubinsIntermediateResults {
+  double alpha;
+  double beta;
+  double d;
+  double sa;
+  double sb;
+  double ca;
+  double cb;
+  double c_ab;
+  double d_sq;
+};
+
 class DubinsPath : public rrts::space::Trajectory<Se2Coord> {
  public:
   DubinsPath() = default;
@@ -159,18 +171,9 @@ class DubinsPath : public rrts::space::Trajectory<Se2Coord> {
   friend DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0,
                                             const Se2Coord &q1, double rho,
                                             DubinsPathType pathType);
-};
-
-struct DubinsIntermediateResults {
-  double alpha;
-  double beta;
-  double d;
-  double sa;
-  double sb;
-  double ca;
-  double cb;
-  double c_ab;
-  double d_sq;
+  friend DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0,
+                                            const Se2Coord &q1, double rho, DubinsPathType pathType,
+                                            const DubinsIntermediateResults &in);
 };
 
 DubinsWordStatus DubinsWord(const DubinsIntermediateResults &in, DubinsPathType pathType,
@@ -192,5 +195,11 @@ DubinsIntermediateResults ComputeDubinsIntermediateResults(const Se2Coord &q0, c
  */
 DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
                                    double rho, DubinsPathType pathType);
+
+// same as above but with pre-computed intermediate results
+// Note - intermediate results must be consistent with q0, q1, rho, or the path will be invalid
+DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                   double rho, DubinsPathType pathType,
+                                   const DubinsIntermediateResults &in);
 
 }  //  namespace rrts::dubins
