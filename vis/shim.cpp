@@ -92,6 +92,56 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("GetObstacles", &Se2Problem::GetObstacles)
       .function("NumEdges", &Se2Problem::NumEdges);
 
+  // ----------- dubins ----------------
+  using rrts::dubins::Se2Coord;
+  emscripten::value_object<Se2Coord>("Se2Coord")
+      .field("position", &Se2Coord::position)
+      .field("theta", &Se2Coord::theta);
+
+  using rrts::dubins::DubinsWordStatus;
+  emscripten::enum_<DubinsWordStatus>("DubinsWordStatus")
+      .value("kSuccess", DubinsWordStatus::kSuccess)
+      .value("kNoPath", DubinsWordStatus::kNoPath);
+
+  using rrts::dubins::DubinsStatus;
+  emscripten::enum_<DubinsStatus>("DubinsStatus")
+      .value("kSuccess", DubinsStatus::kSuccess)
+      .value("kNoPath", DubinsStatus::kNoPath);
+
+  using rrts::dubins::DubinsPathType;
+  emscripten::enum_<DubinsPathType>("DubinsPathType")
+      .value("kLsl", DubinsPathType::kLsl)
+      .value("kLsr", DubinsPathType::kLsr)
+      .value("kRsl", DubinsPathType::kRsl)
+      .value("kRsr", DubinsPathType::kRsr)
+      .value("kRlr", DubinsPathType::kRlr)
+      .value("kLrl", DubinsPathType::kLrl);
+
+  using rrts::dubins::DubinsIntermediateResults;
+  emscripten::class_<DubinsIntermediateResults>("DubinsIntermediateResults");  // opaque
+
+  emscripten::function("ComputeDubinsIntermediateResults",
+                       &rrts::dubins::ComputeDubinsIntermediateResults);
+  using rrts::dubins::DubinsIntermediateResults;
+  using rrts::dubins::DubinsPath;
+  emscripten::function("ComputeDubinsPath",
+                       emscripten::select_overload<DubinsWordStatus(
+                           DubinsPath &, const Se2Coord &, const Se2Coord &, double, DubinsPathType,
+                           const DubinsIntermediateResults &)>(&rrts::dubins::ComputeDubinsPath));
+  //   emscripten::function(
+  //       "ComputeDubinsPath",
+  //       emscripten::select_overload<DubinsWordStatus(DubinsPath &, const Se2Coord &, const
+  //       Se2Coord &,
+  //                                                    double, DubinsPathType)>(
+  //           &rrts::dubins::ComputeDubinsPath));
+
+  using rrts::dubins::DubinsPath;
+  emscripten::class_<DubinsPath>("DubinsPath")
+      .constructor<>()
+      .function("TotalLength", &DubinsPath::TotalLength)
+      .function("Sample", &DubinsPath::Sample);
+
+  // ------------ vectors --------------
   emscripten::register_vector<XyzRgb>("vector<XyzRgb>");
   emscripten::register_vector<R3Sphere>("vector<R3Sphere>");
   emscripten::register_vector<R2Sphere>("vector<R2Sphere>");

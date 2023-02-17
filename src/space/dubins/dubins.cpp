@@ -115,9 +115,8 @@ DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho) {
 }
 
 DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
-                                   double rho, DubinsPathType pathType) {
-  DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
-
+                                   double rho, DubinsPathType pathType,
+                                   const DubinsIntermediateResults &in) {
   std::array<double, 3> normalized_segment_lengths{};
   DubinsWordStatus errcode = DubinsWord(in, pathType, normalized_segment_lengths);
   if (errcode == DubinsWordStatus::kSuccess) {
@@ -130,6 +129,11 @@ DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const S
                                 normalized_segment_lengths[2]);
   }
   return errcode;
+}
+DubinsWordStatus ComputeDubinsPath(DubinsPath &path, const Se2Coord &q0, const Se2Coord &q1,
+                                   double rho, DubinsPathType pathType) {
+  DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
+  return ComputeDubinsPath(path, q0, q1, rho, pathType, in);
 }
 
 std::array<double, 3> DubinsSegment(double t, const std::array<double, 3> &qi, SegmentType type) {

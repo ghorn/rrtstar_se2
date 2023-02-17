@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>vis</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="./dubins_vis/main.css">
+		<link rel="shortcut icon" href="#" >
+	</head>
+
+	<body>
+
+		<div id="container"></div>
+
+		<div id="title">Visualization of Dubins paths</div>
+		<div id="info">0</div>
+
+		<canvas id="draw_area" width="800" height="600"></canvas>
+
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+
+        <script type="importmap">
+            {
+                "imports": {
+				"three": "https://unpkg.com/three@0.149.0/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/",
+				"bazel-bin/": "./bazel-bin/"
+	            }
+            }
+        </script>
+
+        <script type="module" src="./dubins_vis/dubins.js"></script>
+
+	</body>
+
+</html>
