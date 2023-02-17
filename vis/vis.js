@@ -275,6 +275,49 @@ class ProblemScene {
     goal_lines.delete();
     bounding_box_lines.delete();
   }
+
+  update_xyzq(xyzq_problem, gui_params) {
+    // Get the goal region.
+    // It's in the form of {position: {center: {x, y}, radius}, min_angle, max_angle}.
+    // Convert to {center: {x, y, z}, radius}.
+    const goal_region = xyzq_problem.GetGoalRegion().position;
+
+    // get obstacles
+    const obstacles_vec = xyzq_problem.GetObstacles();
+    const obstacles = [];
+    for (let i = 0; i < obstacles_vec.size(); i++) {
+      const obstacle = obstacles_vec.get(i);
+      obstacles.push(obstacle);
+    }
+    obstacles_vec.delete();
+
+    // get the lines
+    const bridge_lines = xyzq_problem.GetBridgeLines();
+    const goal_lines = xyzq_problem.GetGoalLine({
+      x: gui_params.optimal_line_color.r,
+      y: gui_params.optimal_line_color.g,
+      z: gui_params.optimal_line_color.b,
+    });
+
+    const bounding_box_lines = xyzq_problem.GetBoundingBoxLines(
+      gui_params.bounding_box_opacity
+    );
+
+    // update the scene
+    this.update_common(
+      goal_region,
+      obstacles,
+      bridge_lines,
+      goal_lines,
+      bounding_box_lines,
+      gui_params
+    );
+
+    // delete C++ objects
+    bridge_lines.delete();
+    goal_lines.delete();
+    bounding_box_lines.delete();
+  }
 }
 
 let renderer, scene, camera, controls;
@@ -299,9 +342,9 @@ var problem_factory = new cxx_shim_module.ProblemFactory();
 const gui_params = {
   delay_before_restart: 1,
   pause: false,
-  space: "r3",
+  space: "xyzq",
   scene: {
-    rotate: true,
+    rotate: false,
     rotation_rate: 0.5,
     show_goal_region: true,
     goal_region_opacity: 0.5,
@@ -333,6 +376,18 @@ const gui_params = {
     max_length: 10,
     goal_radius: 0.5,
   },
+  xyzq_problem: {
+    max_iterations: 5000,
+    iterations_per_frame: 50,
+    rho: 1.0, // radius of curvature
+    max_glideslope: 6,
+    eta: 4.5,
+    max_num_obstacles: 0,
+    obstacle_fraction: 0.75,
+    min_length: 9.9,
+    max_length: 10,
+    goal_radius: 1,
+  },
 };
 
 let problem;
@@ -342,6 +397,12 @@ if (gui_params.space == "r3") {
   problem = problem_factory.RandomSe2Problem(
     gui_params.se2_problem,
     gui_params.se2_problem.rho
+  );
+} else if (gui_params.space == "xyzq") {
+  problem = problem_factory.RandomXyzqProblem(
+    gui_params.xyzq_problem,
+    gui_params.xyzq_problem.rho,
+    gui_params.xyzq_problem.max_glideslope
   );
 } else {
   throw "Unknown space: " + gui_params.space;
@@ -408,6 +469,8 @@ function render() {
     problem_params = gui_params.r3_problem;
   } else if (problem.constructor.name == "Se2Problem") {
     problem_params = gui_params.se2_problem;
+  } else if (problem.constructor.name == "XyzqProblem") {
+    problem_params = gui_params.xyzq_problem;
   } else {
     throw "Unknown class: " + problem.constructor.name;
   }
@@ -457,6 +520,12 @@ function render() {
         gui_params.se2_problem,
         gui_params.se2_problem.rho
       );
+    } else if (gui_params.space == "xyzq") {
+      problem = problem_factory.RandomXyzqProblem(
+        gui_params.xyzq_problem,
+        gui_params.xyzq_problem.rho,
+        gui_params.xyzq_problem.max_glideslope
+      );
     } else {
       throw "Unknown space: " + gui_params.space;
     }
@@ -467,6 +536,8 @@ function render() {
     problem_scene.update_r3(problem, gui_params.scene);
   } else if (problem.constructor.name == "Se2Problem") {
     problem_scene.update_se2(problem, gui_params.scene);
+  } else if (problem.constructor.name == "XyzqProblem") {
+    problem_scene.update_xyzq(problem, gui_params.scene);
   } else {
     throw "Unknown class: " + problem.constructor.name;
   }
@@ -494,16 +565,22 @@ function initGui() {
   gui = new GUI();
 
   gui.add(gui_params, "pause");
-  gui.add(gui_params, "space", ["r3", "se2"]);
+  gui.add(gui_params, "space", ["r3", "se2", "xyzq"]);
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
-  for (const problem_type of ["r3_problem", "se2_problem"]) {
+  for (const problem_type of ["r3_problem", "se2_problem", "xyzq_problem"]) {
     const problem_folder = gui.addFolder(problem_type);
     const problem_params = gui_params[problem_type];
     if (problem_type == "se2_problem") {
       problem_folder.add(problem_params, "rho", 0.01, 1.5, 0.01);
     }
-    const max_eta = { r3_problem: 1, se2_problem: 10 }[problem_type];
+    if (problem_type == "xyzq_problem") {
+      problem_folder.add(problem_params, "rho", 0.01, 1.5, 0.01);
+      problem_folder.add(problem_params, "max_glideslope", 0.5, 15, 0.5);
+    }
+    const max_eta = { r3_problem: 1, se2_problem: 10, xyzq_problem: 10 }[
+      problem_type
+    ];
     problem_folder.add(problem_params, "eta", 0, max_eta, 0.01);
     problem_folder.add(problem_params, "max_num_obstacles", 0, 150, 1);
     problem_folder.add(problem_params, "obstacle_fraction", 0, 1, 0.01);

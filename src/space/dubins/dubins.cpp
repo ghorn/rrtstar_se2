@@ -167,7 +167,8 @@ Se2Coord DubinsPath::Sample(double t) const {
   double tprime = t / rho_;
   const std::array<SegmentType, 3> &types = Dirdata(type_);
 
-  ASSERT_MSG(t >= 0 && t <= total_length_, "DubinsPathSample got bad input");
+  ASSERT_MSG(t >= 0 && t <= total_length_,
+             "DubinsPathSample t (" << t << ") out of range (0, " << total_length_ << ")");
 
   /* initial configuration */
   /* The translated initial configuration */
