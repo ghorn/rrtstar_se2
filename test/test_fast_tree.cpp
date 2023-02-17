@@ -19,9 +19,10 @@
 #include "src/space/r3.hpp"          // for Point, R3, Sphere, Line
 #include "src/space/se2.hpp"         // for Point, R3, Sphere, Line
 #include "src/space/space_base.hpp"  // for SpaceBase
-#include "src/tagged.hpp"            // for Tagged
-#include "src/tree/fast.hpp"         // for Fast
-#include "src/tree/naive.hpp"        // for Naive
+#include "src/space/xyzq.hpp"
+#include "src/tagged.hpp"      // for Tagged
+#include "src/tree/fast.hpp"   // for Fast
+#include "src/tree/naive.hpp"  // for Naive
 
 using namespace std::chrono_literals;
 
@@ -241,4 +242,18 @@ TEST(TestTreeInSpace, Se2LargeRho) {
   const double large_rho = 1.6;
   Se2 space_large_rho(large_rho, lb, ub, {});
   TestSpace<Se2Coord, DubinsPath, Se2, 3>(space_large_rho);
+}
+
+TEST(TestTreeInSpace, XyzqSmallRho) {
+  using XyzqPath = rrts::space::xyzq::XyzqPath;
+  using XyzqCoord = rrts::space::xyzq::XyzqCoord;
+  using Xyzq = rrts::space::xyzq::Xyzq;
+
+  const glm::dvec3 lb = {-2, -3, -3};
+  const glm::dvec3 ub = {1, 1.1, 2};
+
+  const double rho = 0.6;
+  const double max_glideslope = 0.2;
+  Xyzq space(rho, max_glideslope, lb, ub, {});
+  TestSpace<XyzqCoord, XyzqPath, Xyzq, 4>(space);
 }

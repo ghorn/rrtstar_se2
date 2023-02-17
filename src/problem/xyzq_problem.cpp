@@ -1,4 +1,6 @@
-#include "se2_problem.hpp"
+#include "xyzq_problem.hpp"
+
+#include "src/space/se2.hpp"
 
 // std::vector<std::vector<bb3d::ColoredVec3> > DrawBridge(const DubinsPath &path, double ctg0,
 // double ctg1, double z __attribute__((unused))) {
@@ -38,19 +40,17 @@
 //  }
 //  return lines;
 //}
-std::vector<XyzRgb> DrawBridge(const Se2Problem::DubinsPath &path, double ctg0, double ctg1,
-                               double z) {
+std::vector<XyzRgb> DrawBridge(const XyzqProblem::XyzqPath &path, double ctg0, double ctg1) {
   std::vector<XyzRgb> line;
 
   constexpr int kN = 20;
   for (int j = 0; j < kN; j++) {
     double t = 0.999 * static_cast<double>(j) / (kN - 1);
-    Se2Problem::Se2Coord q = path.Sample(t * path.TotalLength());
+    XyzqProblem::XyzqCoord q = path.Sample(t * path.TotalLength());
     double ctg = ctg0 * (1 - t) + ctg1 * t;
     // std::cout << "t " << t << ": " << q[0] << ", " << q[1] << "   | " << ctg << std::endl;
     glm::vec4 color = {1 - ctg, 0, ctg, 1};
-    XyzRgb v({q[0], q[1], z}, color);
-    // XyzRgb v({q[0], q[1], q[2]}, color);
+    XyzRgb v({q.se2.position[0], q.se2.position[1], q.z}, color);
 
     line.push_back(v);
   }
@@ -58,20 +58,20 @@ std::vector<XyzRgb> DrawBridge(const Se2Problem::DubinsPath &path, double ctg0, 
 }
 
 void DrawBridgeReverse(std::vector<XyzRgb> &line, const glm::vec4 &color,
-                       const Se2Problem::DubinsPath &path, double z) {
+                       const XyzqProblem::XyzqPath &path) {
   constexpr int kN = 20;
   for (int j = 0; j < kN; j++) {
     double t = 0.999 * path.TotalLength() * static_cast<double>(kN - 1 - j) / (kN - 1);
-    Se2Problem::Se2Coord q = path.Sample(t);
-    glm::vec3 v = {q[0], q[1], z};
+    XyzqProblem::XyzqCoord q = path.Sample(t);
+    glm::vec3 v = {q.se2.position[0], q.se2.position[1], q.z - 0.05};
     // glm::vec3 v = {q[0], q[1], q[2] + 0.05};
     line.push_back(XyzRgb(v, color));
   }
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetBridgeLines() const {
+std::vector<std::vector<XyzRgb> > XyzqProblem::GetBridgeLines() const {
   const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
-  const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
+  const std::vector<rrts::Edge<Point, XyzqPath> > &edges = search_.Edges();
 
   // Find max cost to go in order to scale lines
   double max_cost_to_go = 0;
@@ -82,29 +82,20 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetBridgeLines() const {
   // Draw all bridges
   std::vector<std::vector<XyzRgb> > bridges;
   size_t node_index = 1;
-  for (const rrts::Edge<Point, Line> &edge : edges) {
+  for (const rrts::Edge<Point, XyzqPath> &edge : edges) {
     const double ctg0 = cost_to_go.at(edge.parent_index_) / max_cost_to_go;
     const double ctg1 = cost_to_go.at(node_index) / max_cost_to_go;
 
-    bridges.push_back(DrawBridge(edge.bridge_, ctg0, ctg1, 0));
-    // std::vector<std::vector<bb3d::ColoredVec3> > next_bridge = DrawBridge(edge.bridge_, ctg0,
-    // ctg1, 0); bridges.reserve(bridges.size() + next_bridge.size());
-    // bridges.insert(bridges.end(), next_bridge.begin(), next_bridge.end());
+    bridges.push_back(DrawBridge(edge.bridge_, ctg0, ctg1));
     node_index++;
   }
 
-  // TODO(greg): why did I used to sort these?
-  // std::sort(bridges.begin(), bridges.end(),
-  //           [](const std::vector<bb3d::ColoredVec3> &b0, const std::vector<bb3d::ColoredVec3>
-  //           &b1) {
-  //             return b0.at(b0.size() - 1).color[0] > b1.at(b1.size() - 1).color[0];
-  //           });
   return bridges;
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color) const {
+std::vector<std::vector<XyzRgb> > XyzqProblem::GetGoalLine(const glm::vec3 &color) const {
   const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
-  const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
+  const std::vector<rrts::Edge<Point, XyzqPath> > &edges = search_.Edges();
   std::vector<XyzRgb> goal_line;
 
   double min_cost_to_go = 0;
@@ -112,7 +103,7 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color
   bool got_winner = false;
   size_t index = 1;
   // best cost to go in a goal region
-  for (const rrts::Edge<Point, Line> &edge : edges) {
+  for (const rrts::Edge<Point, XyzqPath> &edge : edges) {
     const Point &endpoint = edge.bridge_.Endpoint();
     if (InGoalRegion(endpoint) && (cost_to_go.at(index) < min_cost_to_go || !got_winner)) {
       winner_index = index;
@@ -130,34 +121,35 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color
     const glm::vec4 color_with_alpha = {color.x, color.y, color.z, 1};
 
     while (head != 0) {
-      rrts::Edge<Point, Line> edge = edges.at(head - 1);
-      DrawBridgeReverse(winning_route, color_with_alpha, edge.bridge_, -0.05);
-      //        glm::vec3 p = static_cast<glm::dvec3>(edge.bridge_.p1);
-      //        p.z -= 0.05F;
-      // std::cerr << edge.bridge.p1.x << " " << edge.bridge.p1.y << " " << edge.bridge.p1.z <<
-      // " " << std::endl; winning_route.push_back(p);
+      rrts::Edge<Point, XyzqPath> edge = edges.at(head - 1);
+      DrawBridgeReverse(winning_route, color_with_alpha, edge.bridge_);
       head = edge.parent_index_;
-
-      // if (head == 0) {
-      //  glm::vec3 pf = static_cast<glm::dvec3>(edge.bridge_.p0);
-      //  pf.z -= 0.02F;
-      //  winning_route.push_back(pf);
-      //}
     }
     segments.push_back(winning_route);
   }
   return segments;
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetBoundingBoxLines(
+std::vector<std::vector<XyzRgb> > XyzqProblem::GetBoundingBoxLines(
     float bounding_box_opacity) const {
-  const glm::vec2 lb = Lb().position;
-  const glm::vec2 ub = Ub().position;
+  const glm::vec3 lb = Lb().Xyz();
+  const glm::vec3 ub = Ub().Xyz();
+
   std::vector<std::vector<glm::vec3> > bb_lines;
-  bb_lines.push_back({{lb.x, lb.y, 0}, {lb.x, ub.y, 0}});
-  bb_lines.push_back({{lb.x, ub.y, 0}, {ub.x, ub.y, 0}});
-  bb_lines.push_back({{ub.x, ub.y, 0}, {ub.x, lb.y, 0}});
-  bb_lines.push_back({{ub.x, lb.y, 0}, {lb.x, lb.y, 0}});
+  bb_lines.push_back({{lb.x, lb.y, lb.z}, {ub.x, lb.y, lb.z}});
+  bb_lines.push_back({{lb.x, lb.y, ub.z}, {ub.x, lb.y, ub.z}});
+  bb_lines.push_back({{lb.x, ub.y, lb.z}, {ub.x, ub.y, lb.z}});
+  bb_lines.push_back({{lb.x, ub.y, ub.z}, {ub.x, ub.y, ub.z}});
+
+  bb_lines.push_back({{lb.x, lb.y, lb.z}, {lb.x, ub.y, lb.z}});
+  bb_lines.push_back({{lb.x, lb.y, ub.z}, {lb.x, ub.y, ub.z}});
+  bb_lines.push_back({{ub.x, lb.y, lb.z}, {ub.x, ub.y, lb.z}});
+  bb_lines.push_back({{ub.x, lb.y, ub.z}, {ub.x, ub.y, ub.z}});
+
+  bb_lines.push_back({{lb.x, lb.y, lb.z}, {lb.x, lb.y, ub.z}});
+  bb_lines.push_back({{lb.x, ub.y, lb.z}, {lb.x, ub.y, ub.z}});
+  bb_lines.push_back({{ub.x, lb.y, lb.z}, {ub.x, lb.y, ub.z}});
+  bb_lines.push_back({{ub.x, ub.y, lb.z}, {ub.x, ub.y, ub.z}});
 
   // add a color to each one
   const glm::vec4 color = {1, 1, 1, bounding_box_opacity};
@@ -172,28 +164,29 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetBoundingBoxLines(
   return ret;
 }
 
-Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params,
-                                     double rho) {
+XyzqProblem XyzqProblem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params,
+                                       double rho, double max_glideslope) {
   std::uniform_real_distribution<double> uniform_distribution;
   std::function<double(void)> uniform = [&uniform_distribution, &rng_engine]() {
     return uniform_distribution(rng_engine);
   };
-
   const double dx = params.min_length + (params.max_length - params.min_length) * uniform();
   const double dy = params.min_length + (params.max_length - params.min_length) * uniform();
-  const glm::dvec2 lb = {-dx / 2, -dy / 2};
-  const glm::dvec2 ub = {dx / 2, dy / 2};
-  Se2Coord x_init = {{lb[0], 0}, 0};
+  const double dz = (params.min_length + (params.max_length - params.min_length) * uniform()) /
+                    max_glideslope * 4;
+  const glm::dvec3 lb = {-dx / 2, -dy / 2, -dz / 2};
+  const glm::dvec3 ub = {dx / 2, dy / 2, dz / 2};
+  XyzqCoord x_init = {rrts::space::se2::Se2Coord{{lb[0], 0}, 0}, lb[2]};
 
-  const glm::dvec2 goal = {ub[0], dy * (uniform() - 0.5)};
-  Sphere goal_region = {goal, params.goal_radius};
+  const glm::dvec3 goal = {ub[0], dy * (uniform() - 0.5), ub[2]};
+  R3Sphere goal_region = {goal, params.goal_radius};
 
   // obstacles
-  std::vector<Sphere> obstacles;
+  std::vector<R3Sphere> obstacles;
   if (params.max_num_obstacles > 0) {
     const size_t n = static_cast<size_t>(
         std::uniform_int_distribution<>(1, params.max_num_obstacles)(rng_engine));
-    const double total_volume = dx * dy;
+    const double total_volume = dx * dy * dz;
     // upper bound (no overlap)
     const double volume_per_obstacle =
         total_volume * params.obstacle_fraction / static_cast<double>(n);
@@ -202,12 +195,12 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemP
     int32_t num_failed_insertions = 0;
     while (obstacles.size() < n) {
       const double obstacle_radius = radius_per_obstacle * (0.5 + 0.5 * uniform());
-      const glm::dvec2 p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5)};
+      const glm::dvec3 p = {dx * (uniform() - 0.5), dy * (uniform() - 0.5), dz * (uniform() - 0.5)};
       const bool avoids_goal = glm::distance(p, goal) > obstacle_radius + params.goal_radius;
       const bool avoids_start =
-          glm::distance(p, x_init.position) > obstacle_radius + 1.3;  // careful of turning radius
+          glm::distance(p, x_init.Xyz()) > obstacle_radius + 1.3;  // careful of turning radius
       if (avoids_goal && avoids_start) {
-        Sphere obstacle = {p, obstacle_radius};
+        R3Sphere obstacle = {p, obstacle_radius};
         obstacles.push_back(obstacle);
       } else {
         num_failed_insertions++;
@@ -220,5 +213,5 @@ Se2Problem Se2Problem::RandomProblem(std::mt19937_64 &rng_engine, const ProblemP
     }
   }
 
-  return Se2Problem(x_init, rho, params.eta, lb, ub, goal_region, obstacles);
+  return XyzqProblem(x_init, rho, max_glideslope, params.eta, lb, ub, goal_region, obstacles);
 }

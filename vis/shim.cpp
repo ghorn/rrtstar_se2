@@ -2,6 +2,7 @@
 
 #include "src/problem/r3_problem.hpp"
 #include "src/problem/se2_problem.hpp"
+#include "src/problem/xyzq_problem.hpp"
 
 // shim class that owns an RNG state and can create random problems
 class ProblemFactory {
@@ -12,6 +13,10 @@ class ProblemFactory {
   };
   Se2Problem RandomSe2Problem(const ProblemParameters &params, double rho) {
     return Se2Problem::RandomProblem(rng_engine, params, rho);
+  };
+  XyzqProblem RandomXyzqProblem(const ProblemParameters &params, double rho,
+                                double max_glideslope) {
+    return XyzqProblem::RandomProblem(rng_engine, params, rho, max_glideslope);
   };
 
  private:
@@ -69,10 +74,18 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .field("min_angle", &Se2GoalRegion::min_angle)
       .field("max_angle", &Se2GoalRegion::max_angle);
 
+  // Xyzq::GoalRegion
+  using XyzqGoalRegion = XyzqProblem::GoalRegion;
+  emscripten::value_object<XyzqGoalRegion>("XyzqGoalRegion")
+      .field("position", &XyzqGoalRegion::position)
+      .field("min_angle", &XyzqGoalRegion::min_angle)
+      .field("max_angle", &XyzqGoalRegion::max_angle);
+
   emscripten::class_<ProblemFactory>("ProblemFactory")
       .constructor<>()
       .function("RandomR3Problem", &ProblemFactory::RandomR3Problem)
-      .function("RandomSe2Problem", &ProblemFactory::RandomSe2Problem);
+      .function("RandomSe2Problem", &ProblemFactory::RandomSe2Problem)
+      .function("RandomXyzqProblem", &ProblemFactory::RandomXyzqProblem);
 
   emscripten::class_<R3Problem>("R3Problem")
       .function("GetBridgeLines", &R3Problem::GetBridgeLines)
@@ -91,6 +104,15 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("GetGoalRegion", &Se2Problem::GetGoalRegion)
       .function("GetObstacles", &Se2Problem::GetObstacles)
       .function("NumEdges", &Se2Problem::NumEdges);
+
+  emscripten::class_<XyzqProblem>("XyzqProblem")
+      .function("GetBridgeLines", &XyzqProblem::GetBridgeLines)
+      .function("GetGoalLine", &XyzqProblem::GetGoalLine)
+      .function("GetBoundingBoxLines", &XyzqProblem::GetBoundingBoxLines)
+      .function("Step", &XyzqProblem::Step)
+      .function("GetGoalRegion", &XyzqProblem::GetGoalRegion)
+      .function("GetObstacles", &XyzqProblem::GetObstacles)
+      .function("NumEdges", &XyzqProblem::NumEdges);
 
   // ----------- dubins ----------------
   using rrts::dubins::Se2Coord;

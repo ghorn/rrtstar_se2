@@ -37,7 +37,7 @@ class SpaceBase {
   virtual Bridge FormBridge(const Point &v0, const Point &v1) const = 0;
 
   // efficient K-D tree searching
-  virtual std::array<BoundingBoxIntervals, 3> BoundingBox(const Point &p,
+  virtual std::array<BoundingBoxIntervals, D> BoundingBox(const Point &p,
                                                           double max_distance) const = 0;
 };
 
