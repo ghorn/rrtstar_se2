@@ -220,16 +220,7 @@ const params = {
   only_draw_best_path: false,
 };
 
-const colors = [
-  "red",
-  "green",
-  "blue",
-  "orange",
-  "purple",
-  "deepPink",
-  // "black",
-  // "brown",
-];
+const colors = ["red", "green", "blue", "orange", "purple", "deepPink"];
 
 function compute_and_draw() {
   // update dubins paths
@@ -261,10 +252,8 @@ function compute_and_draw() {
   context.restore();
 
   // draw stuff here
-  // console.log("drawing");
   startArrow.draw(context);
   endArrow.draw(context);
-
   dubinsPaths.draw(context, colors, params);
 }
 
@@ -357,69 +346,4 @@ function initGui() {
   gui.add(params, "only_draw_best_path").onChange(function (value) {
     compute_and_draw();
   });
-  // gui.add(gui_params, "space", ["r3", "se2", "xyzq"]);
-  // gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
-
-  // for (const problem_type of ["r3_problem", "se2_problem", "xyzq_problem"]) {
-  //   const problem_folder = gui.addFolder(problem_type);
-  //   const problem_params = gui_params[problem_type];
-  //   if (problem_type == "se2_problem") {
-  //     problem_folder.add(problem_params, "rho", 0.01, 1.5, 0.01);
-  //   }
-  //   if (problem_type == "xyzq_problem") {
-  //     problem_folder.add(problem_params, "rho", 0.01, 1.5, 0.01);
-  //     problem_folder.add(problem_params, "max_glideslope", 0.5, 15, 0.5);
-  //   }
-  //   const max_eta = { r3_problem: 1, se2_problem: 10, xyzq_problem: 10 }[
-  //     problem_type
-  //   ];
-  //   problem_folder.add(problem_params, "eta", 0, max_eta, 0.01);
-  //   problem_folder.add(problem_params, "max_num_obstacles", 0, 150, 1);
-  //   problem_folder.add(problem_params, "obstacle_fraction", 0, 1, 0.01);
-  //   const min_length = problem_folder.add(
-  //     problem_params,
-  //     "min_length",
-  //     0.05,
-  //     9.95,
-  //     0.05
-  //   );
-  //   const max_length = problem_folder.add(
-  //     problem_params,
-  //     "max_length",
-  //     0.1,
-  //     10,
-  //     0.05
-  //   );
-  //   // make sure max_length is bigger than min_length
-  //   min_length.onChange(function (min_length_val) {
-  //     const max_length_val = max_length.getValue();
-  //     if (min_length_val > max_length_val) {
-  //       max_length.setValue(min_length_val + 0.05);
-  //       max_length.updateDisplay();
-  //     }
-  //   });
-  //   // make sure min length is smaller than max length
-  //   max_length.onChange(function (max_length_val) {
-  //     const min_length_val = min_length.getValue();
-  //     if (max_length_val < min_length_val) {
-  //       min_length.setValue(max_length_val - 0.05);
-  //       min_length.updateDisplay();
-  //     }
-  //   });
-  //   problem_folder.add(problem_params, "goal_radius", 0.01, 2, 0.01);
-  //   problem_folder.add(problem_params, "max_iterations", 0, 10000);
-  //   problem_folder.add(problem_params, "iterations_per_frame", 1, 500, 1);
-  // }
-
-  // const scene_folder = gui.addFolder("scene");
-  // scene_folder.add(gui_params.scene, "rotate");
-  // scene_folder.add(gui_params.scene, "rotation_rate", 0, 1.5);
-  // scene_folder.add(gui_params.scene, "show_goal_region");
-  // scene_folder.add(gui_params.scene, "show_obstacles");
-  // scene_folder.add(gui_params.scene, "goal_region_opacity", 0, 1, 0.01);
-  // scene_folder.add(gui_params.scene, "obstacle_opacity", 0, 1, 0.01);
-  // scene_folder.add(gui_params.scene, "show_bounding_box");
-  // scene_folder.add(gui_params.scene, "bounding_box_opacity", 0, 1, 0.01);
-  // scene_folder.addColor(gui_params.scene, "optimal_line_color");
-  // scene_folder.add(gui_params.scene, "show_axes");
 }

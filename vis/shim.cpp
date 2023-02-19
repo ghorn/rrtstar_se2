@@ -128,12 +128,6 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
                        emscripten::select_overload<DubinsWordStatus(
                            DubinsPath &, const Se2Coord &, const Se2Coord &, double, DubinsPathType,
                            const DubinsIntermediateResults &)>(&rrts::dubins::ComputeDubinsPath));
-  //   emscripten::function(
-  //       "ComputeDubinsPath",
-  //       emscripten::select_overload<DubinsWordStatus(DubinsPath &, const Se2Coord &, const
-  //       Se2Coord &,
-  //                                                    double, DubinsPathType)>(
-  //           &rrts::dubins::ComputeDubinsPath));
 
   using rrts::dubins::DubinsPath;
   emscripten::class_<DubinsPath>("DubinsPath")
