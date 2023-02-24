@@ -2,44 +2,6 @@
 
 #include "src/space/se2.hpp"
 
-// std::vector<std::vector<bb3d::ColoredVec3> > DrawBridge(const DubinsPath &path, double ctg0,
-// double ctg1, double z __attribute__((unused))) {
-//
-//  std::vector<std::vector<bb3d::ColoredVec3> > lines;
-//  lines.push_back({});
-//
-//  constexpr int N = 20;
-//  for (int j=0; j<N; j++) {
-//    double t = 0.999*path.total_length * static_cast<double>(j) / (N - 1); // static_cast)
-//    std::array<double, 3> q{};
-//    DubinsStatus sample_ret = DubinsPathSample(path, t, q);
-//    if (sample_ret != DubinsStatus::kSuccess) {
-//      std::cerr << "bad return code for sampling: " << static_cast<int>(sample_ret) <<
-//      std::endl;
-//    //double q[3];
-//    //int sample_ret = dubins_path_sample(&path, t, q);
-//    //if (sample_ret != 0) {
-//    //  std::cerr << "bad return code for sampling: " << sample_ret << std::endl;
-//      std::exit(EXIT_FAILURE);
-//    }
-//    //if (first) {
-//    //  std::cout << "t " << t << ": " << q[0] << ", " << q[1] << std::endl;
-//    //}
-//    double ctg = ctg0 * (1 - t) + ctg1 * t;
-//    glm::vec4 color = {ctg, 0, 1 - ctg, 0.6};
-//    //bb3d::ColoredVec3 v = {{q[0], q[1], z}, color};
-//    bb3d::ColoredVec3 v = {{q[0], q[1], q[2]}, color};
-//    if (j > 0) {
-//      const std::vector<bb3d::ColoredVec3> &latest_vec = lines.at(lines.size()-1);
-//      double prev_q = latest_vec.at(latest_vec.size() - 1).position.z;
-//      if ((prev_q > 2.2 && q[2] < -2.2) || (prev_q < -2.2 && q[2] > 2.2)) {
-//        lines.push_back({});
-//      }
-//    }
-//    lines.at(lines.size()-1).push_back(v);
-//  }
-//  return lines;
-//}
 std::vector<XyzRgb> DrawBridge(const XyzqProblem::XyzqPath &path, double ctg0, double ctg1) {
   std::vector<XyzRgb> line;
 
