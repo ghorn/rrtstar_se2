@@ -342,9 +342,9 @@ var problem_factory = new cxx_shim_module.ProblemFactory();
 const gui_params = {
   delay_before_restart: 1,
   pause: false,
-  space: "xyzq",
+  space: "r3",
   scene: {
-    rotate: false,
+    rotate: true,
     rotation_rate: 0.5,
     show_goal_region: true,
     goal_region_opacity: 0.5,
@@ -361,8 +361,8 @@ const gui_params = {
     eta: 0.55,
     max_num_obstacles: 10,
     obstacle_fraction: 0.6,
-    min_length: 3,
-    max_length: 4,
+    min_length: 5,
+    max_length: 10,
     goal_radius: 0.5,
   },
   se2_problem: {
@@ -425,7 +425,7 @@ function init() {
     1,
     1000
   );
-  camera.position.set(-4, 4, 5);
+  camera.position.set(-10, 7, 15);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.minDistance = 0.01;
@@ -588,14 +588,14 @@ function initGui() {
       problem_params,
       "min_length",
       0.05,
-      9.95,
+      19.95,
       0.05
     );
     const max_length = problem_folder.add(
       problem_params,
       "max_length",
       0.1,
-      10,
+      20,
       0.05
     );
     // make sure max_length is bigger than min_length
