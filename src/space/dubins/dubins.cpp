@@ -85,6 +85,14 @@ double Mod2pi(double theta) {
   return ret;
 }
 
+// The paper states without justification that we can skip RLR and LRL.
+constexpr std::array<DubinsPathType, 4> kPathsToTry = {DubinsPathType::kLsl, DubinsPathType::kLsr,
+                                                       DubinsPathType::kRsl, DubinsPathType::kRsr};
+// constexpr std::array<DubinsPathType, 6> kPathsToTry =
+//               {DubinsPathType::kLsl, DubinsPathType::kLsr, DubinsPathType::kRsl,
+//               DubinsPathType::kRsr,
+//         DubinsPathType::kRlr, DubinsPathType::kLrl});
+
 // shortest path
 DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho) {
   const DubinsIntermediateResults in = ComputeDubinsIntermediateResults(q0, q1, rho);
@@ -94,9 +102,7 @@ DubinsPath::DubinsPath(const Se2Coord &q0, const Se2Coord &q1, double rho) {
   rho_ = rho;
 
   double best_cost = std::numeric_limits<double>::infinity();
-  for (DubinsPathType path_type :
-       // The paper states without justification that we can skip RLR and LRL.
-       {DubinsPathType::kLsl, DubinsPathType::kLsr, DubinsPathType::kRsl, DubinsPathType::kRsr}) {
+  for (DubinsPathType path_type : kPathsToTry) {
     std::array<double, 3> normalized_segment_lengths{};
     DubinsWordStatus errcode = DubinsWord(in, path_type, normalized_segment_lengths);
     if (errcode == DubinsWordStatus::kSuccess) {
