@@ -178,7 +178,7 @@ XyzqProblem XyzqProblem::RandomProblem(std::mt19937_64 &rng_engine, const Proble
   const glm::dvec3 ub = {dx / 2, dy / 2, dz / 2};
   XyzqCoord x_init = {rrts::space::se2::Se2Coord{{lb[0], 0}, 0}, lb[2]};
 
-  const glm::dvec3 goal = {ub[0], dy * (uniform() - 0.5), ub[2]};
+  const glm::dvec3 goal = {ub[0] - params.goal_radius, dy * (uniform() - 0.5), ub[2]};
   R3Sphere goal_region = {goal, params.goal_radius};
 
   // obstacles
