@@ -51,9 +51,24 @@ XyzqPath Xyzq::FormBridge(const XyzqCoord &v0, const XyzqCoord &v1) const {
   return XyzqPath(dubins, v0.z, v1.z);
 }
 
-std::tuple<XyzqCoord, XyzqPath> Xyzq::Steer(const XyzqCoord &v0, const XyzqCoord &v1,
+// Steering policy works as follows:
+// 1. sample a random point in the free (x,y,theta,z) space
+// 2. move z (as little as possible) to satisfy the glideslope constraint
+// 3. reduce length along path (via Sample) if necessary to satisfy eta
+std::tuple<XyzqCoord, XyzqPath> Xyzq::Steer(const XyzqCoord &v0, const XyzqCoord &v1_unchecked,
                                             double eta) const {
-  const XyzqPath xyzq_path = FormBridge(v0, v1);
+  // form dubins path from x,y,theta
+  DubinsPath dubins_path(v0.se2, v1_unchecked.se2, rho_);
+  const double dubins_length = dubins_path.TotalLength();
+
+  // form v1 by finding v1.z that satisfies the glideslope constraint
+  XyzqCoord v1 = v1_unchecked;
+  if (v1.z < v0.z) {
+    v1.z = v0.z;
+  } else if (v1.z - v0.z > dubins_length / max_glideslope_) {
+    v1.z = v0.z + dubins_length / max_glideslope_;
+  }
+  XyzqPath xyzq_path(dubins_path, v0.z, v1.z);  // this is consistent with FormBridge
 
   // if distance is shorter than eta, then go all the way to the second point
   if (xyzq_path.TotalLength() <= eta) {
@@ -67,19 +82,19 @@ std::tuple<XyzqCoord, XyzqPath> Xyzq::Steer(const XyzqCoord &v0, const XyzqCoord
 
 bool Xyzq::CollisionFree(const XyzqPath &path) const {
   // handle glideslope
-  if (path.ZF() <= path.Z0()) {
+  if (path.ZF() < path.Z0()) {
     return false;
   }
   if (std::fabs(path.Glideslope()) < max_glideslope_) {
     return false;
   }
-  // // discard paths that turn too much too fast
-  // if (fabs(path.Dubins().AngleDifference()) >= M_PI / 2) {
-  //   return false;
-  // }
-  // if (path.Dubins().MaxAngle() >= M_PI / 4) {
-  //   return false;
-  // }
+  // discard paths that turn too much too fast
+  if (fabs(path.Dubins().AngleDifference()) >= M_PI / 2) {
+    return false;
+  }
+  if (path.Dubins().MaxAngle() >= M_PI / 4) {
+    return false;
+  }
 
   constexpr int kN = 20;
   for (int j = 0; j < kN; j++) {
