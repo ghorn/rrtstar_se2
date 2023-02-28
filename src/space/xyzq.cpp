@@ -158,7 +158,7 @@ std::array<BoundingBoxIntervals, 4> Xyzq::BoundingBox(const XyzqCoord &p,
 
   // z
   bbs[3].centroid = p.z;
-  double delta_z = max_distance * sin_glideangle_;
+  double delta_z = max_distance * sin_max_glideangle_;
   bbs[3].intervals.push_back(BoundingBoxInterval{p.z - delta_z, p.z + delta_z});
 
   return bbs;
