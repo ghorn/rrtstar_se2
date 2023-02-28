@@ -158,7 +158,11 @@ std::array<BoundingBoxIntervals, 4> Xyzq::BoundingBox(const XyzqCoord &p,
 
   // z
   bbs[3].centroid = p.z;
-  double delta_z = max_distance * sin_max_glideangle_;
+  double delta_z = max_distance;
+  // TODO(greg): cos_max_glideangle_ should be more efficient, but unit tests show that
+  // sin_max_glideangle_ is correct.
+  // For now just go with max_distance, which is conservative.
+  // double delta_z = max_distance * sin_max_glideangle_;
   bbs[3].intervals.push_back(BoundingBoxInterval{p.z - delta_z, p.z + delta_z});
 
   return bbs;

@@ -253,7 +253,21 @@ TEST(TestTreeInSpace, XyzqSmallRho) {
   const glm::dvec3 ub = {1, 1.1, 2};
 
   const double rho = 0.6;
-  const double max_glideslope = 0.2;
+  const double max_glideslope = 2.2;
+  Xyzq space(rho, max_glideslope, lb, ub, {});
+  TestSpace<XyzqCoord, XyzqPath, Xyzq, 4>(space);
+}
+
+TEST(TestTreeInSpace, XyzqSLargeRho) {
+  using XyzqPath = rrts::space::xyzq::XyzqPath;
+  using XyzqCoord = rrts::space::xyzq::XyzqCoord;
+  using Xyzq = rrts::space::xyzq::Xyzq;
+
+  const glm::dvec3 lb = {-2, -3, -3};
+  const glm::dvec3 ub = {1, 1.1, 2};
+
+  const double rho = 1.6;
+  const double max_glideslope = 2.2;
   Xyzq space(rho, max_glideslope, lb, ub, {});
   TestSpace<XyzqCoord, XyzqPath, Xyzq, 4>(space);
 }

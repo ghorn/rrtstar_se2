@@ -119,12 +119,16 @@ class Xyzq : public SpaceBase<XyzqCoord, XyzqPath, 4> {
         max_glideslope_(max_glideslope),
         sin_max_glideangle_(std::fabs(max_glideslope_) /
                             std::sqrt(1 + max_glideslope_ * max_glideslope_)),
+        cos_max_glideangle_(1 / std::sqrt(1 + max_glideslope_ * max_glideslope_)),
         lb_{{{lb[0], lb[1]}, -M_PI}, lb[2]},
         ub_{{{ub[0], ub[1]}, M_PI}, ub[2]},
         sphere_obstacles_(std::move(sphere_obstacles)) {
     double sin_max_glideangle2 = std::sin(std::atan(std::fabs(max_glideslope)));
     ASSERT_MSG(std::fabs(sin_max_glideangle_ - sin_max_glideangle2) < 1e-9,
                "sin_max_glideangle_ " << sin_max_glideangle_ << " vs " << sin_max_glideangle2);
+    double cos_max_glideangle2 = std::cos(std::atan(std::fabs(max_glideslope)));
+    ASSERT_MSG(std::fabs(cos_max_glideangle_ - cos_max_glideangle2) < 1e-9,
+               "cos_max_glideangle_ " << cos_max_glideangle_ << " vs " << cos_max_glideangle2);
   };
   ~Xyzq() override = default;
 
@@ -151,6 +155,7 @@ class Xyzq : public SpaceBase<XyzqCoord, XyzqPath, 4> {
   double rho_;
   double max_glideslope_;
   double sin_max_glideangle_;
+  double cos_max_glideangle_;
 
   XyzqCoord lb_;
   XyzqCoord ub_;
