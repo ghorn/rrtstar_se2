@@ -151,8 +151,7 @@ class ProblemScene {
   update_common(
     goal_region,
     obstacles,
-    bridge_lines,
-    goal_lines,
+    path_lines_callback,
     bounding_box_lines,
     gui_params
   ) {
@@ -171,10 +170,7 @@ class ProblemScene {
     );
 
     // set the pathfinding lines
-    this.lines_buffer.set_lines(bridge_lines);
-
-    // set the optimal path lines
-    this.goal_lines_buffer.set_lines(goal_lines);
+    this.lines_buffer.set_lines_from_callback(path_lines_callback);
 
     // set the bounding box lines
     this.bounding_box_lines_buffer.set_lines(bounding_box_lines);
@@ -205,29 +201,28 @@ class ProblemScene {
     obstacles_vec.delete();
 
     // get the lines
-    const bridge_lines = r3_problem.GetBridgeLines();
-    const goal_lines = r3_problem.GetGoalLine({
-      x: gui_params.optimal_line_color.r,
-      y: gui_params.optimal_line_color.g,
-      z: gui_params.optimal_line_color.b,
-    });
     const bounding_box_lines = r3_problem.GetBoundingBoxLines(
       gui_params.bounding_box_opacity
     );
 
     // update the scene
+    const goal_line_color = {
+      x: gui_params.optimal_line_color.r,
+      y: gui_params.optimal_line_color.g,
+      z: gui_params.optimal_line_color.b,
+    };
+
     this.update_common(
       goal_region,
       obstacles,
-      bridge_lines,
-      goal_lines,
+      (...args) => {
+        return r3_problem.SetPathLines(goal_line_color, ...args);
+      },
       bounding_box_lines,
       gui_params
     );
 
     // delete C++ objects
-    goal_lines.delete();
-    bridge_lines.delete();
     bounding_box_lines.delete();
   }
 
@@ -249,30 +244,28 @@ class ProblemScene {
     obstacles_vec.delete();
 
     // get the lines
-    const bridge_lines = se2_problem.GetBridgeLines();
-    const goal_lines = se2_problem.GetGoalLine({
-      x: gui_params.optimal_line_color.r,
-      y: gui_params.optimal_line_color.g,
-      z: gui_params.optimal_line_color.b,
-    });
-
     const bounding_box_lines = se2_problem.GetBoundingBoxLines(
       gui_params.bounding_box_opacity
     );
 
     // update the scene
+    const goal_line_color = {
+      x: gui_params.optimal_line_color.r,
+      y: gui_params.optimal_line_color.g,
+      z: gui_params.optimal_line_color.b,
+    };
+
     this.update_common(
       goal_region,
       obstacles,
-      bridge_lines,
-      goal_lines,
+      (...args) => {
+        return se2_problem.SetPathLines(goal_line_color, ...args);
+      },
       bounding_box_lines,
       gui_params
     );
 
     // delete C++ objects
-    bridge_lines.delete();
-    goal_lines.delete();
     bounding_box_lines.delete();
   }
 
@@ -292,30 +285,28 @@ class ProblemScene {
     obstacles_vec.delete();
 
     // get the lines
-    const bridge_lines = xyzq_problem.GetBridgeLines();
-    const goal_lines = xyzq_problem.GetGoalLine({
-      x: gui_params.optimal_line_color.r,
-      y: gui_params.optimal_line_color.g,
-      z: gui_params.optimal_line_color.b,
-    });
-
     const bounding_box_lines = xyzq_problem.GetBoundingBoxLines(
       gui_params.bounding_box_opacity
     );
 
     // update the scene
+    const goal_line_color = {
+      x: gui_params.optimal_line_color.r,
+      y: gui_params.optimal_line_color.g,
+      z: gui_params.optimal_line_color.b,
+    };
+
     this.update_common(
       goal_region,
       obstacles,
-      bridge_lines,
-      goal_lines,
+      (...args) => {
+        return xyzq_problem.SetPathLines(goal_line_color, ...args);
+      },
       bounding_box_lines,
       gui_params
     );
 
     // delete C++ objects
-    bridge_lines.delete();
-    goal_lines.delete();
     bounding_box_lines.delete();
   }
 }

@@ -1,43 +1,5 @@
 #include "se2_problem.hpp"
 
-// std::vector<std::vector<bb3d::ColoredVec3> > DrawBridge(const DubinsPath &path, double ctg0,
-// double ctg1, double z __attribute__((unused))) {
-//
-//  std::vector<std::vector<bb3d::ColoredVec3> > lines;
-//  lines.push_back({});
-//
-//  constexpr int N = 20;
-//  for (int j=0; j<N; j++) {
-//    double t = 0.999*path.total_length * static_cast<double>(j) / (N - 1); // static_cast)
-//    std::array<double, 3> q{};
-//    DubinsStatus sample_ret = DubinsPathSample(path, t, q);
-//    if (sample_ret != DubinsStatus::kSuccess) {
-//      std::cerr << "bad return code for sampling: " << static_cast<int>(sample_ret) <<
-//      std::endl;
-//    //double q[3];
-//    //int sample_ret = dubins_path_sample(&path, t, q);
-//    //if (sample_ret != 0) {
-//    //  std::cerr << "bad return code for sampling: " << sample_ret << std::endl;
-//      std::exit(EXIT_FAILURE);
-//    }
-//    //if (first) {
-//    //  std::cout << "t " << t << ": " << q[0] << ", " << q[1] << std::endl;
-//    //}
-//    double ctg = ctg0 * (1 - t) + ctg1 * t;
-//    glm::vec4 color = {ctg, 0, 1 - ctg, 0.6};
-//    //bb3d::ColoredVec3 v = {{q[0], q[1], z}, color};
-//    bb3d::ColoredVec3 v = {{q[0], q[1], q[2]}, color};
-//    if (j > 0) {
-//      const std::vector<bb3d::ColoredVec3> &latest_vec = lines.at(lines.size()-1);
-//      double prev_q = latest_vec.at(latest_vec.size() - 1).position.z;
-//      if ((prev_q > 2.2 && q[2] < -2.2) || (prev_q < -2.2 && q[2] > 2.2)) {
-//        lines.push_back({});
-//      }
-//    }
-//    lines.at(lines.size()-1).push_back(v);
-//  }
-//  return lines;
-//}
 std::vector<XyzRgb> DrawBridge(const Se2Problem::DubinsPath &path, double ctg0, double ctg1,
                                double z) {
   std::vector<XyzRgb> line;
@@ -69,10 +31,9 @@ void DrawBridgeReverse(std::vector<XyzRgb> &line, const glm::vec4 &color,
   }
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetBridgeLines() const {
-  const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
-  const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
-
+std::vector<std::vector<XyzRgb>> Se2Problem::ComputeBridgeLines(
+    const std::vector<double> &cost_to_go,
+    const std::vector<rrts::Edge<Point, Line>> &edges) const {
   // Find max cost to go in order to scale lines
   double max_cost_to_go = 0;
   for (double c : cost_to_go) {
@@ -80,7 +41,7 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetBridgeLines() const {
   }
 
   // Draw all bridges
-  std::vector<std::vector<XyzRgb> > bridges;
+  std::vector<std::vector<XyzRgb>> bridges;
   size_t node_index = 1;
   for (const rrts::Edge<Point, Line> &edge : edges) {
     const double ctg0 = cost_to_go.at(edge.parent_index_) / max_cost_to_go;
@@ -102,9 +63,9 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetBridgeLines() const {
   return bridges;
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color) const {
-  const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
-  const std::vector<rrts::Edge<Point, Line> > &edges = search_.Edges();
+std::vector<std::vector<XyzRgb>> Se2Problem::ComputeGoalLine(
+    const std::vector<double> &cost_to_go, const std::vector<rrts::Edge<Point, Line>> &edges,
+    const glm::vec3 &color) const {
   std::vector<XyzRgb> goal_line;
 
   double min_cost_to_go = 0;
@@ -123,7 +84,7 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color
   }
 
   // trace back route from winner
-  std::vector<std::vector<XyzRgb> > segments;
+  std::vector<std::vector<XyzRgb>> segments;
   if (got_winner) {
     std::vector<XyzRgb> winning_route;
     size_t head = winner_index;
@@ -149,11 +110,69 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetGoalLine(const glm::vec3 &color
   return segments;
 }
 
-std::vector<std::vector<XyzRgb> > Se2Problem::GetBoundingBoxLines(
-    float bounding_box_opacity) const {
+#ifdef __EMSCRIPTEN__
+void Se2Problem::SetPathLines(const glm::vec3 &goal_line_color, emscripten::val positions,
+                              emscripten::val colors, emscripten::val indices,
+                              size_t max_points) const {
+  // compute bridge and goal lines
+  const std::vector<double> cost_to_go = search_.ComputeCostsToGo();
+  const std::vector<rrts::Edge<Point, Line>> &edges = search_.Edges();
+
+  const std::vector<std::vector<XyzRgb>> bridge_lines = ComputeBridgeLines(cost_to_go, edges);
+  const std::vector<std::vector<XyzRgb>> goal_lines =
+      ComputeGoalLine(cost_to_go, edges, goal_line_color);
+
+  // TODO(greg): check max points
+  (void)max_points;
+
+  // now copy the lines out
+  size_t count = 0;
+
+  // first copy every line segment to flat vectors
+  std::vector<float> positions_vec;
+  std::vector<float> colors_vec;
+
+  for (const std::vector<std::vector<XyzRgb>> &lines : {bridge_lines, goal_lines}) {
+    for (const std::vector<XyzRgb> &line : lines) {
+      for (size_t k = 0; k < line.size(); k++) {
+        const XyzRgb &cv = line.at(k);
+
+        if (k < line.size() - 1) {
+          indices.call<void>("push", count);
+          indices.call<void>("push", count + 1);
+        }
+
+        positions_vec.push_back(cv.x);
+        positions_vec.push_back(cv.y);
+        positions_vec.push_back(cv.z);
+
+        colors_vec.push_back(cv.r);
+        colors_vec.push_back(cv.g);
+        colors_vec.push_back(cv.b);
+        colors_vec.push_back(cv.a);
+
+        count++;
+      }
+    }
+  }
+
+  // finally, make memory view of the flat vectors and copy to the javascript TypedArrays
+  emscripten::val positions_view =
+      emscripten::val(emscripten::typed_memory_view(positions_vec.size(), positions_vec.data()));
+  emscripten::val colors_view =
+      emscripten::val(emscripten::typed_memory_view(colors_vec.size(), colors_vec.data()));
+
+  positions.call<void>("set", positions_view);
+  colors.call<void>("set", colors_view);
+
+  // return true;
+}
+#endif
+
+std::vector<std::vector<XyzRgb>> Se2Problem::GetBoundingBoxLines(float bounding_box_opacity) const {
   const glm::vec2 lb = Lb().position;
   const glm::vec2 ub = Ub().position;
-  std::vector<std::vector<glm::vec3> > bb_lines;
+  std::vector<std::vector<glm::vec3>> bb_lines;
   bb_lines.push_back({{lb.x, lb.y, 0}, {lb.x, ub.y, 0}});
   bb_lines.push_back({{lb.x, ub.y, 0}, {ub.x, ub.y, 0}});
   bb_lines.push_back({{ub.x, ub.y, 0}, {ub.x, lb.y, 0}});
@@ -161,7 +180,7 @@ std::vector<std::vector<XyzRgb> > Se2Problem::GetBoundingBoxLines(
 
   // add a color to each one
   const glm::vec4 color = {1, 1, 1, bounding_box_opacity};
-  std::vector<std::vector<XyzRgb> > ret;
+  std::vector<std::vector<XyzRgb>> ret;
   for (const std::vector<glm::vec3> &segment : bb_lines) {
     std::vector<XyzRgb> colored_segment;
     for (const glm::vec3 &point : segment) {

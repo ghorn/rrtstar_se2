@@ -28,6 +28,21 @@ class LinesBuffer {
     this.lines.visible = true;
   }
 
+  set_lines_from_callback(callback) {
+    const positions = this.lines.geometry.attributes.position.array;
+    const colors = this.lines.geometry.attributes.color.array;
+
+    const indices = [];
+    callback(positions, colors, indices, this.MAX_POINTS);
+
+    this.lines.geometry.attributes.position.needsUpdate = true; // required after updates
+    this.lines.geometry.attributes.color.needsUpdate = true; // required after updates
+    this.lines.geometry.setIndex(indices);
+    this.lines.geometry.setDrawRange(0, indices.length);
+    // this.lines.geometry.computeBoundingBox();
+    // this.lines.geometry.computeBoundingSphere();
+  }
+
   set_lines(line_list) {
     const positions = this.lines.geometry.attributes.position.array;
     const colors = this.lines.geometry.attributes.color.array;
@@ -76,8 +91,8 @@ class LinesBuffer {
     this.lines.geometry.attributes.color.needsUpdate = true; // required after updates
     this.lines.geometry.setIndex(indices);
     this.lines.geometry.setDrawRange(0, indices.length);
-    this.lines.geometry.computeBoundingBox();
-    this.lines.geometry.computeBoundingSphere();
+    // this.lines.geometry.computeBoundingBox();
+    // this.lines.geometry.computeBoundingSphere();
   }
 
   set_lines_from_lists(line_list) {
@@ -119,8 +134,8 @@ class LinesBuffer {
     this.lines.geometry.attributes.color.needsUpdate = true; // required after updates
     this.lines.geometry.setIndex(indices);
     this.lines.geometry.setDrawRange(0, indices.length);
-    this.lines.geometry.computeBoundingBox();
-    this.lines.geometry.computeBoundingSphere();
+    // this.lines.geometry.computeBoundingBox();
+    // this.lines.geometry.computeBoundingSphere();
   }
 
   get_segments() {

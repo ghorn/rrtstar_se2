@@ -11,6 +11,12 @@ BASE_LINKOPTS = [
     # "-sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency",
     "--pre-js",
     "$(location hello_embind_interface.js)",
+    "-sALLOW_MEMORY_GROWTH",
+    # debugging
+    "-g",
+    "-sASSERTIONS",
+    # "-gsource-map",
+    # "-sDEMANGLE_SUPPORT=1",
 ]
 
 RELEASE_LINKOPTS = [

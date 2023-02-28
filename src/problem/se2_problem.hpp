@@ -4,6 +4,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+#endif
+
 #include "src/problem/parameters.hpp"
 #include "src/problem/xyz_rgb.hpp"
 #include "src/search.hpp"               // for Edge, Search, StepResult, StepResult::kSuccess
@@ -43,10 +47,20 @@ struct Se2Problem {
   [[nodiscard]] const Point &Lb() const { return se2_space_.Lb(); };
   [[nodiscard]] const Point &Ub() const { return se2_space_.Ub(); };
 
- public:
-  std::vector<std::vector<XyzRgb> > GetBoundingBoxLines(float bounding_box_opacity) const;
+  std::vector<std::vector<XyzRgb>> ComputeBridgeLines(
+      const std::vector<double> &cost_to_go,
+      const std::vector<rrts::Edge<Point, Line>> &edges) const;
+  std::vector<std::vector<XyzRgb>> ComputeGoalLine(
+      const std::vector<double> &cost_to_go, const std::vector<rrts::Edge<Point, Line>> &edges,
+      const glm::vec3 &color) const;
 
-  std::vector<std::vector<XyzRgb> > GetBridgeLines() const;
+ public:
+#ifdef __EMSCRIPTEN__
+  void SetPathLines(const glm::vec3 &goal_line_color, emscripten::val positions,
+                    emscripten::val colors, emscripten::val indices, size_t max_points) const;
+#endif
+
+  std::vector<std::vector<XyzRgb>> GetBoundingBoxLines(float bounding_box_opacity) const;
 
   [[nodiscard]] bool InGoalRegion(const Point &p) const {
     const bool heading_good =
@@ -57,8 +71,6 @@ struct Se2Problem {
 
     return in_goal;
   }
-
-  std::vector<std::vector<XyzRgb> > GetGoalLine(const glm::vec3 &color) const;
 
   GoalRegion GetGoalRegion() const { return goal_region_; }
   std::vector<Sphere> GetObstacles() const { return obstacles_; }
