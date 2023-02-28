@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+#endif
+
 #include "src/problem/parameters.hpp"
 #include "src/problem/xyz_rgb.hpp"
 #include "src/search.hpp"     // for Edge, Search, StepResult, StepResult::kSuccess
@@ -37,16 +41,24 @@ struct R3Problem {
 
   size_t NumEdges() const { return search_.Edges().size(); }
 
-  std::vector<std::vector<XyzRgb> > GetBridgeLines() const;
+  std::vector<std::vector<XyzRgb>> ComputeBridgeLines(
+      const std::vector<double> &cost_to_go,
+      const std::vector<rrts::Edge<R3Point, Line>> &edges) const;
+  std::vector<std::vector<XyzRgb>> ComputeGoalLine(
+      const std::vector<double> &cost_to_go, const std::vector<rrts::Edge<R3Point, Line>> &edges,
+      const glm::vec3 &color) const;
+
+#ifdef __EMSCRIPTEN__
+  void SetPathLines(const glm::vec3 &goal_line_color, emscripten::val positions,
+                    emscripten::val colors, emscripten::val indices, size_t max_points) const;
+#endif
 
   [[nodiscard]] bool InGoalRegion(const R3Point &p) const {
     double dist = glm::distance(glm::dvec3(p), goal_region_.center);
     return dist <= goal_region_.radius;
   }
 
-  std::vector<std::vector<XyzRgb> > GetBoundingBoxLines(float bounding_box_opacity) const;
-
-  std::vector<std::vector<XyzRgb> > GetGoalLine(const glm::vec3 &color) const;
+  std::vector<std::vector<XyzRgb>> GetBoundingBoxLines(float bounding_box_opacity) const;
 
   static R3Problem RandomProblem(std::mt19937_64 &rng_engine, const ProblemParameters &params);
 };

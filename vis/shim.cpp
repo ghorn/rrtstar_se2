@@ -88,8 +88,7 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("RandomXyzqProblem", &ProblemFactory::RandomXyzqProblem);
 
   emscripten::class_<R3Problem>("R3Problem")
-      .function("GetBridgeLines", &R3Problem::GetBridgeLines)
-      .function("GetGoalLine", &R3Problem::GetGoalLine)
+      .function("SetPathLines", &R3Problem::SetPathLines)
       .function("GetBoundingBoxLines", &R3Problem::GetBoundingBoxLines)
       .function("Step", &R3Problem::Step)
       .function("GetGoalRegion", &R3Problem::GetGoalRegion)
@@ -97,8 +96,7 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("NumEdges", &R3Problem::NumEdges);
 
   emscripten::class_<Se2Problem>("Se2Problem")
-      .function("GetBridgeLines", &Se2Problem::GetBridgeLines)
-      .function("GetGoalLine", &Se2Problem::GetGoalLine)
+      .function("SetPathLines", &Se2Problem::SetPathLines)
       .function("GetBoundingBoxLines", &Se2Problem::GetBoundingBoxLines)
       .function("Step", &Se2Problem::Step)
       .function("GetGoalRegion", &Se2Problem::GetGoalRegion)
@@ -106,8 +104,7 @@ EMSCRIPTEN_BINDINGS(RrtStar) {
       .function("NumEdges", &Se2Problem::NumEdges);
 
   emscripten::class_<XyzqProblem>("XyzqProblem")
-      .function("GetBridgeLines", &XyzqProblem::GetBridgeLines)
-      .function("GetGoalLine", &XyzqProblem::GetGoalLine)
+      .function("SetPathLines", &XyzqProblem::SetPathLines)
       .function("GetBoundingBoxLines", &XyzqProblem::GetBoundingBoxLines)
       .function("Step", &XyzqProblem::Step)
       .function("GetGoalRegion", &XyzqProblem::GetGoalRegion)
