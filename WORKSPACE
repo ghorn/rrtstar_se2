@@ -51,8 +51,11 @@ cc_library(
 
 http_archive(
     name = "emsdk",
+    patch_args = ["-s"],
+    patches = ["//:missing_dwarfdump.patch"],
     sha256 = "1d38b7375e12e85197165a4c51d76d90e1d9db8c2c593b64cfaec4338af54750",
     strip_prefix = "emsdk-3.1.31/bazel",
+    # strip_prefix = "emsdk-3.1.31",
     url = "https://github.com/emscripten-core/emsdk/archive/refs/tags/3.1.31.tar.gz",
 )
 

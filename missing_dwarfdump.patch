@@ -1,0 +1,31 @@
+From 0e341efbaff7c0efef3d6ed0997ee407aa707c38 Mon Sep 17 00:00:00 2001
+From: kinsei0916 <kinsei0916@gmail.com>
+Date: Mon, 1 Aug 2022 10:59:15 +0900
+Subject: [PATCH] Add missing binaries for bazel
+
+---
+ bazel/emscripten_deps.bzl | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/bazel/emscripten_deps.bzl b/bazel/emscripten_deps.bzl
+index cd592e9842..360bca6c77 100644
+--- emscripten_deps.bzl
++++ emscripten_deps.bzl
+@@ -54,12 +54,16 @@ filegroup(
+         "bin/clang{bin_extension}",
+         "bin/llc{bin_extension}",
+         "bin/llvm-ar{bin_extension}",
++        "bin/llvm-dwarfdump{bin_extension}",
+         "bin/llvm-nm{bin_extension}",
+         "bin/llvm-objcopy{bin_extension}",
++        "bin/wasm-ctor-eval{bin_extension}",
+         "bin/wasm-emscripten-finalize{bin_extension}",
+         "bin/wasm-ld{bin_extension}",
+-        "bin/wasm-opt{bin_extension}",
+         "bin/wasm-metadce{bin_extension}",
++        "bin/wasm-opt{bin_extension}",
++        "bin/wasm-split{bin_extension}",
++        "bin/wasm2js{bin_extension}",
+         ":emcc_common",
+     ] + glob(
+         include = [
