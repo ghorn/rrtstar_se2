@@ -77,17 +77,9 @@ class XyzqPath : public rrts::space::Trajectory<XyzqCoord> {
   XyzqPath(const DubinsPath &dubins, double z0, double zF) : dubins_(dubins), z0_(z0), zF_(zF) {
     double dxy = dubins_.TotalLength();
     double dz = zF - z0;
-    // double dxyz = TotalLength();
 
     glideslope_ = dxy / dz;
-    // glide_angle = std::atan(glideslope_);
-    // cos_glideslope_ = dxy / dxyz;
-    cos_glideslope_ = 1 / std::sqrt(1 + dz * dz / (dxy * dxy));  // TODO(greg): double-check
-
-    // double w = std::fabs(dz / dxy);
-    // sin_glideslope_ = w / std::sqrt(1 + w * w);  // TODO(greg): double-check
-    // double glide_angle = std::atan(glideslope_);
-    // cos_glideslope_ = std::cos(glide_angle);
+    cos_atan_glideslope_ = 1 / std::sqrt(1 + dz * dz / (dxy * dxy));  // TODO(greg): double-check
 
     total_length_ = std::sqrt(dxy * dxy + dz * dz);
   }
@@ -96,14 +88,13 @@ class XyzqPath : public rrts::space::Trajectory<XyzqCoord> {
   DubinsPath dubins_;
   double z0_;
   double zF_;
-  double glideslope_;
-  double cos_glideslope_;
-  // double sin_glideslope_;
-  double total_length_;  // memoize
+  double glideslope_{};
+  double cos_atan_glideslope_{};
+  double total_length_{};  // memoize
 
  public:
   XyzqCoord Sample(double t) const {
-    dubins::Se2Coord se2 = dubins_.Sample(t * cos_glideslope_);
+    dubins::Se2Coord se2 = dubins_.Sample(t * cos_atan_glideslope_);
     double z = z0_ + (zF_ - z0_) * t / total_length_;
     return XyzqCoord{se2, z};
   };
@@ -126,14 +117,14 @@ class Xyzq : public SpaceBase<XyzqCoord, XyzqPath, 4> {
        std::vector<R3Sphere> sphere_obstacles)
       : rho_(rho),
         max_glideslope_(max_glideslope),
+        sin_max_glideangle_(std::fabs(max_glideslope_) /
+                            std::sqrt(1 + max_glideslope_ * max_glideslope_)),
         lb_{{{lb[0], lb[1]}, -M_PI}, lb[2]},
         ub_{{{ub[0], ub[1]}, M_PI}, ub[2]},
         sphere_obstacles_(std::move(sphere_obstacles)) {
-    sin_glideangle_ = std::sin(std::atan(std::fabs(max_glideslope)));
-    double sin_glideangle2_ =
-        std::fabs(max_glideslope_) / std::sqrt(1 + max_glideslope_ * max_glideslope_);
-    ASSERT_MSG(std::fabs(sin_glideangle_ - sin_glideangle2_) < 1e-9,
-               "sin_glideangle_ " << sin_glideangle_ << " vs " << sin_glideangle2_);
+    double sin_max_glideangle2 = std::sin(std::atan(std::fabs(max_glideslope)));
+    ASSERT_MSG(std::fabs(sin_max_glideangle_ - sin_max_glideangle2) < 1e-9,
+               "sin_max_glideangle_ " << sin_max_glideangle_ << " vs " << sin_max_glideangle2);
   };
   ~Xyzq() override = default;
 
@@ -159,7 +150,7 @@ class Xyzq : public SpaceBase<XyzqCoord, XyzqPath, 4> {
 
   double rho_;
   double max_glideslope_;
-  double sin_glideangle_;
+  double sin_max_glideangle_;
 
   XyzqCoord lb_;
   XyzqCoord ub_;
