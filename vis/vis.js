@@ -333,7 +333,7 @@ var problem_factory = new cxx_shim_module.ProblemFactory();
 
 const gui_params = {
   delay_before_restart: 1,
-  pause: false,
+  pause_solver: false,
   space: "r3",
   cycle_space: true,
   scene: {
@@ -475,7 +475,7 @@ function render() {
   );
   const was_finished = problem.NumEdges() >= problem_params.max_iterations;
 
-  if (!gui_params.pause) {
+  if (!gui_params.pause_solver) {
     let num_failed_iterations = 0;
     while (problem.NumEdges() < target_num_edges) {
       if (!problem.Step()) {
@@ -571,7 +571,7 @@ function animate() {
 function initGui() {
   gui = new GUI();
 
-  gui.add(gui_params, "pause");
+  gui.add(gui_params, "pause_solver");
   gui_space = gui.add(gui_params, "space", ["r3", "se2", "xyzq"]);
   gui.add(gui_params, "cycle_space");
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
