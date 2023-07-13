@@ -379,7 +379,7 @@ const gui_params = {
     obstacle_fraction: 0.75,
     min_length: 9.9,
     max_length: 10,
-    goal_radius: 1,
+    goal_radius: 2,
   },
 };
 
