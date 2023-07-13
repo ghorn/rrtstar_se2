@@ -314,6 +314,7 @@ class ProblemScene {
 let renderer, scene, camera, controls;
 let stats, gpuPanel;
 let gui;
+let gui_space; // spaghetti placeholder to cycle spaces
 let problem_scene = new ProblemScene();
 
 let last_rotation_time = Date.now();
@@ -334,6 +335,7 @@ const gui_params = {
   delay_before_restart: 1,
   pause: false,
   space: "r3",
+  cycle_space: true,
   scene: {
     rotate: true,
     rotation_rate: 0.5,
@@ -503,6 +505,20 @@ function render() {
   ) {
     problem.delete();
 
+    // cycle spaces if that option is selected
+    if (gui_params.cycle_space) {
+      if (gui_params.space == "r3") {
+        gui_space.setValue("se2");
+      } else if (gui_params.space == "se2") {
+        gui_space.setValue("xyzq");
+      } else if (gui_params.space == "xyzq") {
+        gui_space.setValue("r3");
+      } else {
+        throw "Unknown space: " + gui_params.space;
+      }
+      gui_space.updateDisplay();
+    }
+
     // create a new problem in the proper space
     if (gui_params.space == "r3") {
       problem = problem_factory.RandomR3Problem(gui_params.r3_problem);
@@ -556,7 +572,8 @@ function initGui() {
   gui = new GUI();
 
   gui.add(gui_params, "pause");
-  gui.add(gui_params, "space", ["r3", "se2", "xyzq"]);
+  gui_space = gui.add(gui_params, "space", ["r3", "se2", "xyzq"]);
+  gui.add(gui_params, "cycle_space");
   gui.add(gui_params, "delay_before_restart", 0.1, 5, 0.1);
 
   for (const problem_type of ["r3_problem", "se2_problem", "xyzq_problem"]) {
